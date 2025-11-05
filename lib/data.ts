@@ -24,6 +24,27 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   `);
   return result.rows;
 }
+export async function getBlogPostById(id: number): Promise<BlogPost | null> {
+  const result = await query(`
+    SELECT 
+      id,
+      title,
+      summary,
+      image_url AS "imageUrl",
+      video_url AS "videoUrl",
+      author,
+      publish_date AS "publishDate",
+      rating,
+      affiliate_url AS "affiliateUrl",
+      content,
+      category
+    FROM blog_posts
+    WHERE id = $1
+  `, [id]);
+
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
 
 // جلب مقال واحد عبر الـ ID
 export async function getBlogPostById(id: number): Promise<BlogPost | null> {
@@ -83,6 +104,22 @@ export async function getAllProducts(): Promise<Product[]> {
   `);
   return result.rows;
 }
+// جلب منتج واحد عبر الـ ID
+export async function getProductById(id: number): Promise<Product | null> {
+  const result = await query(`
+    SELECT
+      id,
+      name,
+      image_url AS "imageUrl",
+      price,
+      url,
+      description
+    FROM products
+    WHERE id = $1
+  `, [id]);
+
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
 
 /* ========== 🎮 GAMES ========== */
 
@@ -102,4 +139,21 @@ export async function getAllGames(): Promise<Game[]> {
     ORDER BY id ASC
   `);
   return result.rows;
+}
+export async function getGameById(id: number): Promise<Game | null> {
+  const result = await query(`
+    SELECT
+      id,
+      title,
+      image_url AS "imageUrl",
+      genre,
+      platform,
+      rating,
+      description,
+      affiliate_url AS "affiliateUrl"
+    FROM games
+    WHERE id = $1
+  `, [id]);
+
+  return result.rows.length > 0 ? result.rows[0] : null;
 }
