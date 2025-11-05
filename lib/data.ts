@@ -24,6 +24,7 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   `);
   return result.rows;
 }
+
 // جلب مقال واحد عبر الـ ID
 export async function getBlogPostById(id: number): Promise<BlogPost | null> {
   const result = await query(`
@@ -76,7 +77,9 @@ export async function getAllProducts(): Promise<Product[]> {
       image_url AS "imageUrl",
       price,
       url,
-      description
+      description,
+      gallery,
+      category
     FROM products
     ORDER BY id ASC
   `);
@@ -91,7 +94,9 @@ export async function getProductById(id: number): Promise<Product | null> {
       image_url AS "imageUrl",
       price,
       url,
-      description
+      description,
+      gallery,
+      category
     FROM products
     WHERE id = $1
   `, [id]);
@@ -108,10 +113,13 @@ export async function getAllGames(): Promise<Game[]> {
       id,
       title,
       image_url AS "imageUrl",
-      platform,
-      rating,
+      category,
+      tags,
+      theme,
       description,
-      affiliate_url AS "affiliateUrl"
+      video_url AS "videoUrl",
+      download_url AS "downloadUrl",
+      gallery
     FROM games
     ORDER BY id ASC
   `);
@@ -123,10 +131,13 @@ export async function getGameById(id: number): Promise<Game | null> {
       id,
       title,
       image_url AS "imageUrl",
-      platform,
-      rating,
+      category,
+      tags,
+      theme,
       description,
-      affiliate_url AS "affiliateUrl"
+      video_url AS "videoUrl",
+      download_url AS "downloadUrl",
+      gallery
     FROM games
     WHERE id = $1
   `, [id]);
