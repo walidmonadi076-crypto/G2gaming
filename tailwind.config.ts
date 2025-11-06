@@ -1,4 +1,7 @@
+
 import type { Config } from "tailwindcss";
+// Fix: Replaced require() with an ES module import for better TypeScript compatibility.
+import typography from "@tailwindcss/typography";
 
 const config: Config = {
   content: [
@@ -13,7 +16,7 @@ const config: Config = {
     },
   },
   plugins: [
-    require('@tailwindcss/typography'),
+    typography,
   ],
 };
 export default config;

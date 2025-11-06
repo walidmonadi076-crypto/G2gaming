@@ -1,5 +1,6 @@
 
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import type { Game, BlogPost, Product } from '../types';
@@ -36,10 +37,70 @@ export default function AdminPanel() {
   const [itemsPerPage] = useState(20);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Déplacement des useMemo en haut pour respecter les règles de React
+  const currentData = useMemo(() =>
+    activeTab === 'games' ? games :
+    activeTab === 'blogs' ? blogs :
+    products, [activeTab, games, blogs, products]);
+
+  const filteredData = useMemo(() => currentData.filter((item: any) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      (item.title && item.title.toLowerCase().includes(query)) ||
+      (item.name && item.name.toLowerCase().includes(query)) ||
+      (item.category && item.category.toLowerCase().includes(query)) ||
+      (item.author && item.author.toLowerCase().includes(query))
+    );
+  }), [currentData, searchQuery]);
+
+  const paginationData = useMemo(() => paginate(filteredData, currentPage, itemsPerPage), [filteredData, currentPage, itemsPerPage]);
+
+
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout');
     setIsAuthenticated(false);
   }, []);
+
+  const fetchAllData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [gamesRes, blogsRes, productsRes] = await Promise.all([
+        fetch('/api/games'),
+        fetch('/api/blogs'),
+        fetch('/api/products'),
+      ]);
+      
+      if (!gamesRes.ok || !blogsRes.ok || !productsRes.ok) {
+        throw new Error('Failed to fetch initial data');
+      }
+
+      const [gamesData, blogsData, productsData] = await Promise.all([
+        gamesRes.json(),
+        blogsRes.json(),
+        productsRes.json(),
+      ]);
+
+      setGames(gamesData);
+      setBlogs(blogsData);
+      setProducts(productsData);
+    } catch (error) {
+      console.error('Error fetching all data:', error);
+      alert('Erreur lors du chargement des données.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/auth/check');
+      const data = await res.json();
+      setIsAuthenticated(data.authenticated);
+    } catch (error) {
+      setIsAuthenticated(false);
+    }
+    setCheckingAuth(false);
+  };
 
   useEffect(() => {
     checkAuth();
@@ -47,15 +108,19 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchData();
-      setCurrentPage(1);
-      setSearchQuery('');
+      fetchAllData();
     }
-  }, [activeTab, isAuthenticated]);
+  }, [isAuthenticated, fetchAllData]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setSearchQuery('');
+  }, [activeTab]);
 
   // Déconnexion automatique pour inactivité
   useEffect(() => {
-    let logoutTimer: NodeJS.Timeout;
+    // Fix: Using ReturnType<typeof setTimeout> to avoid dependency on Node.js types in the browser.
+    let logoutTimer: ReturnType<typeof setTimeout>;
 
     const resetTimer = () => {
       clearTimeout(logoutTimer);
@@ -81,18 +146,6 @@ export default function AdminPanel() {
     }
   }, [isAuthenticated, handleLogout]);
 
-
-  const checkAuth = async () => {
-    try {
-      const res = await fetch('/api/auth/check');
-      const data = await res.json();
-      setIsAuthenticated(data.authenticated);
-    } catch (error) {
-      setIsAuthenticated(false);
-    }
-    setCheckingAuth(false);
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -116,28 +169,6 @@ export default function AdminPanel() {
     }
   };
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      if (activeTab === 'games') {
-        const res = await fetch('/api/games');
-        const data = await res.json();
-        setGames(data);
-      } else if (activeTab === 'blogs') {
-        const res = await fetch('/api/blogs');
-        const data = await res.json();
-        setBlogs(data);
-      } else if (activeTab === 'products') {
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        setProducts(data);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-    setLoading(false);
-  };
-
   const handleDelete = async (id: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément?')) return;
 
@@ -154,7 +185,9 @@ export default function AdminPanel() {
       });
       if (res.ok) {
         alert('Élément supprimé avec succès!');
-        fetchData();
+        if (activeTab === 'games') setGames(prev => prev.filter(item => item.id !== id));
+        else if (activeTab === 'blogs') setBlogs(prev => prev.filter(item => item.id !== id));
+        else if (activeTab === 'products') setProducts(prev => prev.filter(item => item.id !== id));
       } else {
         const error = await res.json();
         alert(`Erreur: ${error.error || error.message || 'La suppression a échoué'}`);
@@ -182,12 +215,23 @@ export default function AdminPanel() {
         },
         body: JSON.stringify(formData),
       });
+    
 
       if (res.ok) {
+        const savedItem = await res.json();
         alert(editingItem ? 'Élément modifié avec succès!' : 'Élément créé avec succès!');
         setShowForm(false);
         setEditingItem(null);
-        fetchData();
+        
+        // Mise à jour optimiste de l'UI
+        if (activeTab === 'games') {
+          setGames(prev => editingItem ? prev.map(g => g.id === savedItem.id ? savedItem : g) : [savedItem, ...prev]);
+        } else if (activeTab === 'blogs') {
+          setBlogs(prev => editingItem ? prev.map(b => b.id === savedItem.id ? savedItem : b) : [savedItem, ...prev]);
+        } else if (activeTab === 'products') {
+          setProducts(prev => editingItem ? prev.map(p => p.id === savedItem.id ? savedItem : p) : [savedItem, ...prev]);
+        }
+
       } else {
         const error = await res.json();
         alert(`Erreur: ${error.error || error.message || 'La sauvegarde a échoué'}`);
@@ -252,24 +296,7 @@ export default function AdminPanel() {
       </div>
     );
   }
-
-  const currentData =
-    activeTab === 'games' ? games :
-    activeTab === 'blogs' ? blogs :
-    products;
-
-  const filteredData = currentData.filter((item: any) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      (item.title && item.title.toLowerCase().includes(query)) ||
-      (item.name && item.name.toLowerCase().includes(query)) ||
-      (item.category && item.category.toLowerCase().includes(query)) ||
-      (item.author && item.author.toLowerCase().includes(query))
-    );
-  });
-
-  const paginationData = paginate(filteredData, currentPage, itemsPerPage);
-
+  
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Head>
