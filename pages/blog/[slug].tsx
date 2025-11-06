@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -79,7 +80,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
                 
                 <main className="col-span-12 lg:col-span-8">
                      <div className="mb-4">
-                        <Link href="/blogs" className="text-sm text-purple-400 hover:underline">&lt; Back to Blogs</Link>
+                        <Link href="/blog" className="text-sm text-purple-400 hover:underline">&lt; Back to Blogs</Link>
                     </div>
                     <header className="mb-8">
                         <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">{post.title}</h1>

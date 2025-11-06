@@ -18,14 +18,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
   
   const navItems = [
     { href: '/', icon: ICONS.HOME, label: 'Home' },
-    { href: '/blogs', icon: ICONS.BLOG, label: 'Blogs' },
+    { href: '/blog', icon: ICONS.BLOG, label: 'Blogs' },
     { href: '/shop', icon: ICONS.STORE, label: 'Shop' },
   ];
 
   const { popularLinks, parentPath } = useMemo(() => {
     const path = router.pathname;
-    if (path.startsWith('/blogs')) {
-      return { popularLinks: POPULAR_BLOG_CATEGORIES, parentPath: '/blogs' };
+    if (path.startsWith('/blog')) {
+      return { popularLinks: POPULAR_BLOG_CATEGORIES, parentPath: '/blog' };
     }
     if (path.startsWith('/shop')) {
       return { popularLinks: POPULAR_SHOP_CATEGORIES, parentPath: '/shop' };

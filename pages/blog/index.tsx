@@ -80,7 +80,7 @@ const BlogsPage: React.FC<BlogsPageProps> = ({ searchQuery, posts }) => {
         } else {
             newQuery.category = cat;
         }
-        router.push({ pathname: '/blogs', query: newQuery }, undefined, { shallow: true });
+        router.push({ pathname: '/blog', query: newQuery }, undefined, { shallow: true });
     };
 
     const areFiltersActive = searchQuery || (selectedCategory && selectedCategory !== 'All');
