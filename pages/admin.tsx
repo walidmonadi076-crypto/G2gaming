@@ -36,6 +36,27 @@ export default function AdminPanel() {
   const [itemsPerPage] = useState(20);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Correction: les hooks useMemo doivent être appelés avant les retours conditionnels.
+  const currentData = useMemo(() => 
+      activeTab === 'games' ? games :
+      activeTab === 'blogs' ? blogs :
+      products,
+    [activeTab, games, blogs, products]
+  );
+
+  const filteredData = useMemo(() => 
+    currentData.filter((item: any) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        (item.title && item.title.toLowerCase().includes(query)) ||
+        (item.name && item.name.toLowerCase().includes(query)) ||
+        (item.category && item.category.toLowerCase().includes(query)) ||
+        (item.author && item.author.toLowerCase().includes(query))
+      );
+    }),
+    [currentData, searchQuery]
+  );
+
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout');
     setIsAuthenticated(false);
@@ -271,26 +292,6 @@ export default function AdminPanel() {
       </div>
     );
   }
-
-  const currentData = useMemo(() => 
-      activeTab === 'games' ? games :
-      activeTab === 'blogs' ? blogs :
-      products,
-    [activeTab, games, blogs, products]
-  );
-
-  const filteredData = useMemo(() => 
-    currentData.filter((item: any) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        (item.title && item.title.toLowerCase().includes(query)) ||
-        (item.name && item.name.toLowerCase().includes(query)) ||
-        (item.category && item.category.toLowerCase().includes(query)) ||
-        (item.author && item.author.toLowerCase().includes(query))
-      );
-    }),
-    [currentData, searchQuery]
-  );
   
   const paginationData = paginate(filteredData, currentPage, itemsPerPage);
 
