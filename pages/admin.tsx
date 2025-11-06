@@ -3,10 +3,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
-import type { Game, BlogPost, Product } from '../types';
+import type { Game, BlogPost, Product, SocialLink } from '../types';
 import AdminDashboard from '../components/AdminDashboard';
 import { paginate } from '../lib/pagination';
 import AdminForm from '../components/AdminForm';
+import ToastContainer from '../components/ToastContainer';
+import type { ToastData, ToastType } from '../components/Toast';
+
 
 // Fonction `getCookie` encore plus robuste pour lire les cookies de manière fiable
 function getCookie(name: string): string | null {
@@ -26,22 +29,34 @@ export default function AdminPanel() {
   const [loginError, setLoginError] = useState('');
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<'games' | 'blogs' | 'products'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'blogs' | 'products' | 'social-links'>('games');
   const [games, setGames] = useState<Game[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [searchQuery, setSearchQuery] = useState('');
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  const addToast = useCallback((message: string, type: ToastType) => {
+    const id = Date.now();
+    setToasts(prevToasts => [...prevToasts, { id, message, type }]);
+  }, []);
+
+  const removeToast = useCallback((id: number) => {
+    setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
+  }, []);
 
   // Déplacement des useMemo en haut pour respecter les règles de React
   const currentData = useMemo(() =>
     activeTab === 'games' ? games :
     activeTab === 'blogs' ? blogs :
-    products, [activeTab, games, blogs, products]);
+    activeTab === 'products' ? products :
+    socialLinks, [activeTab, games, blogs, products, socialLinks]);
 
   const filteredData = useMemo(() => currentData.filter((item: any) => {
     const query = searchQuery.toLowerCase();
@@ -49,7 +64,8 @@ export default function AdminPanel() {
       (item.title && item.title.toLowerCase().includes(query)) ||
       (item.name && item.name.toLowerCase().includes(query)) ||
       (item.category && item.category.toLowerCase().includes(query)) ||
-      (item.author && item.author.toLowerCase().includes(query))
+      (item.author && item.author.toLowerCase().includes(query)) ||
+      (item.url && item.url.toLowerCase().includes(query))
     );
   }), [currentData, searchQuery]);
 
@@ -64,32 +80,35 @@ export default function AdminPanel() {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const [gamesRes, blogsRes, productsRes] = await Promise.all([
+      const [gamesRes, blogsRes, productsRes, socialLinksRes] = await Promise.all([
         fetch('/api/games'),
         fetch('/api/blogs'),
         fetch('/api/products'),
+        fetch('/api/admin/social-links'),
       ]);
       
-      if (!gamesRes.ok || !blogsRes.ok || !productsRes.ok) {
+      if (!gamesRes.ok || !blogsRes.ok || !productsRes.ok || !socialLinksRes.ok) {
         throw new Error('Failed to fetch initial data');
       }
 
-      const [gamesData, blogsData, productsData] = await Promise.all([
+      const [gamesData, blogsData, productsData, socialLinksData] = await Promise.all([
         gamesRes.json(),
         blogsRes.json(),
         productsRes.json(),
+        socialLinksRes.json(),
       ]);
 
       setGames(gamesData);
       setBlogs(blogsData);
       setProducts(productsData);
+      setSocialLinks(socialLinksData);
     } catch (error) {
       console.error('Error fetching all data:', error);
-      alert('Erreur lors du chargement des données.');
+      addToast('Erreur lors du chargement des données.', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [addToast]);
   
   const checkAuth = async () => {
     try {
@@ -125,7 +144,7 @@ export default function AdminPanel() {
     const resetTimer = () => {
       clearTimeout(logoutTimer);
       logoutTimer = setTimeout(() => {
-        alert("Vous avez été déconnecté pour inactivité.");
+        addToast("Vous avez été déconnecté pour inactivité.", 'error');
         handleLogout();
       }, 10 * 60 * 1000); // 10 minutes
     };
@@ -144,7 +163,7 @@ export default function AdminPanel() {
         activityEvents.forEach(event => window.removeEventListener(event, handleActivity));
       };
     }
-  }, [isAuthenticated, handleLogout]);
+  }, [isAuthenticated, handleLogout, addToast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,7 +193,7 @@ export default function AdminPanel() {
 
     const csrfToken = getCookie('csrf_token');
     if (!csrfToken) {
-        alert('Erreur de session. Veuillez vous reconnecter.');
+        addToast('Erreur de session. Veuillez vous reconnecter.', 'error');
         return;
     }
 
@@ -184,24 +203,25 @@ export default function AdminPanel() {
         headers: { 'X-CSRF-Token': csrfToken },
       });
       if (res.ok) {
-        alert('Élément supprimé avec succès!');
+        addToast('Élément supprimé avec succès!', 'success');
         if (activeTab === 'games') setGames(prev => prev.filter(item => item.id !== id));
         else if (activeTab === 'blogs') setBlogs(prev => prev.filter(item => item.id !== id));
         else if (activeTab === 'products') setProducts(prev => prev.filter(item => item.id !== id));
+        else if (activeTab === 'social-links') setSocialLinks(prev => prev.filter(item => item.id !== id));
       } else {
         const error = await res.json();
-        alert(`Erreur: ${error.error || error.message || 'La suppression a échoué'}`);
+        addToast(`Erreur: ${error.error || error.message || 'La suppression a échoué'}`, 'error');
       }
     } catch (error) {
       console.error('Error deleting:', error);
-      alert('Erreur lors de la suppression');
+      addToast('Erreur lors de la suppression', 'error');
     }
   };
 
   const handleSubmit = async (formData: any) => {
     const csrfToken = getCookie('csrf_token');
     if (!csrfToken) {
-        alert('Erreur de session. Veuillez vous reconnecter.');
+        addToast('Erreur de session. Veuillez vous reconnecter.', 'error');
         return;
     }
 
@@ -219,7 +239,7 @@ export default function AdminPanel() {
 
       if (res.ok) {
         const savedItem = await res.json();
-        alert(editingItem ? 'Élément modifié avec succès!' : 'Élément créé avec succès!');
+        addToast(editingItem ? 'Élément modifié avec succès!' : 'Élément créé avec succès!', 'success');
         setShowForm(false);
         setEditingItem(null);
         
@@ -230,15 +250,17 @@ export default function AdminPanel() {
           setBlogs(prev => editingItem ? prev.map(b => b.id === savedItem.id ? savedItem : b) : [savedItem, ...prev]);
         } else if (activeTab === 'products') {
           setProducts(prev => editingItem ? prev.map(p => p.id === savedItem.id ? savedItem : p) : [savedItem, ...prev]);
+        } else if (activeTab === 'social-links') {
+          setSocialLinks(prev => editingItem ? prev.map(sl => sl.id === savedItem.id ? savedItem : sl) : [savedItem, ...prev]);
         }
 
       } else {
         const error = await res.json();
-        alert(`Erreur: ${error.error || error.message || 'La sauvegarde a échoué'}`);
+        addToast(`Erreur: ${error.error || error.message || 'La sauvegarde a échoué'}`, 'error');
       }
     } catch (error) {
       console.error('Error saving:', error);
-      alert('Erreur lors de la sauvegarde');
+      addToast('Erreur lors de la sauvegarde', 'error');
     }
   };
 
@@ -303,6 +325,8 @@ export default function AdminPanel() {
         <title>Panneau d'Administration</title>
       </Head>
       
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       {showForm && (
         <AdminForm 
             item={editingItem}
@@ -328,7 +352,7 @@ export default function AdminPanel() {
         <AdminDashboard games={games} blogs={blogs} products={products} />
 
         <div className="flex gap-4 mb-6">
-          {['games', 'blogs', 'products'].map((tab) => (
+          {['games', 'blogs', 'products', 'social-links'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -338,7 +362,8 @@ export default function AdminPanel() {
             >
               {tab === 'games' ? `Jeux (${games.length})` :
                tab === 'blogs' ? `Blogs (${blogs.length})` :
-               `Produits (${products.length})`}
+               tab === 'products' ? `Produits (${products.length})` :
+               `Réseaux (${socialLinks.length})`}
             </button>
           ))}
         </div>
@@ -366,9 +391,9 @@ export default function AdminPanel() {
                   <thead>
                     <tr className="border-b border-gray-700">
                       <th className="text-left p-3">ID</th>
-                      <th className="text-left p-3">{activeTab === 'products' ? 'Nom' : 'Titre'}</th>
-                      <th className="text-left p-3">Catégorie</th>
-                      <th className="text-left p-3">Image</th>
+                      <th className="text-left p-3">{activeTab === 'products' || activeTab === 'social-links' ? 'Nom' : 'Titre'}</th>
+                      <th className="text-left p-3">{activeTab === 'social-links' ? 'URL' : 'Catégorie'}</th>
+                      <th className="text-left p-3">{activeTab === 'social-links' ? 'Icône' : 'Image'}</th>
                       <th className="text-right p-3">Actions</th>
                     </tr>
                   </thead>
@@ -377,15 +402,19 @@ export default function AdminPanel() {
                       <tr key={item.id} className="border-b border-gray-700 hover:bg-gray-750">
                         <td className="p-3">{item.id}</td>
                         <td className="p-3">{item.title || item.name}</td>
-                        <td className="p-3">{item.category}</td>
+                        <td className="p-3">{activeTab === 'social-links' ? item.url : item.category}</td>
                         <td className="p-3">
-                          <Image
-                            src={item.imageUrl}
-                            alt={item.title || item.name}
-                            width={64}
-                            height={64}
-                            className="object-cover rounded"
-                          />
+                          {activeTab === 'social-links' ? (
+                            <span className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded text-white" dangerouslySetInnerHTML={{ __html: item.icon_svg }} />
+                          ) : (
+                            <Image
+                              src={item.imageUrl}
+                              alt={item.title || item.name}
+                              width={64}
+                              height={64}
+                              className="object-cover rounded"
+                            />
+                          )}
                         </td>
                         <td className="p-3 text-right">
                           <button onClick={() => handleEdit(item)} className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded mr-2">Modifier</button>

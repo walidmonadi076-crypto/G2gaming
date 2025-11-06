@@ -79,9 +79,65 @@ const Home: React.FC<HomeProps> = ({ searchQuery, searchActive, games }) => {
     });
   }, [searchQuery, selectedCategory, selectedTag, games, featuredTags]);
   
-  const playOnCometGames = useMemo(() => games.filter(g => g.tags?.includes('Play on Comet')), [games]);
-  const featuredGames = useMemo(() => games.filter(g => g.tags?.some(tag => featuredTags.includes(tag))), [games, featuredTags]);
-  const newGames = useMemo(() => games.filter(g => g.tags?.includes('New')), [games]);
+  const sections = useMemo(() => {
+    const allTags = [...new Set(games.flatMap(g => g.tags || []))];
+    const featuredTagsList = ['Hot', 'Updated', 'Top'];
+
+    // Définir l'ordre et la configuration des sections
+    const sectionConfigs: {
+      key: string;
+      title: string;
+      getGames: (allGames: Game[]) => Game[];
+      carouselProps: { cardVariant: 'default' | 'vertical' | 'featured' };
+      viewMoreTag: string;
+    }[] = [
+      {
+        key: 'play-on-comet',
+        title: 'Play on Comet',
+        getGames: (allGames) => allGames.filter(g => g.tags?.includes('Play on Comet')),
+        carouselProps: { cardVariant: 'default' },
+        viewMoreTag: 'Play on Comet',
+      },
+      {
+        key: 'featured',
+        title: 'Featured Games',
+        getGames: (allGames) => allGames.filter(g => g.tags?.some(tag => featuredTagsList.includes(tag))),
+        carouselProps: { cardVariant: 'default' },
+        viewMoreTag: '__FEATURED__',
+      },
+      {
+        key: 'new',
+        title: 'New Games',
+        getGames: (allGames) => allGames.filter(g => g.tags?.includes('New')),
+        carouselProps: { cardVariant: 'default' },
+        viewMoreTag: 'New',
+      }
+    ];
+
+    const handledTags = ['Play on Comet', 'New', ...featuredTagsList];
+
+    const otherTags = allTags
+      .filter(tag => !handledTags.includes(tag))
+      .sort();
+
+    otherTags.forEach(tag => {
+      sectionConfigs.push({
+        key: tag.toLowerCase().replace(/\s+/g, '-'),
+        title: `${tag} Games`,
+        getGames: (allGames) => allGames.filter(g => g.tags?.includes(tag)),
+        carouselProps: { cardVariant: 'default' },
+        viewMoreTag: tag,
+      });
+    });
+
+    return sectionConfigs
+      .map(config => ({
+        ...config,
+        games: config.getGames(games),
+      }))
+      .filter(section => section.games.length > 0);
+  }, [games]);
+
 
   const areFiltersActive = searchQuery || (selectedCategory && selectedCategory !== 'All') || (selectedTag && selectedTag !== 'All');
   const showFilters = searchActive || areFiltersActive;
@@ -136,27 +192,23 @@ const Home: React.FC<HomeProps> = ({ searchQuery, searchActive, games }) => {
                     </div>
                 </div>
 
-              <Section title="Play on Comet" onViewMore={() => handleViewMore('Play on Comet')}>
-                <GameCarousel games={playOnCometGames} cardVariant="vertical" />
-              </Section>
-
-              <div className="bg-gradient-to-r from-purple-800 to-indigo-800 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-6 my-12">
-                <div className="flex items-center space-x-4">
-                    <div className="bg-yellow-400 p-2 rounded-lg relative"><span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-purple-800">1</span><svg className="w-8 h-8 text-yellow-900" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg></div>
-                    <div><h3 className="text-lg sm:text-xl font-bold">Climb the new CrazyGames leaderboards</h3></div>
+                <div className="bg-gradient-to-r from-purple-800 to-indigo-800 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-6 my-12">
+                    <div className="flex items-center space-x-4">
+                        <div className="bg-yellow-400 p-2 rounded-lg relative"><span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-purple-800">1</span><svg className="w-8 h-8 text-yellow-900" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg></div>
+                        <div><h3 className="text-lg sm:text-xl font-bold">Climb the new CrazyGames leaderboards</h3></div>
+                    </div>
+                    <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex-shrink-0">Explore games</button>
                 </div>
-                <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex-shrink-0">Explore games</button>
-              </div>
-
-              <Section title="Featured Games" onViewMore={() => handleViewMore('__FEATURED__')}>
-                <GameCarousel games={featuredGames} cardVariant="default" />
-              </Section>
-
-              <Section title="New Games" onViewMore={() => handleViewMore('New')}>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                   {newGames.map(game => (<GameCard key={game.id} game={game} />))}
-                </div>
-              </Section>
+                
+                {sections.map(section => (
+                    <Section 
+                        key={section.key} 
+                        title={section.title} 
+                        onViewMore={() => handleViewMore(section.viewMoreTag)}
+                    >
+                        <GameCarousel games={section.games} {...section.carouselProps} />
+                    </Section>
+                ))}
             </>
         )}
     </div>

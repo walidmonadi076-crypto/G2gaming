@@ -1,5 +1,6 @@
 
 import React from 'react';
+import type { SocialLink } from '../types';
 
 interface HeaderProps {
     searchQuery: string;
@@ -7,9 +8,10 @@ interface HeaderProps {
     onSearchFocus: () => void;
     onSearchBlur: () => void;
     onToggleMobileSidebar: () => void;
+    socialLinks: SocialLink[];
 }
 
-const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSearchFocus, onSearchBlur, onToggleMobileSidebar }) => {
+const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSearchFocus, onSearchBlur, onToggleMobileSidebar, socialLinks }) => {
   return (
     <header className="bg-gray-900/80 backdrop-blur-sm sticky top-0 z-40 flex-shrink-0 flex h-16 border-b border-gray-700 items-center justify-between px-4 sm:px-6 lg:px-8">
       <div className="flex-1 flex items-center min-w-0">
@@ -39,15 +41,18 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSearchFo
           />
         </div>
       </div>
-      <div className="flex items-center space-x-2 sm:space-x-4 ml-4 flex-shrink-0">
-        <button className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-purple-500">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </button>
-        <button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-200 text-sm sm:text-base">
-          Log in
-        </button>
+      <div className="flex items-center space-x-3 sm:space-x-4 ml-4 flex-shrink-0">
+        {socialLinks.map(link => (
+          <a
+            key={link.id}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={link.name}
+            className="text-gray-400 hover:text-white transition-colors"
+            dangerouslySetInnerHTML={{ __html: link.icon_svg }}
+          />
+        ))}
       </div>
     </header>
   );

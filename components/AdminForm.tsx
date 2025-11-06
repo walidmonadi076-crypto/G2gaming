@@ -1,12 +1,14 @@
 
 import { useState, useEffect, Fragment } from 'react';
-import type { Game, BlogPost, Product } from '../types';
+import type { Game, BlogPost, Product, SocialLink } from '../types';
 
-type Item = Game | BlogPost | Product;
+type Item = Game | BlogPost | Product | SocialLink;
+type ItemType = 'games' | 'blogs' | 'products' | 'social-links';
+
 
 interface AdminFormProps {
   item: Item | null;
-  type: 'games' | 'blogs' | 'products';
+  type: ItemType;
   onClose: () => void;
   onSubmit: (data: any) => Promise<void>;
 }
@@ -37,7 +39,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       const defaults = {
         games: { title: '', imageUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [] },
         blogs: { title: '', summary: '', imageUrl: '', author: '', rating: 4.5, content: '', category: '' },
-        products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] }
+        products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
+        'social-links': { name: '', url: '', icon_svg: '' },
       };
       setFormData(defaults[type]);
       setIsFeatured(false);
@@ -217,6 +220,27 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     </>
   );
 
+  const renderSocialLinkFields = () => (
+    <>
+      {renderField('name', 'Nom du réseau')}
+      {renderField('url', 'URL (lien complet)')}
+      <div>
+        <label htmlFor="icon_svg" className="block text-sm font-medium text-gray-300 mb-1">Icône (code SVG)</label>
+        <textarea
+            id="icon_svg"
+            name="icon_svg"
+            value={formData.icon_svg || ''}
+            onChange={handleChange}
+            required
+            rows={5}
+            className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"
+            placeholder='<svg width="24" height="24" ...>...</svg>'
+        />
+        <p className="text-xs text-gray-400 mt-1">Collez le code SVG complet de l'icône ici. Pour un affichage optimal, utilisez une icône de 24x24 pixels.</p>
+      </div>
+    </>
+  );
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
       <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
@@ -228,6 +252,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             {type === 'games' && renderGameFields()}
             {type === 'blogs' && renderBlogFields()}
             {type === 'products' && renderProductFields()}
+            {type === 'social-links' && renderSocialLinkFields()}
             
             <div className="p-6 border-t border-gray-700 mt-auto flex justify-end gap-4 -mx-6 -mb-6">
                 <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md">Annuler</button>

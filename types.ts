@@ -45,3 +45,10 @@ export interface BlogPost {
   content: string; // This will be markdown/html string
   category: string;
 }
+
+export interface SocialLink {
+  id: number;
+  name: string;
+  url: string;
+  icon_svg: string; // Storing the full SVG code as text
+}

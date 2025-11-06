@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { AppProps } from 'next/app';
+import { useRouter } from 'next/router';
 import { Inter } from 'next/font/google';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import '../styles/globals.css';
+import type { SocialLink } from '@/types';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -11,17 +13,38 @@ const inter = Inter({
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+
+  useEffect(() => {
+    if (router.pathname !== '/admin') {
+      fetch('/api/social-links')
+        .then(res => res.json())
+        .then(data => {
+            if(Array.isArray(data)) {
+                setSocialLinks(data)
+            }
+        })
+        .catch(console.error);
+    }
+  }, [router.pathname]);
 
   const enhancedPageProps = {
     ...pageProps,
     searchQuery,
     searchActive,
   };
+  
+  // Si la page est le panneau d'administration, on affiche uniquement le composant
+  if (router.pathname === '/admin') {
+    return <Component {...pageProps} />;
+  }
 
+  // Pour toutes les autres pages, on affiche la mise en page standard
   return (
     <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans`}>
       {isMobileSidebarOpen && (
@@ -49,6 +72,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           onSearchFocus={() => setSearchActive(true)}
           onSearchBlur={() => setTimeout(() => setSearchActive(false), 200)}
           onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          socialLinks={socialLinks}
         />
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
           <Component {...enhancedPageProps} />
