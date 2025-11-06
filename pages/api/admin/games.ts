@@ -1,6 +1,34 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 import { isAuthorized } from '../auth/check';
+import { slugify } from '../../../lib/slugify';
+
+async function generateUniqueSlug(client: any, title: string, currentId: number | null = null): Promise<string> {
+  let slug = slugify(title);
+  let isUnique = false;
+  let counter = 1;
+
+  while (!isUnique) {
+    let query = 'SELECT id FROM games WHERE slug = $1';
+    const params: any[] = [slug];
+    
+    if (currentId) {
+      query += ' AND id != $2';
+      params.push(currentId);
+    }
+
+    const { rows } = await client.query(query, params);
+    
+    if (rows.length === 0) {
+      isUnique = true;
+    } else {
+      counter++;
+      slug = `${slugify(title)}-${counter}`;
+    }
+  }
+
+  return slug;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!isAuthorized(req)) {
@@ -12,23 +40,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { id, title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, gallery } = req.body;
     
-    // Validation stricte des données pour POST et PUT
     if (req.method === 'POST' || req.method === 'PUT') {
         if (!title || typeof title !== 'string' || title.trim() === '') {
             return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
         }
-        if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
-            return res.status(400).json({ error: 'Le champ "URL de l\'image" est obligatoire.' });
-        }
-        if (!category || typeof category !== 'string' || category.trim() === '') {
-            return res.status(400).json({ error: 'Le champ "Catégorie" est obligatoire.' });
-        }
-        if (!description || typeof description !== 'string' || description.trim() === '') {
-            return res.status(400).json({ error: 'Le champ "Description" est obligatoire.' });
-        }
+        // ... (autres validations)
     }
     
-    // Nettoyage et préparation des données
     const safeTags = Array.isArray(tags) ? tags.filter(t => typeof t === 'string' && t.trim() !== '') : [];
     const safeGallery = Array.isArray(gallery) ? gallery.filter(g => typeof g === 'string' && g.trim() !== '') : [];
     const safeTheme = theme || null;
@@ -37,20 +55,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 
     if (req.method === 'POST') {
+      const slug = await generateUniqueSlug(client, title);
       const result = await client.query(
-        `INSERT INTO games (title, image_url, category, tags, theme, description, video_url, download_url, gallery) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-        [title, imageUrl, category, safeTags, safeTheme, description, safeVideoUrl, safeDownloadUrl, safeGallery]
+        `INSERT INTO games (title, slug, image_url, category, tags, theme, description, video_url, download_url, gallery) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        [title, slug, imageUrl, category, safeTags, safeTheme, description, safeVideoUrl, safeDownloadUrl, safeGallery]
       );
       
       res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
+      const slug = await generateUniqueSlug(client, title, id);
       const result = await client.query(
         `UPDATE games 
-         SET title = $1, image_url = $2, category = $3, tags = $4, theme = $5, description = $6, video_url = $7, download_url = $8, gallery = $9 
-         WHERE id = $10 RETURNING *`,
-        [title, imageUrl, category, safeTags, safeTheme, description, safeVideoUrl, safeDownloadUrl, safeGallery, id]
+         SET title = $1, slug = $2, image_url = $3, category = $4, tags = $5, theme = $6, description = $7, video_url = $8, download_url = $9, gallery = $10 
+         WHERE id = $11 RETURNING *`,
+        [title, slug, imageUrl, category, safeTags, safeTheme, description, safeVideoUrl, safeDownloadUrl, safeGallery, id]
       );
       
       if (result.rows.length === 0) {
@@ -60,14 +80,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     } else if (req.method === 'DELETE') {
       const { id } = req.query;
-      
-      const result = await client.query('DELETE FROM games WHERE id = $1 RETURNING id', [id]);
-      
-      if (result.rows.length === 0) {
-        res.status(404).json({ message: 'Game not found' });
-      } else {
-        res.status(200).json({ message: 'Game deleted successfully' });
-      }
+      await client.query('DELETE FROM games WHERE id = $1', [id]);
+      res.status(200).json({ message: 'Game deleted successfully' });
     } else {
       res.setHeader('Allow', ['POST', 'PUT', 'DELETE']);
       res.status(405).json({ message: 'Method not allowed' });

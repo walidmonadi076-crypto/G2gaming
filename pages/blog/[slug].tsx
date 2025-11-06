@@ -1,12 +1,9 @@
-
-
 import React from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-// Fix: Removed non-existent getBlogPostById and will fetch all posts instead.
-import { getAllBlogPosts, getCommentsByBlogId } from '../../lib/data';
+import { getBlogPostBySlug, getAllBlogPosts, getCommentsByBlogId } from '../../lib/data';
 import type { BlogPost, Comment } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -34,7 +31,7 @@ interface BlogDetailPageProps {
 const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
     const router = useRouter();
 
-    if (router.isFallback) {
+    if (router.isFallback || !post) {
         return (
              <div className="text-center p-10">
                 <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -43,12 +40,35 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
         );
     }
     
+    const articleSchema = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": post.title,
+      "author": {
+        "@type": "Person",
+        "name": post.author
+      },
+      "datePublished": post.publishDate,
+      "image": post.imageUrl,
+      "publisher": {
+        "@type": "Organization",
+        "name": "G2gaming",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://g2gaming.vercel.app/logo.png"
+        }
+      },
+      "description": post.summary
+    };
+
     return (
         <>
             <SEO
                 title={post.title}
                 description={post.summary}
                 image={post.imageUrl}
+                url={`/blog/${post.slug}`}
+                schema={articleSchema}
             />
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <aside className="hidden lg:block lg:col-span-2">
@@ -119,16 +139,14 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
 export const getStaticPaths: GetStaticPaths = async () => {
     const posts = await getAllBlogPosts();
     const paths = posts.map(post => ({
-        params: { id: post.id.toString() },
+        params: { slug: post.slug },
     }));
-    return { paths, fallback: true };
+    return { paths, fallback: 'blocking' };
 };
 
 export const getStaticProps: GetStaticProps = async (context) => {
-    const { id } = context.params!;
-    // Fix: Fetch all posts and find the one with the matching ID.
-    const posts = await getAllBlogPosts();
-    const post = posts.find(p => p.id === Number(id));
+    const { slug } = context.params!;
+    const post = await getBlogPostBySlug(slug as string);
 
     if (!post) {
         return { notFound: true };

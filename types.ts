@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 
 export interface Game {
   id: number;
+  slug: string;
   title: string;
   imageUrl: string;
   category: string;
@@ -15,6 +16,7 @@ export interface Game {
 
 export interface Product {
   id: number;
+  slug: string;
   name: string;
   imageUrl: string;
   price: string;
@@ -34,6 +36,7 @@ export interface Comment {
 
 export interface BlogPost {
   id: number;
+  slug: string;
   title: string;
   summary: string;
   imageUrl: string;

@@ -3,6 +3,8 @@ import type { BlogPost, Comment } from '../types';
 export const BLOGS_DATA: BlogPost[] = [
     {
         id: 1,
+// Fix: Added slug property to match BlogPost type.
+        slug: "the-ultimate-guide-to-mechanical-keyboards-for-gaming",
         title: "The Ultimate Guide to Mechanical Keyboards for Gaming",
         summary: "Dive deep into the world of mechanical keyboards. We review the top 5 models of the year, breaking down switch types, build quality, and why they're a game-changer for any serious gamer.",
         imageUrl: "https://picsum.photos/seed/blog1/800/450",
@@ -29,6 +31,8 @@ export const BLOGS_DATA: BlogPost[] = [
     },
     {
         id: 2,
+// Fix: Added slug property to match BlogPost type.
+        slug: "finding-the-perfect-gaming-mouse-a-2024-review",
         title: "Finding the Perfect Gaming Mouse: A 2024 Review",
         summary: "Your mouse is your primary weapon in many games. We've tested dozens of mice to find the best in terms of sensor accuracy, ergonomics, and features. See our top picks inside.",
         imageUrl: "https://picsum.photos/seed/blog2/800/450",

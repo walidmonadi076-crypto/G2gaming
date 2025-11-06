@@ -21,8 +21,10 @@ function MyApp({ Component, pageProps }: AppProps) {
   const [searchActive, setSearchActive] = useState(false);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
 
+  const isAdminPage = router.pathname.startsWith('/admin');
+
   useEffect(() => {
-    if (router.pathname !== '/admin') {
+    if (!isAdminPage) {
       fetch('/api/social-links')
         .then(res => res.json())
         .then(data => {
@@ -32,7 +34,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         })
         .catch(console.error);
     }
-  }, [router.pathname]);
+  }, [isAdminPage]);
 
   const enhancedPageProps = {
     ...pageProps,
@@ -40,8 +42,8 @@ function MyApp({ Component, pageProps }: AppProps) {
     searchActive,
   };
   
-  // Si la page est le panneau d'administration, on affiche uniquement le composant
-  if (router.pathname === '/admin') {
+  // Si la page est dans la section admin, on affiche uniquement le composant
+  if (isAdminPage) {
     return <Component {...pageProps} />;
   }
 

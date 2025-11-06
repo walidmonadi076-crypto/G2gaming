@@ -3,8 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-// Fix: Removed non-existent getGameById and will fetch all games instead.
-import { getAllGames } from '../../lib/data';
+import { getGameBySlug, getAllGames } from '../../lib/data';
 import type { Game } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -53,7 +52,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
         }
     };
 
-    if (router.isFallback) {
+    if (router.isFallback || !game) {
         return (
              <div className="text-center p-10">
                 <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -62,12 +61,34 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
         );
     }
 
+    const gameSchema = {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": game.title,
+        "description": game.description,
+        "image": game.imageUrl,
+        "applicationCategory": game.category,
+        "operatingSystem": "PC",
+        "genre": game.category,
+        "publisher": {
+            "@type": "Organization",
+            "name": "G2gaming"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    };
+
     return (
         <>
             <SEO
                 title={game.title}
                 description={game.description}
                 image={game.imageUrl}
+                url={`/games/${game.slug}`}
+                schema={gameSchema}
             />
             <div className="max-w-7xl mx-auto">
                 <div className="mb-4">
@@ -108,16 +129,14 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
 export const getStaticPaths: GetStaticPaths = async () => {
     const games = await getAllGames();
     const paths = games.map(game => ({
-        params: { id: game.id.toString() },
+        params: { slug: game.slug },
     }));
-    return { paths, fallback: true };
+    return { paths, fallback: 'blocking' };
 };
 
 export const getStaticProps: GetStaticProps = async (context) => {
-    const { id } = context.params!;
-    // Fix: Fetch all games and find the one with the matching ID.
-    const games = await getAllGames();
-    const game = games.find(g => g.id === Number(id));
+    const { slug } = context.params!;
+    const game = await getGameBySlug(slug as string);
     if (!game) {
         return { notFound: true };
     }

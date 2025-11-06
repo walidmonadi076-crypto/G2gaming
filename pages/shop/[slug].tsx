@@ -3,8 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-// Fix: Removed non-existent getProductById and will fetch all products instead.
-import { getAllProducts } from '../../lib/data';
+import { getProductBySlug, getAllProducts } from '../../lib/data';
 import type { Product } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -23,7 +22,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
         }
     }, [product]);
 
-    if (router.isFallback) {
+    if (router.isFallback || !product) {
         return (
              <div className="text-center p-10">
                 <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -31,6 +30,25 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
             </div>
         );
     }
+
+    const productSchema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product.name,
+        "image": product.imageUrl,
+        "description": product.description,
+        "brand": {
+            "@type": "Brand",
+            "name": "G2gaming"
+        },
+        "offers": {
+            "@type": "Offer",
+            "url": product.url,
+            "priceCurrency": "USD",
+            "price": product.price.replace('$', ''),
+            "availability": "https://schema.org/InStock"
+        }
+    };
     
     return (
         <>
@@ -38,6 +56,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
                 title={product.name}
                 description={product.description}
                 image={product.imageUrl}
+                url={`/shop/${product.slug}`}
+                schema={productSchema}
             />
             <div className="max-w-6xl mx-auto">
                 <div className="mb-4">
@@ -79,16 +99,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
 export const getStaticPaths: GetStaticPaths = async () => {
     const products = await getAllProducts();
     const paths = products.map(product => ({
-        params: { id: product.id.toString() },
+        params: { slug: product.slug },
     }));
-    return { paths, fallback: true };
+    return { paths, fallback: 'blocking' };
 };
 
 export const getStaticProps: GetStaticProps = async (context) => {
-    const { id } = context.params!;
-    // Fix: Fetch all products and find the one with the matching ID.
-    const products = await getAllProducts();
-    const product = products.find(p => p.id === Number(id));
+    const { slug } = context.params!;
+    const product = await getProductBySlug(slug as string);
 
     if (!product) {
         return { notFound: true };

@@ -23,7 +23,7 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 };
 
 const BlogCard: React.FC<{ post: BlogPost }> = ({ post }) => (
-    <Link href={`/blogs/${post.id}`} className="bg-gray-800 rounded-2xl overflow-hidden group shadow-lg transform hover:-translate-y-1 transition-transform duration-200 flex flex-col">
+    <Link href={`/blog/${post.slug}`} className="bg-gray-800 rounded-2xl overflow-hidden group shadow-lg transform hover:-translate-y-1 transition-transform duration-200 flex flex-col">
         <div className="aspect-video relative">
             <Image src={post.imageUrl} alt={post.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
         </div>

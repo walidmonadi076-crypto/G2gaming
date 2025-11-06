@@ -10,7 +10,7 @@ interface StoreItemCardProps {
 
 const StoreItemCard: React.FC<StoreItemCardProps> = ({ product }) => {
   return (
-    <Link href={`/shop/${product.id}`} className="block bg-gray-800 rounded-2xl overflow-hidden group shadow-lg transform hover:-translate-y-1 transition-transform duration-200">
+    <Link href={`/shop/${product.slug}`} className="block bg-gray-800 rounded-2xl overflow-hidden group shadow-lg transform hover:-translate-y-1 transition-transform duration-200">
       <div className="aspect-square relative">
         <Image 
           src={product.imageUrl} 
