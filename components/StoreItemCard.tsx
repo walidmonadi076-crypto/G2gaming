@@ -23,7 +23,7 @@ const StoreItemCard: React.FC<StoreItemCardProps> = ({ product }) => {
       <div className="p-4">
         <h3 className="text-lg font-semibold text-white truncate">{product.name}</h3>
         <div className="flex justify-between items-center mt-2">
-            <p className="text-xl font-bold text-purple-400">{product.price}</p>
+            <p className="text-xl font-bold text-purple-400">${product.price}</p>
             <div
                 className="bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-center text-sm"
             >

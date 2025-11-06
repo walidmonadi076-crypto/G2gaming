@@ -63,7 +63,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
 
                     <div className="flex flex-col">
                          <h1 className="text-4xl font-extrabold text-white mb-2">{product.name}</h1>
-                         <p className="text-4xl font-bold text-purple-400 mb-6">{product.price}</p>
+                         <p className="text-4xl font-bold text-purple-400 mb-6">${product.price}</p>
                          <div className="prose prose-invert prose-p:text-gray-300 prose-p:leading-relaxed mb-8">
                              <p>{product.description}</p>
                          </div>

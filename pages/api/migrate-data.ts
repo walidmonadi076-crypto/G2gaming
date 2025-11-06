@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Client } from "pg";
 import { GAMES_DATA } from "../../data/games";
@@ -80,6 +81,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     for (const product of PRODUCTS_DATA) {
+      // On s'assure que le prix est un nombre, comme dans l'API admin
+      const numericPrice = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
       await client.query(
         `INSERT INTO products (id, name, image_url, price, url, description, gallery, category) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -87,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           product.id,
           product.name,
           product.imageUrl,
-          product.price,
+          numericPrice,
           product.url,
           product.description,
           product.gallery,
