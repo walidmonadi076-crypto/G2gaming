@@ -3,10 +3,11 @@ import { Client } from "pg";
 import { GAMES_DATA } from "../../data/games";
 import { BLOGS_DATA, COMMENTS_DATA } from "../../data/blogs";
 import { PRODUCTS_DATA } from "../../data/products";
-import { isAuthenticated } from "./auth/check";
+import { isAuthorized } from "./auth/check";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (!isAuthenticated(req)) {
+  // Remplacé par la vérification renforcée incluant le CSRF
+  if (!isAuthorized(req)) {
     return res.status(401).json({ error: 'Non autorisé' });
   }
 
@@ -24,10 +25,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     await client.connect();
 
+    // On utilise une transaction pour s'assurer que tout réussit ou tout échoue
+    await client.query('BEGIN');
+
     await client.query("DELETE FROM comments");
     await client.query("DELETE FROM blog_posts");
     await client.query("DELETE FROM games");
     await client.query("DELETE FROM products");
+    
+    // Réinitialisation des séquences pour éviter les conflits d'ID
+    await client.query("ALTER SEQUENCE comments_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE blog_posts_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE games_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE products_id_seq RESTART WITH 1");
+
 
     for (const game of GAMES_DATA) {
       await client.query(
@@ -102,10 +113,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    await client.query(`SELECT setval('games_id_seq', (SELECT MAX(id) FROM games))`);
-    await client.query(`SELECT setval('blog_posts_id_seq', (SELECT MAX(id) FROM blog_posts))`);
-    await client.query(`SELECT setval('products_id_seq', (SELECT MAX(id) FROM products))`);
-    await client.query(`SELECT setval('comments_id_seq', (SELECT MAX(id) FROM comments))`);
+    await client.query(`SELECT setval('games_id_seq', (SELECT MAX(id) FROM games), true)`);
+    await client.query(`SELECT setval('blog_posts_id_seq', (SELECT MAX(id) FROM blog_posts), true)`);
+    await client.query(`SELECT setval('products_id_seq', (SELECT MAX(id) FROM products), true)`);
+    await client.query(`SELECT setval('comments_id_seq', (SELECT MAX(id) FROM comments), true)`);
+    
+    await client.query('COMMIT');
 
     res.status(200).json({ 
       success: true, 
@@ -118,6 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     res.status(500).json({
       success: false,
       error: (error as Error).message,

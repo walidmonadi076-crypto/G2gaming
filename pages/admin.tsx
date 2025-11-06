@@ -7,6 +7,13 @@ import AdminDashboard from '../components/AdminDashboard';
 import { paginate } from '../lib/pagination';
 import AdminForm from '../components/AdminForm';
 
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -59,7 +66,7 @@ export default function AdminPanel() {
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setIsAuthenticated(true);
         setPassword('');
       } else {
@@ -100,9 +107,16 @@ export default function AdminPanel() {
   const handleDelete = async (id: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément?')) return;
 
+    const csrfToken = getCookie('csrf_token');
+    if (!csrfToken) {
+        alert('Erreur de session. Veuillez vous reconnecter.');
+        return;
+    }
+
     try {
       const res = await fetch(`/api/admin/${activeTab}?id=${id}`, {
         method: 'DELETE',
+        headers: { 'X-CSRF-Token': csrfToken },
       });
       if (res.ok) {
         alert('Élément supprimé avec succès!');
@@ -118,11 +132,20 @@ export default function AdminPanel() {
   };
 
   const handleSubmit = async (formData: any) => {
+    const csrfToken = getCookie('csrf_token');
+    if (!csrfToken) {
+        alert('Erreur de session. Veuillez vous reconnecter.');
+        return;
+    }
+
     try {
       const method = editingItem ? 'PUT' : 'POST';
       const res = await fetch(`/api/admin/${activeTab}`, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken 
+        },
         body: JSON.stringify(formData),
       });
 

@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
-import { isAuthenticated } from '../auth/check';
+import { isAuthorized } from '../auth/check';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (!isAuthenticated(req)) {
+  if (!isAuthorized(req)) {
     return res.status(401).json({ error: 'Non autorisé' });
   }
 
