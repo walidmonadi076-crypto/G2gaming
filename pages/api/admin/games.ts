@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const result = await client.query(
         `UPDATE games 
-         SET title = $1, image_url = $2, category = $3, tags = $4, theme = $5, description = $6, video_url = $7, download_url = $8, gallery = $9, updated_at = CURRENT_TIMESTAMP 
+         SET title = $1, image_url = $2, category = $3, tags = $4, theme = $5, description = $6, video_url = $7, download_url = $8, gallery = $9 
          WHERE id = $10 RETURNING *`,
         [title, imageUrl, category, tags || [], theme || null, description, videoUrl || null, downloadUrl, gallery || [], id]
       );

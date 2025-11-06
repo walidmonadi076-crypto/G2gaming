@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const result = await client.query(
         `UPDATE blog_posts 
-         SET title = $1, summary = $2, image_url = $3, video_url = $4, author = $5, publish_date = $6, rating = $7, affiliate_url = $8, content = $9, category = $10, updated_at = CURRENT_TIMESTAMP 
+         SET title = $1, summary = $2, image_url = $3, video_url = $4, author = $5, publish_date = $6, rating = $7, affiliate_url = $8, content = $9, category = $10 
          WHERE id = $11 RETURNING *`,
         [title, summary, imageUrl, videoUrl || null, author, publishDate, rating, affiliateUrl, content, category, id]
       );
