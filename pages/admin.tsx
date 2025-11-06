@@ -7,15 +7,14 @@ import AdminDashboard from '../components/AdminDashboard';
 import { paginate } from '../lib/pagination';
 import AdminForm from '../components/AdminForm';
 
-// Fonction `getCookie` plus robuste pour lire les cookies de manière fiable
+// Fonction `getCookie` encore plus robuste pour lire les cookies de manière fiable
 function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for(let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  if (match) {
+    return match[2];
   }
   return null;
 }

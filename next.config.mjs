@@ -43,9 +43,19 @@ const nextConfig = {
         headers: securityHeaders,
       },
       {
-        source: '/api/:path*',
+        // Cache pour les API publiques (tout sauf admin, auth, etc.)
+        source: '/api/((?!admin|auth|migrate-data|test-db).*)',
         headers: [
           { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=120' },
+        ],
+      },
+      {
+        // Désactivation du cache pour les API sensibles
+        source: '/api/(admin|auth|migrate-data|test-db)/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
         ],
       },
       {
