@@ -27,7 +27,7 @@ export default function AdminPanel() {
   const [products, setProducts] = useState<Product[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [ads, setAds] = useState<Record<string, string>>({});
-  const [ogadsScriptSrc, setOgadsScriptSrc] = useState('');
+  const [ogadsScript, setOgadsScript] = useState('');
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
@@ -89,7 +89,7 @@ export default function AdminPanel() {
       setSocialLinks(socialLinksData);
       const adsObject = adsData.reduce((acc: Record<string, string>, ad: Ad) => ({ ...acc, [ad.placement]: ad.code || '' }), {});
       setAds(adsObject);
-      setOgadsScriptSrc(settingsData.ogads_script_src || '');
+      setOgadsScript(settingsData.ogads_script_src || '');
     } catch (error) {
       console.error('Error fetching data:', error);
       addToast('Erreur lors du chargement des données.', 'error');
@@ -205,7 +205,7 @@ export default function AdminPanel() {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ ogads_script_src: ogadsScriptSrc })
+        body: JSON.stringify({ ogads_script_src: ogadsScript })
       });
       if (res.ok) {
         addToast('Paramètres sauvegardés!', 'success');
@@ -279,13 +279,13 @@ export default function AdminPanel() {
                   <label htmlFor="ogads-script" className="block text-lg font-semibold text-gray-200 mb-2">Script OGAds</label>
                   <textarea
                     id="ogads-script"
-                    value={ogadsScriptSrc}
-                    onChange={(e) => setOgadsScriptSrc(e.target.value)}
+                    value={ogadsScript}
+                    onChange={(e) => setOgadsScript(e.target.value)}
                     rows={4}
                     className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder='<script type="text/javascript" id="ogjs" src="..."></script>'
                   />
-                  <p className="text-xs text-gray-400 mt-2">Collez ici le code `&lt;script&gt;` complet fourni par OGAds. Le système extraira l'URL automatiquement.</p>
+                  <p className="text-xs text-gray-400 mt-2">Collez ici le code `&lt;script&gt;` complet fourni par OGAds. Le système le sauvegardera tel quel.</p>
                 </div>
                 <div className="flex justify-end"><button onClick={handleSaveSettings} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Paramètres</button></div>
               </div>
