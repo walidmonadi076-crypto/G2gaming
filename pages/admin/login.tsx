@@ -328,7 +328,7 @@ export default function AdminPanel() {
                     <table className="w-full">
                       <thead><tr className="border-b border-gray-700 bg-gray-700/50"><th className="text-left p-3 text-sm font-semibold uppercase">Auteur</th><th className="text-left p-3 text-sm font-semibold uppercase">Commentaire</th><th className="text-left p-3 text-sm font-semibold uppercase">Article</th><th className="text-left p-3 text-sm font-semibold uppercase">Status</th><th className="text-right p-3 text-sm font-semibold uppercase">Actions</th></tr></thead>
                       <tbody>
-                        {paginationData.items.map((comment: Comment) => (
+                        {(paginationData.items as Comment[]).map((comment) => (
                           <tr key={comment.id} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
                             <td className="p-3 font-medium">{comment.author}<br/><span className="text-xs text-gray-400">{comment.email}</span></td>
                             <td className="p-3 text-sm text-gray-300 max-w-sm truncate">{comment.text}</td>
