@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,11 +9,13 @@ import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 import StarRating from '../../components/StarRating';
 import CommentCard from '../../components/CommentCard';
+import CommentForm from '../../components/CommentForm';
 
 interface BlogDetailPageProps { post: BlogPost; comments: Comment[]; }
 
-const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
+const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initialComments }) => {
     const router = useRouter();
+    const [comments, setComments] = useState<Comment[]>(initialComments);
 
     if (router.isFallback) {
         return <div className="text-center p-10">Chargement de l'article...</div>;
@@ -30,6 +32,20 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
         "datePublished": new Date(post.publishDate).toISOString(),
         "image": post.imageUrl,
         "description": post.summary
+    };
+
+    const handleCommentAdded = async () => {
+        // After a successful post, we refetch the comments for this post
+        // to provide an immediate update to the user who posted.
+        try {
+            const res = await fetch(`/api/comments/${post.id}`);
+            if (res.ok) {
+                const newComments = await res.json();
+                setComments(newComments);
+            }
+        } catch (error) {
+            console.error("Failed to refresh comments:", error);
+        }
     };
 
     return (
@@ -67,8 +83,8 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
 
                     {post.affiliateUrl && (
                         <div className="my-12 p-6 bg-gray-800 rounded-2xl text-center shadow-lg">
-                            <h3 className="text-xl font-bold text-white mb-2">Did you find this review helpful?</h3>
-                            <p className="text-gray-400 mb-6">Support our work by checking out this product through the link below.</p>
+                            <h3 className="text-xl font-bold text-white mb-2">Like what you see?</h3>
+                            <p className="text-gray-400 mb-6">Explore it through the link below</p>
                             <a
                                 href={post.affiliateUrl}
                                 target="_blank"
@@ -91,6 +107,10 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments }) => {
                         ) : (
                             <p className="text-gray-400">Be the first to leave a comment!</p>
                         )}
+                    </div>
+
+                    <div className="mt-12">
+                        <CommentForm postId={post.id} onCommentAdded={handleCommentAdded} />
                     </div>
                 </main>
 
