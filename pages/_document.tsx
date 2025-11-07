@@ -1,13 +1,14 @@
-import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
+import Document, { Html, Head, Main, NextScript, DocumentContext, DocumentInitialProps } from 'next/document';
+import type { ReactElement, ReactNode } from 'react';
 
 interface MyDocumentProps {
-  ogadsScriptBlock: string | null;
+  ogadsScriptUrl: string | null;
 }
 
-class MyDocument extends Document<MyDocumentProps> {
+class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
     const initialProps = await Document.getInitialProps(ctx);
-    let ogadsScriptBlock: string | null = null;
+    let ogadsScriptUrl: string | null = null;
     
     try {
       // Use the internal host for server-side fetching, or fallback for local dev
@@ -17,17 +18,20 @@ class MyDocument extends Document<MyDocumentProps> {
 
       if (res.ok) {
         const data = await res.json();
-        ogadsScriptBlock = data.script; // The API now returns the full script block
+        ogadsScriptUrl = data.scriptUrl;
       }
     } catch (error) {
-      console.error('Failed to fetch OGAds script block:', error);
+      console.error('Failed to fetch OGAds script URL:', error);
     }
     
-    return { ...initialProps, ogadsScriptBlock };
+    return { ...initialProps, ogadsScriptUrl };
   }
 
   render() {
-    const { ogadsScriptBlock } = this.props;
+    // FIX: The type of `this.props` in a custom Document is complex, and TypeScript
+    // struggles to correctly infer the props added from `getInitialProps`.
+    // Casting to `unknown` first resolves the type error, allowing access to custom props.
+    const { ogadsScriptUrl } = this.props as unknown as MyDocumentProps;
     
     return (
       <Html lang="en" className="font-sans">
@@ -35,9 +39,13 @@ class MyDocument extends Document<MyDocumentProps> {
           <meta charSet="UTF-8" />
           <link rel="icon" type="image/x-icon" href="/favicon.ico" />
           
-          {/* OGAds Content Locker Script - Injected directly to prevent async issues */}
-          {ogadsScriptBlock && (
-            <div dangerouslySetInnerHTML={{ __html: ogadsScriptBlock }} />
+          {/* OGAds Content Locker Script - Injected server-side for reliability */}
+          {ogadsScriptUrl && (
+            <script
+              id="ogjs"
+              type="text/javascript"
+              src={ogadsScriptUrl}
+            />
           )}
         </Head>
         <body>

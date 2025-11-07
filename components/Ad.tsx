@@ -81,7 +81,7 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
       width={width}
       height={height}
       style={{ maxWidth: '100%', border: 'none' }}
-      sandbox="allow-scripts allow-same-origin" // Security sandbox to isolate the ad
+      sandbox="allow-scripts allow-popups allow-forms" // Security sandbox to isolate the ad
       scrolling="no" // Explicitly disable scrolling on the iframe element
     />
   );
