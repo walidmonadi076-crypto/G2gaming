@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,13 +9,35 @@ import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 
 declare global {
-    interface Window { og_load: () => void; }
+    interface Window { 
+        og_load: () => void;
+        onLockerUnlock?: () => void;
+    }
 }
 
 interface GameDetailPageProps { game: Game; }
 
 const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
     const router = useRouter();
+    const [isUnlocked, setIsUnlocked] = useState(false);
+
+    useEffect(() => {
+        // Define the function that OGAds will call upon successful completion of an offer.
+        const handleUnlock = () => {
+            console.log("OGAds locker unlocked! Enabling download button.");
+            setIsUnlocked(true);
+        };
+
+        // Attach the function to the window object to make it globally accessible for the OGAds script.
+        // This function name ('onLockerUnlock') should be configured in your OGAds locker settings.
+        window.onLockerUnlock = handleUnlock;
+
+        // Clean up the global function when the component unmounts to avoid memory leaks.
+        return () => {
+            delete window.onLockerUnlock;
+        };
+    }, []); // The empty dependency array ensures this effect runs only once on mount.
+
 
     if (router.isFallback) {
         return <div className="text-center p-10">Chargement du jeu...</div>;
@@ -33,12 +55,14 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
         "keywords": game.tags?.join(', ') || ''
     };
     
-    const handleDownloadClick = () => {
+    // This function is called when the user clicks the initial "Verify" button.
+    const handleVerificationClick = () => {
         if (typeof window.og_load === 'function') {
-            window.og_load();
+            window.og_load(); // Triggers the OGAds content locker.
         } else {
-            console.error("OGAds script not loaded.");
-            window.open(game.downloadUrl, '_blank');
+            console.error("OGAds script (og_load) is not available.");
+            // Optionally, provide feedback to the user.
+            alert("The verification service is currently unavailable. Please try again later.");
         }
     };
 
@@ -65,7 +89,26 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                 <h1 className="text-4xl font-extrabold text-white mb-3">{game.title}</h1>
                                 <div className="flex flex-wrap gap-2 mb-6">{game.tags?.map(tag => <span key={tag} className="text-xs font-semibold bg-gray-700 text-gray-300 px-2.5 py-1 rounded-full">{tag}</span>)}</div>
                                 <p className="text-gray-300 leading-relaxed">{game.description}</p>
-                                <button onClick={handleDownloadClick} className="mt-8 inline-block w-full sm:w-auto text-center bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-green-600 transition-colors">Download Now</button>
+                                
+                                <div className="mt-8">
+                                    {!isUnlocked ? (
+                                        <button 
+                                            onClick={handleVerificationClick} 
+                                            className="inline-block w-full sm:w-auto text-center bg-purple-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-purple-700 transition-colors"
+                                        >
+                                            Verify & Unlock Download
+                                        </button>
+                                    ) : (
+                                        <a 
+                                            href={game.downloadUrl} 
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-block w-full sm:w-auto text-center bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-green-600 transition-colors animate-fade-in-right"
+                                        >
+                                            Download Now
+                                        </a>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="mt-8 flex justify-center">
