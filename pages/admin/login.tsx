@@ -21,12 +21,13 @@ export default function AdminPanel() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<'games' | 'blogs' | 'products' | 'social-links' | 'ads'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'blogs' | 'products' | 'social-links' | 'ads' | 'settings'>('games');
   const [games, setGames] = useState<Game[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [ads, setAds] = useState<Record<string, string>>({});
+  const [ogadsScriptSrc, setOgadsScriptSrc] = useState('');
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
@@ -70,17 +71,17 @@ export default function AdminPanel() {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const [gamesRes, blogsRes, productsRes, socialLinksRes, adsRes] = await Promise.all([
+      const [gamesRes, blogsRes, productsRes, socialLinksRes, adsRes, settingsRes] = await Promise.all([
         fetch('/api/admin/games'),
         fetch('/api/admin/blogs'),
         fetch('/api/admin/products'),
         fetch('/api/admin/social-links'),
         fetch('/api/admin/ads'),
+        fetch('/api/admin/settings'),
       ]);
-      if (!gamesRes.ok || !blogsRes.ok || !productsRes.ok || !socialLinksRes.ok || !adsRes.ok) throw new Error('Failed to fetch initial data');
-      // Fix: Corrected a typo where `socialLinksData.json()` was called before the variable was declared. It has been changed to `socialLinksRes.json()` to correctly parse the fetched response.
-      const [gamesData, blogsData, productsData, socialLinksData, adsData] = await Promise.all([
-        gamesRes.json(), blogsRes.json(), productsRes.json(), socialLinksRes.json(), adsRes.json(),
+      if (!gamesRes.ok || !blogsRes.ok || !productsRes.ok || !socialLinksRes.ok || !adsRes.ok || !settingsRes.ok) throw new Error('Failed to fetch initial data');
+      const [gamesData, blogsData, productsData, socialLinksData, adsData, settingsData] = await Promise.all([
+        gamesRes.json(), blogsRes.json(), productsRes.json(), socialLinksRes.json(), adsRes.json(), settingsRes.json()
       ]);
       setGames(gamesData);
       setBlogs(blogsData);
@@ -88,6 +89,7 @@ export default function AdminPanel() {
       setSocialLinks(socialLinksData);
       const adsObject = adsData.reduce((acc: Record<string, string>, ad: Ad) => ({ ...acc, [ad.placement]: ad.code || '' }), {});
       setAds(adsObject);
+      setOgadsScriptSrc(settingsData.ogads_script_src || '');
     } catch (error) {
       console.error('Error fetching data:', error);
       addToast('Erreur lors du chargement des données.', 'error');
@@ -195,6 +197,26 @@ export default function AdminPanel() {
       addToast('Erreur lors de la sauvegarde.', 'error');
     }
   };
+
+  const handleSaveSettings = async () => {
+    const csrfToken = getCookie('csrf_token');
+    if (!csrfToken) return addToast('Erreur de session.', 'error');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ ogads_script_src: ogadsScriptSrc })
+      });
+      if (res.ok) {
+        addToast('Paramètres sauvegardés!', 'success');
+      } else {
+        const error = await res.json();
+        addToast(`Erreur: ${error.error || 'La sauvegarde a échoué'}`, 'error');
+      }
+    } catch (error) {
+      addToast('Erreur lors de la sauvegarde des paramètres.', 'error');
+    }
+  };
   
   if (checkingAuth) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center">Chargement...</div>;
@@ -237,9 +259,9 @@ export default function AdminPanel() {
             <AdminDashboard games={games} blogs={blogs} products={products} />
             
             <div className="flex gap-4 mb-6 flex-wrap">
-              {['games', 'blogs', 'products', 'social-links', 'ads'].map((tab) => (
+              {['games', 'blogs', 'products', 'social-links', 'ads', 'settings'].map((tab) => (
                 <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-6 py-3 rounded-lg font-semibold capitalize transition-colors ${activeTab === tab ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>
-                  {{ 'games': `Jeux (${games.length})`, 'blogs': `Blogs (${blogs.length})`, 'products': `Produits (${products.length})`, 'social-links': `Réseaux (${socialLinks.length})`, 'ads': 'Publicités' }[tab]}
+                  {{ 'games': `Jeux (${games.length})`, 'blogs': `Blogs (${blogs.length})`, 'products': `Produits (${products.length})`, 'social-links': `Réseaux (${socialLinks.length})`, 'ads': 'Publicités', 'settings': 'Paramètres' }[tab]}
                 </button>
               ))}
             </div>
@@ -250,6 +272,15 @@ export default function AdminPanel() {
                   <div key={placement}><label htmlFor={`ad-${placement}`} className="block text-lg font-semibold text-gray-200 mb-2 capitalize">{placement.replace(/_/g, ' ')}</label><textarea id={`ad-${placement}`} value={ads[placement] || ''} onChange={(e) => setAds(prev => ({...prev, [placement]: e.target.value}))} rows={6} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" /></div>
                 ))}
                 <div className="flex justify-end"><button onClick={handleSaveAds} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Publicités</button></div>
+              </div>
+            ) : activeTab === 'settings' ? (
+              <div className="bg-gray-800 rounded-lg p-6 space-y-6">
+                <div>
+                  <label htmlFor="ogads-script" className="block text-lg font-semibold text-gray-200 mb-2">URL du Script OGAds</label>
+                  <input id="ogads-script" type="url" value={ogadsScriptSrc} onChange={(e) => setOgadsScriptSrc(e.target.value)} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="https://redirectapps.online/cl/js/xxxxxx" />
+                   <p className="text-xs text-gray-400 mt-2">Collez ici l'URL complète du script fournie par OGAds. Le site la chargera automatiquement.</p>
+                </div>
+                <div className="flex justify-end"><button onClick={handleSaveSettings} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Paramètres</button></div>
               </div>
             ) : (
               <>

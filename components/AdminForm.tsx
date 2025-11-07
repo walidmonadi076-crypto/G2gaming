@@ -1,5 +1,6 @@
 
-import { useState, useEffect, Fragment } from 'react';
+
+import React, { useState, useEffect, Fragment } from 'react';
 import type { Game, BlogPost, Product, SocialLink } from '../types';
 
 type Item = Game | BlogPost | Product | SocialLink;

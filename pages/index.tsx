@@ -25,7 +25,8 @@ const Home: React.FC<HomeProps> = ({ games }) => {
 
   const sections = useMemo(() => {
     const priorityOrder = ['Play on Comet', 'New', 'Hot', 'Updated', 'Top', 'Featured'];
-    const allTags = [...new Set(games.flatMap(game => game.tags || []))];
+    // Fix: Explicitly type `allTags` as `string[]` to correct type inference issues.
+    const allTags: string[] = [...new Set(games.flatMap(game => game.tags || []))];
     const priorityTags = priorityOrder.filter(tag => allTags.includes(tag));
     const otherTags = allTags.filter(tag => !priorityOrder.includes(tag)).sort();
     const orderedTags = [...priorityTags, ...otherTags];
