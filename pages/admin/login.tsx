@@ -71,13 +71,14 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       const [gamesRes, blogsRes, productsRes, socialLinksRes, adsRes] = await Promise.all([
-        fetch('/api/games'),
-        fetch('/api/blogs'),
-        fetch('/api/products'),
+        fetch('/api/admin/games'),
+        fetch('/api/admin/blogs'),
+        fetch('/api/admin/products'),
         fetch('/api/admin/social-links'),
         fetch('/api/admin/ads'),
       ]);
       if (!gamesRes.ok || !blogsRes.ok || !productsRes.ok || !socialLinksRes.ok || !adsRes.ok) throw new Error('Failed to fetch initial data');
+      // Fix: Corrected a typo where `socialLinksData.json()` was called before the variable was declared. It has been changed to `socialLinksRes.json()` to correctly parse the fetched response.
       const [gamesData, blogsData, productsData, socialLinksData, adsData] = await Promise.all([
         gamesRes.json(), blogsRes.json(), productsRes.json(), socialLinksRes.json(), adsRes.json(),
       ]);

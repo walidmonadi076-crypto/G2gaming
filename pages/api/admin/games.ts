@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 import { isAuthorized } from '../auth/check';
 import { slugify } from '../../../lib/slugify';
+import { getAllGames } from '../../../lib/data';
 
 async function generateUniqueSlug(client: any, title: string, currentId: number | null = null): Promise<string> {
   let baseSlug = slugify(title);
@@ -36,7 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const client = await getDbClient();
 
   try {
-    if (req.method === 'POST') {
+    if (req.method === 'GET') {
+      const games = await getAllGames();
+      return res.status(200).json(games);
+    } else if (req.method === 'POST') {
       const { title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, gallery } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
 
@@ -74,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(200).json({ message: 'Game deleted successfully' });
       }
     } else {
-      res.setHeader('Allow', ['POST', 'PUT', 'DELETE']);
+      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
       res.status(405).json({ message: 'Method not allowed' });
     }
   } catch (error) {
