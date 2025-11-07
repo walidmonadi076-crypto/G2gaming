@@ -200,10 +200,12 @@ export default function AdminPanel() {
             refreshCurrentTab();
         } else {
             const error = await res.json();
-            addToast(`Erreur: ${error.message || 'L\\'approbation a échoué'}`, 'error');
+            // Fix: Corrected the escaped single quote in the string literal.
+            addToast(`Erreur: ${error.message || 'L\'approbation a échoué'}`, 'error');
         }
     } catch (error) {
-        addToast('Erreur lors de l\\'approbation.', 'error');
+        // Fix: Corrected the escaped single quote in the string literal.
+        addToast('Erreur lors de l\'approbation.', 'error');
     }
   };
 
