@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { randomBytes } from 'crypto';
 
 // Système simple en mémoire pour limiter les tentatives de connexion par IP

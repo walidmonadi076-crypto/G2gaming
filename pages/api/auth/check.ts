@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 // Vérification simple de la présence du cookie d'authentification.
 function isAuthenticated(req: NextApiRequest): boolean {

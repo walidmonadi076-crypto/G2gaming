@@ -9,8 +9,8 @@ import Image from 'next/image';
 const Section: React.FC<{ title: string; children: React.ReactNode, viewMore?: boolean, onViewMore?: () => void }> = ({ title, children, viewMore = true, onViewMore }) => (
     <section className="mb-12">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
-        {viewMore && <button onClick={onViewMore} className="text-sm font-semibold text-purple-400 hover:text-purple-300">View more</button>}
+        <h2 className="text-2xl font-bold text-text">{title}</h2>
+        {viewMore && <button onClick={onViewMore} className="text-sm font-semibold text-accent hover:text-accent-600">View more</button>}
       </div>
       {children}
     </section>
@@ -60,16 +60,16 @@ const Home: React.FC<HomeProps> = ({ games }) => {
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent p-6 md:p-12 flex flex-col justify-center">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight">Welcome to<br />G2gaming</h2>
                 <p className="mt-2 text-base sm:text-lg text-gray-300">Your ultimate gaming destination.</p>
-                <button onClick={() => router.push('/games')} className="mt-6 bg-purple-600 text-white font-bold py-2 px-5 text-base sm:py-3 sm:px-6 sm:text-lg rounded-lg w-fit hover:bg-purple-700 transition-colors">Explore Games</button>
+                <button onClick={() => router.push('/games')} className="mt-6 bg-accent text-white font-bold py-2 px-5 text-base sm:py-3 sm:px-6 sm:text-lg rounded-lg w-fit hover:bg-accent-600 transition-colors">Explore Games</button>
             </div>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-800 to-indigo-800 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-6 my-12">
+        <div className="bg-gradient-to-r from-accent to-accent-600 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-6 my-12">
             <div className="flex items-center space-x-4">
-                <div className="bg-yellow-400 p-2 rounded-lg relative"><span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-purple-800">1</span><svg className="w-8 h-8 text-yellow-900" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg></div>
-                <div><h3 className="text-lg sm:text-xl font-bold">Climb the new G2gaming leaderboards</h3></div>
+                <div className="bg-yellow-400 p-2 rounded-lg relative"><span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-accent-600">1</span><svg className="w-8 h-8 text-yellow-900" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg></div>
+                <div><h3 className="text-lg sm:text-xl font-bold text-white">Climb the new G2gaming leaderboards</h3></div>
             </div>
-            <button onClick={() => router.push('/games')} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex-shrink-0">Explore games</button>
+            <button onClick={() => router.push('/games')} className="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-6 rounded-lg transition-colors flex-shrink-0">Explore games</button>
         </div>
         
         {sections.map(section => (
