@@ -27,16 +27,15 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
   };
 
   const { width, height, text } = getAdDimensions();
-  const style = { width: `${width}px`, height: `${height}px`, maxWidth: '100%' };
 
   // Loading state placeholder
   if (isLoading) {
     return (
       <div 
-        style={style} 
-        className="bg-surface-alt/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center animate-pulse"
+        style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }} 
+        className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center animate-pulse"
       >
-        <span className="text-muted text-sm font-semibold">Loading Ad...</span>
+        <span className="text-gray-500 text-sm font-semibold">Loading Ad...</span>
       </div>
     );
   }
@@ -45,21 +44,45 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
   if (!ad || !ad.code) {
     return (
        <div 
-        style={style} 
-        className="bg-surface-alt/50 border-2 border-dashed border-border rounded-lg flex items-center justify-center"
+        style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }} 
+        className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center"
       >
-        <span className="text-muted text-sm font-semibold">{text}</span>
+        <span className="text-gray-500 text-sm font-semibold">{text}</span>
       </div>
     );
   }
   
-  // Reverting to dangerouslySetInnerHTML to avoid iframe sandboxing issues
-  // that cause 403 errors with certain ad networks. This approach ensures
-  // the ad script runs in the expected environment.
+  const iframeContent = `
+    <html>
+      <head>
+        <style>
+          /* This style block is crucial for containing the ad script */
+          html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* The key to preventing scrollbars */
+          }
+        </style>
+      </head>
+      <body>
+        ${ad.code}
+      </body>
+    </html>
+  `;
+
+
+  // The iframe component that isolates the ad code
   return (
-    <div
-      style={{ ...style, display: 'inline-block', verticalAlign: 'middle' }}
-      dangerouslySetInnerHTML={{ __html: ad.code }}
+    <iframe
+      title={`Ad for ${placement}`}
+      srcDoc={iframeContent}
+      width={width}
+      height={height}
+      style={{ maxWidth: '100%', border: 'none' }}
+      sandbox="allow-scripts allow-popups allow-forms" // Security sandbox to isolate the ad
+      scrolling="no" // Explicitly disable scrolling on the iframe element
     />
   );
 };
