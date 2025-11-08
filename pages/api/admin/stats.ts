@@ -21,6 +21,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       gameCategoriesResult,
       blogCategoriesResult,
       productCategoriesResult,
+      socialLinksResult,
+      commentsResult,
+      adsResult,
     ] = await Promise.all([
       client.query('SELECT COUNT(*) FROM games'),
       client.query('SELECT COUNT(*) FROM blog_posts'),
@@ -28,6 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       client.query("SELECT COUNT(DISTINCT category) FROM games WHERE category IS NOT NULL AND category <> ''"),
       client.query("SELECT COUNT(DISTINCT category) FROM blog_posts WHERE category IS NOT NULL AND category <> ''"),
       client.query("SELECT COUNT(DISTINCT category) FROM products WHERE category IS NOT NULL AND category <> ''"),
+      client.query('SELECT COUNT(*) FROM social_links'),
+      client.query('SELECT COUNT(*) FROM comments'),
+      client.query('SELECT COUNT(*) FROM ads'),
     ]);
 
     const stats = {
@@ -37,6 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       gameCategories: parseInt(gameCategoriesResult.rows[0].count, 10),
       blogCategories: parseInt(blogCategoriesResult.rows[0].count, 10),
       productCategories: parseInt(productCategoriesResult.rows[0].count, 10),
+      totalSocialLinks: parseInt(socialLinksResult.rows[0].count, 10),
+      totalComments: parseInt(commentsResult.rows[0].count, 10),
+      totalAds: parseInt(adsResult.rows[0].count, 10),
     };
 
     res.status(200).json(stats);

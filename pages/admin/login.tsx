@@ -14,9 +14,6 @@ function getCookie(name: string): string | null {
   return match ? match[2] : null;
 }
 
-// Fix: Define helper types that match the props expected by the AdminForm component.
-// This resolves type conflicts between this component's broader 'Item' and 'TabType'
-// and AdminForm's more specific 'Item' and 'ItemType'.
 type FormItem = Game | BlogPost | Product | SocialLink;
 type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
@@ -33,6 +30,18 @@ interface PaginationState {
   itemsPerPage: number;
 }
 
+interface AdminStats {
+  totalGames: number;
+  totalBlogs: number;
+  totalProducts: number;
+  gameCategories: number;
+  blogCategories: number;
+  productCategories: number;
+  totalSocialLinks: number;
+  totalComments: number;
+  totalAds: number;
+}
+
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -41,7 +50,7 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<TabType>('games');
   
   const [items, setItems] = useState<Item[]>([]);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [ads, setAds] = useState<Record<string, string>>({});
   const [ogadsScript, setOgadsScript] = useState('');
   
@@ -54,6 +63,8 @@ export default function AdminPanel() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
 
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
@@ -71,11 +82,12 @@ export default function AdminPanel() {
     setIsAuthenticated(false);
   }, []);
 
-  const fetchDataForTab = useCallback(async (tab: TabType, page: number, search: string) => {
+  const fetchDataForTab = useCallback(async (tab: TabType, page: number, search: string, sortKey: string, sortDir: string) => {
       if (['ads', 'settings'].includes(tab)) return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/admin/${tab}?page=${page}&search=${encodeURIComponent(search)}&limit=${pagination.itemsPerPage}`);
+        const url = `/api/admin/${tab}?page=${page}&search=${encodeURIComponent(search)}&limit=${pagination.itemsPerPage}&sortBy=${sortKey}&sortOrder=${sortDir}`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch data');
         const data = await res.json();
         setItems(data.items);
@@ -89,7 +101,6 @@ export default function AdminPanel() {
   }, [addToast, pagination.itemsPerPage]);
   
   const fetchInitialAdminData = useCallback(async () => {
-      setLoading(true);
       try {
         const [statsRes, adsRes, settingsRes] = await Promise.all([
           fetch('/api/admin/stats'),
@@ -127,19 +138,20 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (isAuthenticated) {
-        fetchInitialAdminData();
+        setLoading(true);
+        fetchInitialAdminData().finally(() => setLoading(false));
     }
   }, [isAuthenticated, fetchInitialAdminData]);
   
   useEffect(() => {
     if (isAuthenticated) {
-      fetchDataForTab(activeTab, currentPage, debouncedSearchQuery);
+      fetchDataForTab(activeTab, currentPage, debouncedSearchQuery, sortConfig.key, sortConfig.direction);
     }
-  }, [isAuthenticated, activeTab, currentPage, debouncedSearchQuery, fetchDataForTab]);
+  }, [isAuthenticated, activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab]);
 
   useEffect(() => {
       setCurrentPage(1);
-  }, [activeTab, debouncedSearchQuery]);
+  }, [activeTab, debouncedSearchQuery, sortConfig]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,10 +175,9 @@ export default function AdminPanel() {
   };
 
   const refreshCurrentTab = useCallback(() => {
-    fetchDataForTab(activeTab, currentPage, debouncedSearchQuery);
+    fetchDataForTab(activeTab, currentPage, debouncedSearchQuery, sortConfig.key, sortConfig.direction);
     fetchInitialAdminData();
-  }, [activeTab, currentPage, debouncedSearchQuery, fetchDataForTab, fetchInitialAdminData]);
-
+  }, [activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab, fetchInitialAdminData]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément?')) return;
@@ -200,15 +211,12 @@ export default function AdminPanel() {
             refreshCurrentTab();
         } else {
             const error = await res.json();
-            // Fix: Corrected the escaped single quote in the string literal.
             addToast(`Erreur: ${error.message || 'L\'approbation a échoué'}`, 'error');
         }
     } catch (error) {
-        // Fix: Corrected the escaped single quote in the string literal.
         addToast('Erreur lors de l\'approbation.', 'error');
     }
   };
-
 
   const handleSubmit = async (formData: any) => {
     const csrfToken = getCookie('csrf_token');
@@ -273,8 +281,16 @@ export default function AdminPanel() {
     }
   };
   
+  const requestSort = (key: string) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+        direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+  
   if (checkingAuth) {
-    return <div className="min-h-screen bg-gray-900 flex items-center justify-center">Chargement...</div>;
+    return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Chargement...</div>;
   }
   
   if (!isAuthenticated) {
@@ -296,13 +312,30 @@ export default function AdminPanel() {
     );
   }
 
+  const tabs: { id: TabType; label: string; count?: number }[] = [
+    { id: 'games', label: 'Games', count: stats?.totalGames },
+    { id: 'blogs', label: 'Blogs', count: stats?.totalBlogs },
+    { id: 'products', label: 'Products', count: stats?.totalProducts },
+    { id: 'social-links', label: 'Social-Links', count: stats?.totalSocialLinks },
+    { id: 'comments', label: 'Comments', count: stats?.totalComments },
+    { id: 'ads', label: 'Ads', count: stats?.totalAds },
+    { id: 'settings', label: 'Settings' }
+  ];
+  
+  const SortableHeader: React.FC<{ label: string; columnKey: string; className?: string }> = ({ label, columnKey, className }) => {
+    const isSorted = sortConfig.key === columnKey;
+    const sortIcon = isSorted ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '';
+    return (
+      <th onClick={() => requestSort(columnKey)} className={`text-left p-3 text-sm font-semibold uppercase cursor-pointer ${className}`}>
+        {label} <span className="text-purple-400 text-xs">{sortIcon}</span>
+      </th>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
         <Head><title>Admin Panel - G2gaming</title></Head>
         <ToastContainer toasts={toasts} onClose={removeToast} />
-        {/* Fix: Cast `editingItem` and `activeTab` to the specific types required by AdminForm.
-            The component's logic ensures these casts are safe because the form is only
-            rendered for tabs and items that are compatible with AdminForm's props. */}
         {showForm && activeTab !== 'comments' && <AdminForm item={editingItem as FormItem | null} type={activeTab as FormItemType} onClose={() => setShowForm(false)} onSubmit={handleSubmit} />}
 
         <div className="container mx-auto px-4 py-8">
@@ -316,9 +349,9 @@ export default function AdminPanel() {
             <AdminDashboard stats={stats} />
             
             <div className="flex gap-4 mb-6 flex-wrap">
-              {(['games', 'blogs', 'products', 'social-links', 'comments', 'ads', 'settings'] as TabType[]).map((tab) => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-lg font-semibold capitalize transition-colors ${activeTab === tab ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>
-                  {tab}
+              {tabs.map((tab) => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2 rounded-lg font-semibold capitalize transition-colors ${activeTab === tab.id ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>
+                  {tab.label.replace('-', ' ')} {stats && typeof tab.count !== 'undefined' ? `(${tab.count})` : ''}
                 </button>
               ))}
             </div>
@@ -360,7 +393,13 @@ export default function AdminPanel() {
                         <table className="w-full">
                           {activeTab === 'comments' ? (
                             <>
-                            <thead><tr className="border-b border-gray-700 bg-gray-700/50"><th className="text-left p-3 text-sm font-semibold uppercase">Auteur</th><th className="text-left p-3 text-sm font-semibold uppercase">Commentaire</th><th className="text-left p-3 text-sm font-semibold uppercase">Article</th><th className="text-left p-3 text-sm font-semibold uppercase">Status</th><th className="text-right p-3 text-sm font-semibold uppercase">Actions</th></tr></thead>
+                            <thead><tr className="border-b border-gray-700 bg-gray-700/50">
+                                <SortableHeader label="Auteur" columnKey="author" />
+                                <th className="text-left p-3 text-sm font-semibold uppercase">Commentaire</th>
+                                <SortableHeader label="Article" columnKey="blog_title" />
+                                <SortableHeader label="Status" columnKey="status" />
+                                <th className="text-right p-3 text-sm font-semibold uppercase">Actions</th>
+                            </tr></thead>
                             <tbody>
                               {(items as Comment[]).map((comment) => (
                                 <tr key={comment.id} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
@@ -378,7 +417,13 @@ export default function AdminPanel() {
                             </>
                           ) : (
                             <>
-                            <thead><tr className="border-b border-gray-700 bg-gray-700/50"><th className="text-left p-3 text-sm font-semibold uppercase">ID</th><th className="text-left p-3 text-sm font-semibold uppercase">Titre/Nom</th><th className="text-left p-3 text-sm font-semibold uppercase">Catégorie/URL</th><th className="text-left p-3 text-sm font-semibold uppercase">Image/Icône</th><th className="text-right p-3 text-sm font-semibold uppercase">Actions</th></tr></thead>
+                            <thead><tr className="border-b border-gray-700 bg-gray-700/50">
+                                <SortableHeader label="ID" columnKey="id" />
+                                <SortableHeader label="Titre/Nom" columnKey={['products', 'social-links'].includes(activeTab) ? 'name' : 'title'} />
+                                <SortableHeader label="Catégorie/URL" columnKey={activeTab === 'social-links' ? 'url' : 'category'} />
+                                <th className="text-left p-3 text-sm font-semibold uppercase">Image/Icône</th>
+                                <th className="text-right p-3 text-sm font-semibold uppercase">Actions</th>
+                            </tr></thead>
                             <tbody>
                             {items.map((item: any) => (
                                 <tr key={item.id} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">

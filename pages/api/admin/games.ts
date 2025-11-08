@@ -39,7 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
         const search = req.query.search as string || '';
+        const sortBy = req.query.sortBy as string || 'id';
+        const sortOrder = req.query.sortOrder as string || 'desc';
         const offset = (page - 1) * limit;
+
+        const allowedSortBy = ['id', 'title', 'category'];
+        const sanitizedSortBy = allowedSortBy.includes(sortBy) ? sortBy : 'id';
+        const sanitizedSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
         let whereClause = '';
         const queryParams: any[] = [];
@@ -59,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 video_url AS "videoUrl", download_url AS "downloadUrl", gallery
             FROM games
             ${whereClause}
-            ORDER BY id DESC
+            ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}
             LIMIT $${queryParams.length-1} OFFSET $${queryParams.length}
         `, queryParams);
 

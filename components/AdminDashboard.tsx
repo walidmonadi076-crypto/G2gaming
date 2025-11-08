@@ -8,6 +8,9 @@ interface AdminStats {
   gameCategories: number;
   blogCategories: number;
   productCategories: number;
+  totalSocialLinks: number;
+  totalComments: number;
+  totalAds: number;
 }
 
 interface AdminDashboardProps {
