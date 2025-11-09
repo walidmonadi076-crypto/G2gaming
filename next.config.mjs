@@ -9,8 +9,8 @@ const csp = [
   // Allow images and frames from any HTTPS source to accommodate ads and dynamic content.
   "img-src 'self' data: https:",
   "frame-src 'self' https:",
-  // Allow connections for Google Analytics.
-  "connect-src 'self' https://www.google-analytics.com",
+  // Allow connections to any HTTPS source for ads and analytics.
+  "connect-src 'self' https:",
   // Allow media from specific known sources.
   "media-src 'self' https://www.w3schools.com",
   "font-src 'self'",
