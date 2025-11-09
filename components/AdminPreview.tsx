@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -15,12 +16,11 @@ interface AdminPreviewProps {
 type Device = 'desktop' | 'tablet' | 'mobile';
 
 const deviceDimensions: Record<Device, { width: number; height: number }> = {
-  desktop: { width: 1440, height: 810 }, // Used for aspect ratio, not for scaling
+  desktop: { width: 1440, height: 810 },
   tablet: { width: 768, height: 1024 },
   mobile: { width: 375, height: 667 },
 };
 
-// FIX: Added type="button" to prevent buttons from submitting the parent form and closing the modal.
 const ToolbarButton: React.FC<{
   onClick: () => void;
   isActive?: boolean;
@@ -57,49 +57,39 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
 
   const previewTarget = previewPageMap[type];
 
-  // FIX: Re-architected scaling logic.
-  // - Desktop view now fills 100% of the container for a clear, unscaled preview.
-  // - Tablet & Mobile views use a ResizeObserver to scale down perfectly, maintaining aspect ratio.
   useEffect(() => {
     const container = previewContainerRef.current;
-    let resizeObserver: ResizeObserver | null = null;
-    
-    // For desktop, no scaling is needed. Let it fill the container.
-    if (device === 'desktop') {
-      setScale(1);
-    } else if (container) {
-      // For tablet and mobile, we calculate the scale to fit the device frame in the container.
-      const calculateScale = () => {
-        const { width: deviceWidth, height: deviceHeight } = deviceDimensions[device];
-        
-        const containerWidth = container.offsetWidth - 16;
-        const containerHeight = container.offsetHeight - 16;
-
-        if (deviceWidth <= 0 || deviceHeight <= 0 || containerWidth <= 0 || containerHeight <= 0) {
-          setScale(1);
-          return;
-        }
-
-        const scaleX = containerWidth / deviceWidth;
-        const scaleY = containerHeight / deviceHeight;
-        
-        const newScale = Math.min(scaleX, scaleY, 1);
-        setScale(newScale);
-      };
-
-      resizeObserver = new ResizeObserver(() => {
-        requestAnimationFrame(calculateScale);
-      });
-      
-      resizeObserver.observe(container);
-      calculateScale(); // Initial calculation
+    if (device === 'desktop' || !container) {
+      return;
     }
 
-    // Cleanup observer on unmount or when device changes.
+    const calculateScale = () => {
+      if (!previewContainerRef.current) return;
+      const { width: deviceWidth, height: deviceHeight } = deviceDimensions[device];
+      
+      const containerWidth = previewContainerRef.current.offsetWidth;
+      const containerHeight = previewContainerRef.current.offsetHeight;
+
+      const padding = 16;
+      const availableWidth = containerWidth - padding;
+      const availableHeight = containerHeight - padding;
+
+      const scaleX = availableWidth / deviceWidth;
+      const scaleY = availableHeight / deviceHeight;
+      
+      const newScale = Math.min(scaleX, scaleY, 1);
+      setScale(newScale);
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(calculateScale);
+    });
+    
+    resizeObserver.observe(container);
+    calculateScale(); // Initial calculation
+
     return () => {
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
+      resizeObserver.disconnect();
     };
   }, [device]);
 
@@ -139,16 +129,20 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
   const isDesktop = device === 'desktop';
   const { width: deviceWidth, height: deviceHeight } = deviceDimensions[device];
   
-  const frameStyle: React.CSSProperties = isDesktop ? {
-      width: '100%',
-      height: '100%',
-      transform: 'none',
-  } : {
-      width: `${deviceWidth}px`,
-      height: `${deviceHeight}px`,
-      transform: `scale(${scale})`,
-      transformOrigin: 'center center',
-  };
+  const frameStyle: React.CSSProperties = isDesktop
+    ? {
+        width: '100%',
+        height: '100%',
+      }
+    : {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        width: `${deviceWidth}px`,
+        height: `${deviceHeight}px`,
+        transform: `translate(-50%, -50%) scale(${scale})`,
+        transformOrigin: 'center',
+      };
 
   return (
     <div ref={previewRootRef} className="bg-gray-900 rounded-lg h-full flex flex-col p-4">
@@ -178,10 +172,10 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
           </ToolbarButton>
         </div>
       </div>
-      <div ref={previewContainerRef} className="flex-grow flex items-center justify-center overflow-hidden bg-gray-800 rounded-md p-2">
+      <div ref={previewContainerRef} className="flex-grow relative overflow-hidden bg-gray-800 rounded-md p-2">
         <div
           id="preview-frame-container"
-          className="shadow-2xl rounded-lg border-2 border-gray-700 ring-1 ring-inset ring-white/5 overflow-hidden transition-all duration-300 ease-in-out bg-gray-900"
+          className="shadow-inner shadow-black/30 rounded-lg border-2 border-gray-700 ring-1 ring-inset ring-white/5 overflow-hidden transition-all duration-300 ease-in-out bg-gray-900"
           style={frameStyle}
         >
           {previewTarget ? (
