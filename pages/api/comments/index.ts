@@ -1,5 +1,5 @@
 // Fix: Use type-only import for NextApiRequest to correct type resolution.
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 import type { Comment } from '../../../types';
 

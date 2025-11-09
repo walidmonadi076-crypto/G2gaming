@@ -1,5 +1,5 @@
 // Fix: Use type-only import for NextApiRequest to correct type resolution.
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 // Vérification simple de la présence du cookie d'authentification.
 function isAuthenticated(req: NextApiRequest): boolean {
