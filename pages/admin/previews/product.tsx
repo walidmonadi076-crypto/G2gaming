@@ -27,11 +27,12 @@ const ProductPreviewPage: React.FC = () => {
                 const payload = event.data.payload as Partial<Product>;
                 setProduct(prev => ({ ...prev, ...payload }));
                 
-                // FIX: Use Array.isArray to safely check for the gallery property.
-                // This resolves the TypeScript error by ensuring payload.gallery is an array
-                // before we try to access its elements.
+                // FIX: By assigning the type-narrowed `payload.gallery` to a new constant, we help
+                // TypeScript carry the correct `string[]` type into the `setMainImage` callback closure,
+                // resolving the "'payload.gallery' is possibly 'undefined'" error.
                 if (Array.isArray(payload.gallery) && payload.gallery.length > 0) {
-                    setMainImage(prevMain => payload.gallery.includes(prevMain) ? prevMain : payload.gallery[0]);
+                    const gallery = payload.gallery;
+                    setMainImage(prevMain => gallery.includes(prevMain) ? prevMain : gallery[0]);
                 } else if (payload.imageUrl) {
                     setMainImage(payload.imageUrl);
                 }
