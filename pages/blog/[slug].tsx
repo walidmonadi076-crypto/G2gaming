@@ -10,6 +10,7 @@ import SEO from '../../components/SEO';
 import StarRating from '../../components/StarRating';
 import CommentCard from '../../components/CommentCard';
 import CommentForm from '../../components/CommentForm';
+import ShareBar from '../../components/ShareBar';
 
 interface BlogDetailPageProps { post: BlogPost; comments: Comment[]; }
 
@@ -51,7 +52,9 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
             />
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <aside className="hidden lg:block lg:col-span-2">
-                    <div className="sticky top-24"><Ad placement="blog_skyscraper_left" /></div>
+                    <div className="sticky top-24">
+                        <ShareBar title={post.title} orientation="vertical" />
+                    </div>
                 </aside>
                 
                 <main className="col-span-12 lg:col-span-8">
@@ -87,6 +90,10 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                             </a>
                         </div>
                     )}
+                    
+                    <div className="my-12 lg:hidden">
+                        <ShareBar title={post.title} orientation="horizontal" />
+                    </div>
 
                     <div className="mt-12 pt-8 border-t border-gray-700">
                         <h2 className="text-2xl font-bold text-white mb-6">Comments ({comments.length})</h2>
