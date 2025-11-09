@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { useAds } from '../contexts/AdContext';
 
 interface AdProps {
@@ -7,7 +7,6 @@ interface AdProps {
 
 const Ad: React.FC<AdProps> = ({ placement }) => {
   const { ads, isLoading } = useAds();
-  const adContainerRef = useRef<HTMLDivElement>(null);
   
   const ad = ads.find(a => a.placement === placement);
 
@@ -29,55 +28,11 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
 
   const { width, height, text } = getAdDimensions();
 
-  useEffect(() => {
-    const container = adContainerRef.current;
-    if (!container || !ad?.code) {
-      return;
-    }
-
-    // Set the innerHTML, which creates the necessary DOM nodes (like the ad's target div)
-    // but does not execute the script tags for security reasons.
-    container.innerHTML = ad.code;
-
-    // Find the inert script tags that were just added.
-    const scripts = Array.from(container.getElementsByTagName('script'));
-    
-    scripts.forEach(oldScript => {
-      // To execute a script, a new script element must be created and added to the DOM.
-      const newScript = document.createElement('script');
-      
-      // Copy all attributes from the original script to the new one (e.g., src, data attributes).
-      Array.from(oldScript.attributes).forEach(attr => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      
-      // Set async to false. Dynamically added scripts are async by default.
-      // Some ad scripts may depend on a more sequential execution order.
-      newScript.async = false;
-      
-      // Copy the inline script content.
-      newScript.text = oldScript.text;
-      
-      // Replace the old, non-executable script with the new, executable one.
-      // This ensures it runs in the correct place within the ad snippet's structure.
-      oldScript.parentNode?.replaceChild(newScript, oldScript);
-    });
-
-    // Cleanup function to remove ad content when the component unmounts or ad code changes.
-    return () => {
-      if (container) {
-        container.innerHTML = '';
-      }
-    };
-  }, [ad?.code]); // Re-run this effect only when the ad code changes.
-
-  const adDimensionsStyle = { width: `${width}px`, height: `${height}px`, maxWidth: '100%' };
-
-  // Display a loading placeholder while fetching ads.
+  // Loading state placeholder
   if (isLoading) {
     return (
       <div 
-        style={adDimensionsStyle} 
+        style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }} 
         className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center animate-pulse"
       >
         <span className="text-gray-500 text-sm font-semibold">Loading Ad...</span>
@@ -85,11 +40,11 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
     );
   }
 
-  // If there's no ad code for this placement, show a static placeholder.
+  // If no ad code is available, show a placeholder
   if (!ad || !ad.code) {
     return (
        <div 
-        style={adDimensionsStyle} 
+        style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }} 
         className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center"
       >
         <span className="text-gray-500 text-sm font-semibold">{text}</span>
@@ -97,8 +52,39 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
     );
   }
   
-  // Render the container that the useEffect will populate with the executable ad code.
-  return <div ref={adContainerRef} style={adDimensionsStyle} />;
+  const iframeContent = `
+    <html>
+      <head>
+        <style>
+          /* This style block is crucial for containing the ad script */
+          html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* The key to preventing scrollbars */
+          }
+        </style>
+      </head>
+      <body>
+        ${ad.code}
+      </body>
+    </html>
+  `;
+
+
+  // The iframe component that isolates the ad code
+  return (
+    <iframe
+      title={`Ad for ${placement}`}
+      srcDoc={iframeContent}
+      width={width}
+      height={height}
+      style={{ maxWidth: '100%', border: 'none' }}
+      sandbox="allow-scripts allow-popups allow-forms" // Security sandbox to isolate the ad
+      scrolling="no" // Explicitly disable scrolling on the iframe element
+    />
+  );
 };
 
 export default Ad;

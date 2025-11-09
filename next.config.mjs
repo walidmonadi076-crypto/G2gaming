@@ -1,28 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-// Define a permissive Content Security Policy to ensure ad networks can load all necessary resources.
-const csp = [
-  // Fallback for directives not explicitly set. Allows loading resources from any source (*).
-  // 'unsafe-inline' and 'unsafe-eval' are often required by ad and analytics scripts.
-  "default-src 'self' * 'unsafe-inline' 'unsafe-eval' data: blob:",
-  // Allow scripts from any source, plus inline scripts and dynamic execution.
-  "script-src 'self' * 'unsafe-inline' 'unsafe-eval'",
-  // Allow iframes from any source.
-  "frame-src 'self' *",
-  // Allow network connections (fetch, XHR, etc.) to any source.
-  "connect-src 'self' *",
-  // Allow images from any source, including data URIs and blobs.
-  "img-src 'self' * data: blob:",
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self' data:",
-  "media-src 'self' https://www.w3schools.com",
-  // Lock down other directives for better security.
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-].join('; ');
-
 const securityHeaders = [
   {
     key: 'X-Content-Type-Options',
@@ -35,16 +12,6 @@ const securityHeaders = [
   {
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload',
-  },
-  {
-    // Use a less strict policy that is the browser default and more compatible with ad networks.
-    key: 'Referrer-Policy',
-    value: 'no-referrer-when-downgrade'
-  },
-  {
-    // Apply the Content Security Policy to allow external ad scripts to load.
-    key: 'Content-Security-Policy',
-    value: csp.replace(/\s{2,}/g, ' ').trim()
   }
 ];
 
