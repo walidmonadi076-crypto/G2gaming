@@ -2,73 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Modern, thin scrollbar styling to match the site's dark theme,
+  providing a consistent look across the application, similar to mobile UIs.
+*/
 @layer base {
-  :root {
-    /* Default to Dark Theme */
-    --bg: #0b0f14;
-    --surface: #1f2937; /* gray-800 */
-    --surface-alt: #374151; /* gray-700 */
-    --border: #4b5563; /* gray-600 */
-    --text: #E6EEF5;
-    --muted: #94a3b8;
-    --accent: #7c3aed;
-    --accent-600: #6d28d9;
-  }
-  
-  [data-theme="dark"] {
-    --bg: #0b0f14;
-    --surface: #1f2937;
-    --surface-alt: #374151;
-    --border: #4b5563;
-    --text: #E6EEF5;
-    --muted: #94a3b8;
-    --accent: #7c3aed;
-    --accent-600: #6d28d9;
-  }
-  
-  [data-theme="light"] {
-    --bg: #FAFAFB;
-    --surface: #FFFFFF;
-    --surface-alt: #f3f4f6; /* gray-100 */
-    --border: #e5e7eb; /* gray-200 */
-    --text: #0f1720;
-    --muted: #6b7280;
-    --accent: #4f46e5;
-    --accent-600: #4338ca;
-  }
-
-  [data-theme="soft-accent"] {
-    --bg: #0b1020;
-    --surface: #1e293b; /* slate-800 */
-    --surface-alt: #334155; /* slate-700 */
-    --border: #475569; /* slate-600 */
-    --text: #E8F0FF;
-    --muted: #93c5fd;
-    --accent: #06b6d4;
-    --accent-600: #0891b2;
-  }
-
-  [data-theme="gentle-warm"] {
-    --bg: #1c1917; /* stone-900 */
-    --surface: #292524; /* stone-800 */
-    --surface-alt: #44403c; /* stone-700 */
-    --border: #57534e; /* stone-600 */
-    --text: #fff8ed;
-    --muted: #a8a29e; /* stone-400 */
-    --accent: #f59e0b;
-    --accent-600: #d97706;
-  }
-
+  /* For Firefox */
   html {
-    background-color: var(--bg);
-    color: var(--text);
-    transition: background-color 0.3s ease, color 0.3s ease;
-
-    /* For Firefox */
     scrollbar-width: thin;
-    scrollbar-color: var(--accent) var(--surface);
+    scrollbar-color: #8b5cf6 #1f2937; /* thumb color, track color */
   }
-  
+
   /* For Webkit-based browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
     width: 8px;
@@ -76,65 +20,17 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--surface);
+    background: #1f2937; /* bg-gray-800 */
     border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: var(--accent);
+    background-color: #8b5cf6; /* bg-purple-500 */
     border-radius: 10px;
-    border: 2px solid var(--surface);
+    border: 2px solid #1f2937; /* Padding around thumb */
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--accent-600);
-  }
-
-  .prose-invert {
-      --tw-prose-body: var(--muted);
-      --tw-prose-headings: var(--text);
-      --tw-prose-lead: var(--muted);
-      --tw-prose-links: var(--accent);
-      --tw-prose-bold: var(--text);
-      --tw-prose-counters: var(--muted);
-      --tw-prose-bullets: var(--border);
-      --tw-prose-hr: var(--border);
-      --tw-prose-quotes: var(--text);
-      --tw-prose-quote-borders: var(--border);
-      --tw-prose-captions: var(--muted);
-      --tw-prose-code: var(--text);
-      --tw-prose-pre-code: var(--text);
-      --tw-prose-pre-bg: var(--bg);
-      --tw-prose-th-borders: var(--border);
-      --tw-prose-td-borders: var(--border);
-  }
-
-  .prose {
-      --tw-prose-body: var(--text);
-      --tw-prose-headings: var(--text);
-      --tw-prose-lead: var(--muted);
-      --tw-prose-links: var(--accent);
-      --tw-prose-bold: var(--text);
-      --tw-prose-counters: var(--muted);
-      --tw-prose-bullets: var(--border);
-      --tw-prose-hr: var(--border);
-      --tw-prose-quotes: var(--text);
-      --tw-prose-quote-borders: var(--border);
-      --tw-prose-captions: var(--muted);
-      --tw-prose-code: var(--text);
-      --tw-prose-pre-code: var(--text);
-      --tw-prose-pre-bg: var(--surface);
-      --tw-prose-th-borders: var(--border);
-      --tw-prose-td-borders: var(--border);
-  }
-  
-  [data-theme="light"] .prose-invert {
-      --tw-prose-body: var(--text);
-      --tw-prose-headings: var(--text);
-      --tw-prose-links: var(--accent);
-      --tw-prose-bold: var(--text);
-      --tw-prose-invert-body: var(--text);
-      --tw-prose-invert-headings: var(--text);
-      --tw-prose-invert-links: var(--accent);
+    background-color: #a78bfa; /* bg-purple-400 */
   }
 }

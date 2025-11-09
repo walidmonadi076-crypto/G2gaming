@@ -7,7 +7,6 @@ import Header from '@/components/Header';
 import '../styles/globals.css';
 import type { SocialLink } from '@/types';
 import { AdProvider } from '../contexts/AdContext';
-import { ThemeProvider } from '../contexts/ThemeContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -44,51 +43,45 @@ function MyApp({ Component, pageProps }: AppProps) {
   };
   
   if (isAdminPage) {
-    return (
-      <ThemeProvider>
-        <Component {...pageProps} />
-      </ThemeProvider>
-    );
+    return <Component {...pageProps} />;
   }
 
   return (
-    <ThemeProvider>
-      <AdProvider>
-        <div className={`bg-background text-text min-h-screen flex ${inter.variable} font-sans`}>
-          {isMobileSidebarOpen && (
-            <div
-              className="fixed inset-0 bg-black/60 z-50 md:hidden"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              aria-hidden="true"
-            ></div>
-          )}
-          <Sidebar
-            isExpanded={isSidebarExpanded}
-            onMouseEnter={() => setIsSidebarExpanded(true)}
-            onMouseLeave={() => setIsSidebarExpanded(false)}
-            isMobileOpen={isMobileSidebarOpen}
-            onMobileClose={() => setIsMobileSidebarOpen(false)}
-          />
+    <AdProvider>
+      <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans`}>
+        {isMobileSidebarOpen && (
           <div
-            className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
-              isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
-            }`}
-          >
-            <Header
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onSearchFocus={() => setSearchActive(true)}
-              onSearchBlur={() => setTimeout(() => setSearchActive(false), 200)}
-              onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-              socialLinks={socialLinks}
-            />
-            <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
-              <Component {...enhancedPageProps} />
-            </main>
-          </div>
+            className="fixed inset-0 bg-black/60 z-50 md:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-hidden="true"
+          ></div>
+        )}
+        <Sidebar
+          isExpanded={isSidebarExpanded}
+          onMouseEnter={() => setIsSidebarExpanded(true)}
+          onMouseLeave={() => setIsSidebarExpanded(false)}
+          isMobileOpen={isMobileSidebarOpen}
+          onMobileClose={() => setIsMobileSidebarOpen(false)}
+        />
+        <div
+          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+            isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
+          }`}
+        >
+          <Header
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSearchFocus={() => setSearchActive(true)}
+            onSearchBlur={() => setTimeout(() => setSearchActive(false), 200)}
+            onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            socialLinks={socialLinks}
+          />
+          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+            <Component {...enhancedPageProps} />
+          </main>
         </div>
-      </AdProvider>
-    </ThemeProvider>
+      </div>
+    </AdProvider>
   );
 }
 

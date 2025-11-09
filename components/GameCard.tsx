@@ -49,7 +49,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
   return (
     <Link 
       href={`/games/${game.slug}`}
-      className="block bg-surface rounded-2xl overflow-hidden group transform hover:-translate-y-1 transition-transform duration-200 cursor-pointer shadow-lg hover:shadow-accent/20"
+      className="block bg-gray-800 rounded-2xl overflow-hidden group transform hover:-translate-y-1 transition-transform duration-200 cursor-pointer shadow-lg hover:shadow-purple-500/20"
     >
       <div className={`relative ${getCardClasses()}`}>
         <Image 

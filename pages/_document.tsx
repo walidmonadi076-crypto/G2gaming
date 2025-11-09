@@ -52,22 +52,6 @@ class MyDocument extends Document {
           <script src="https://www.google.com/recaptcha/api.js" async defer></script>
         </Head>
         <body>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function() {
-                  function getInitialTheme() {
-                    const savedTheme = window.localStorage.getItem('site_theme');
-                    if (savedTheme) return savedTheme;
-                    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    return systemPrefersDark ? 'dark' : 'light';
-                  }
-                  const theme = getInitialTheme();
-                  document.documentElement.setAttribute('data-theme', theme);
-                })();
-              `,
-            }}
-          />
           <Main />
           <NextScript />
         </body>

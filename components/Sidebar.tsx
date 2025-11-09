@@ -39,16 +39,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
     <nav 
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={`fixed top-0 left-0 h-full bg-surface border-r border-border flex flex-col py-4 z-[60]
+        className={`fixed top-0 left-0 h-full bg-gray-800 border-r border-gray-700 flex flex-col py-4 z-[60]
                    transition-all duration-300 ease-in-out
                    ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
                    md:translate-x-0 
                    ${isExpanded ? 'md:w-64' : 'md:w-20'}
                    ${isFullyExpanded ? 'items-start' : 'items-center'}`}
     >
-      <div className={`flex items-center text-accent mb-6 w-full ${isFullyExpanded ? 'pl-6' : 'justify-center'}`}>
+      <div className={`flex items-center text-purple-500 mb-6 w-full ${isFullyExpanded ? 'pl-6' : 'justify-center'}`}>
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span className={`text-xl font-bold text-text whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-3 opacity-100' : 'w-0 opacity-0'}`}>
+        <span className={`text-xl font-bold text-white whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-3 opacity-100' : 'w-0 opacity-0'}`}>
             G2gaming
         </span>
       </div>
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
                 onClick={onMobileClose}
                 className={
                   `flex items-center p-3 rounded-lg transition-all duration-200
-                   ${isActive ? 'bg-accent text-white' : 'text-muted hover:bg-surface-alt hover:text-text'}
+                   ${isActive ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}
                    ${isFullyExpanded ? 'w-full' : 'w-12 h-12 justify-center'}`
                 }
                 title={isFullyExpanded ? '' : item.label}
@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
 
       <div className="mt-auto pt-4 w-full">
         <div className={`w-full px-4 mb-2 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
-            <h3 className={`text-xs font-semibold text-muted uppercase tracking-wider transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
+            <h3 className={`text-xs font-semibold text-gray-500 uppercase tracking-wider transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
                 Popular
             </h3>
         </div>
@@ -99,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
                           onClick={onMobileClose}
                           className={
                               `flex items-center p-3 rounded-lg transition-all duration-200
-                              ${isActive ? 'bg-accent text-white' : 'text-muted hover:bg-surface-alt hover:text-text'}
+                              ${isActive ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}
                               ${isFullyExpanded ? 'w-full' : 'w-12 h-12 justify-center'}`
                           }
                           title={isFullyExpanded ? '' : item.label}

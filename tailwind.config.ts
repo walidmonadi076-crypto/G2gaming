@@ -10,16 +10,6 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        background: 'var(--bg)',
-        surface: 'var(--surface)',
-        'surface-alt': 'var(--surface-alt)',
-        border: 'var(--border)',
-        text: 'var(--text)',
-        muted: 'var(--muted)',
-        accent: 'var(--accent)',
-        'accent-600': 'var(--accent-600)',
-      },
       fontFamily: {
         sans: ['var(--font-inter)', 'sans-serif'],
       },
