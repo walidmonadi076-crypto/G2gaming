@@ -14,6 +14,24 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
+// Define default settings to be used for the initial server render and as a fallback.
+// This prevents crashes during the build process.
+const defaultSettings: SiteSettings = {
+  site_name: 'G2gaming',
+  site_icon_url: '/favicon.ico',
+  ogads_script_src: '',
+  hero_title: 'Welcome to G2gaming',
+  hero_subtitle: 'Your ultimate gaming destination.',
+  hero_button_text: 'Explore Games',
+  hero_button_url: '/games',
+  hero_bg_url: '',
+  promo_enabled: false,
+  promo_text: '',
+  promo_button_text: '',
+  promo_button_url: '',
+  recaptcha_site_key: '',
+};
+
 type MyAppProps = AppProps & {
   pageProps: {
     settings: SiteSettings;
@@ -27,21 +45,53 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  
+  // State to hold the site settings. It's initialized with props from getInitialProps
+  // (which will be our defaults) and then updated client-side.
+  const [settings, setSettings] = useState<SiteSettings>(pageProps.settings);
 
-  const isAdminPage = router.pathname.startsWith('/admin');
+  // The admin panel should not have the public layout. We identify the login page
+  // specifically, allowing other `/admin/*` routes (like previews) to use the public layout.
+  const isAdminPage = router.pathname === '/admin/login';
+
 
   useEffect(() => {
-    if (!isAdminPage) {
-      fetch('/api/social-links')
-        .then(res => res.json())
-        .then(data => {
+    // This effect runs only on the client-side after hydration.
+    // It fetches the latest site settings and social links from the API.
+    const fetchClientSideData = async () => {
+      // Fetch dynamic site settings.
+      try {
+        const settingsRes = await fetch('/api/settings');
+        if (settingsRes.ok) {
+          const data = await settingsRes.json();
+          setSettings(data);
+        } else {
+          console.error('Failed to fetch settings on client, using defaults.');
+        }
+      } catch (error) {
+        console.error('Error fetching settings, using defaults:', error);
+      }
+      
+      // Fetch social links if not on an admin page.
+      if (!isAdminPage) {
+        try {
+          const socialLinksRes = await fetch('/api/social-links');
+          if (socialLinksRes.ok) {
+            const data = await socialLinksRes.json();
             if(Array.isArray(data)) {
-                setSocialLinks(data)
+                setSocialLinks(data);
             }
-        })
-        .catch(console.error);
-    }
+          }
+        } catch (error) {
+           console.error('Failed to fetch social links:', error);
+        }
+      }
+    };
+    
+    fetchClientSideData();
+    
   }, [isAdminPage]);
+
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -64,7 +114,9 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   return (
     <ThemeProvider>
       <AdProvider>
-        <SettingsProvider value={pageProps.settings}>
+        {/* The SettingsProvider now uses the stateful `settings` variable,
+            which will update automatically after the client-side fetch. */}
+        <SettingsProvider value={settings}>
           <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans`}>
             {isMobileSidebarOpen && (
               <div
@@ -104,40 +156,13 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   );
 }
 
+// FIX: getInitialProps is simplified to avoid server-side/build-time fetches.
+// It now only provides default settings for the initial render.
+// The actual, dynamic settings are fetched on the client-side in the `useEffect` hook.
+// This resolves the build error caused by trying to fetch from an undefined URL.
 MyApp.getInitialProps = async (appContext: AppContext) => {
   const appProps = await App.getInitialProps(appContext);
-  try {
-    const isServer = !!appContext.ctx.req;
-    const host = isServer ? appContext.ctx.req?.headers.host : window.location.host;
-    const protocol = host?.startsWith('localhost') ? 'http:' : 'https:';
-    const baseUrl = `${protocol}//${host}`;
-    
-    const settingsRes = await fetch(`${baseUrl}/api/settings`);
-    if (!settingsRes.ok) {
-        throw new Error(`Failed to fetch settings: ${settingsRes.statusText}`);
-    }
-    const settings = await settingsRes.json();
-    appProps.pageProps.settings = settings;
-
-  } catch (e) {
-    console.error("Could not fetch site settings in _app", e);
-    // Provide default settings if the fetch fails to prevent crash
-    appProps.pageProps.settings = {
-      site_name: 'G2gaming',
-      site_icon_url: '/favicon.ico',
-      ogads_script_src: '',
-      hero_title: 'Welcome to G2gaming',
-      hero_subtitle: 'Your ultimate gaming destination.',
-      hero_button_text: 'Explore Games',
-      hero_button_url: '/games',
-      hero_bg_url: '',
-      promo_enabled: false,
-      promo_text: '',
-      promo_button_text: '',
-      promo_button_url: '',
-      recaptcha_site_key: '',
-    };
-  }
+  appProps.pageProps.settings = defaultSettings;
   return appProps;
 };
 

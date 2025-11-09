@@ -14,7 +14,7 @@ interface AdminFormProps {
 }
 
 // Define which types can be previewed
-const PREVIEWABLE_TYPES: ItemType[] = ['games', 'blogs', 'products'];
+const PREVIEWABLE_TYPES: ItemType[] = ['games', 'blogs', 'products', 'social-links'];
 
 export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormProps) {
   const [formData, setFormData] = useState<any>({});

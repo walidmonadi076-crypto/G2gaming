@@ -7,6 +7,8 @@ interface SEOProps {
   url?: string;
   keywords?: string[];
   schema?: Record<string, any>;
+  // FIX: Added noindex prop to allow pages to opt-out of search engine indexing.
+  noindex?: boolean;
 }
 
 export default function SEO({
@@ -15,7 +17,8 @@ export default function SEO({
   image = 'https://picsum.photos/seed/ogimage/1200/630',
   url = '',
   keywords = ['G2gaming', 'download games', 'free games', 'pc games', 'gaming guides', 'gaming tips', 'gaming techniques', 'gaming gear', 'gaming accessories', 'gaming products'],
-  schema
+  schema,
+  noindex,
 }: SEOProps) {
   const fullTitle = title.includes('G2gaming') ? title : `${title} | G2gaming`;
   const fullUrl = url ? `https://yoursite.com${url}` : 'https://yoursite.com';
@@ -25,6 +28,9 @@ export default function SEO({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords.join(', ')} />
+
+      {/* FIX: Conditionally render the 'noindex' meta tag for search engines. */}
+      {noindex && <meta name="robots" content="noindex, nofollow" />}
 
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />

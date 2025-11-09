@@ -1,24 +1,22 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import GamePreview from './previews/GamePreview';
-import BlogPreview from './previews/BlogPreview';
-import ProductPreview from './previews/ProductPreview';
-import { Game, BlogPost, Product } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import SocialLinkPreview from './previews/SocialLinkPreview';
+import { Game, BlogPost, Product, SocialLink } from '../types';
 
-type PreviewData = Partial<Game> | Partial<BlogPost> | Partial<Product>;
-type PreviewType = 'games' | 'blogs' | 'products';
+type PreviewData = Partial<Game> | Partial<BlogPost> | Partial<Product> | Partial<SocialLink>;
+type FormType = 'games' | 'blogs' | 'products' | 'social-links';
 
 interface AdminPreviewProps {
   data: PreviewData;
-  type: PreviewType;
+  type: FormType;
 }
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 
 const deviceDimensions: Record<Device, { width: string; height: string }> = {
-  desktop: { width: '100%', height: '100%' }, // Fills container
+  desktop: { width: '100%', height: '100%' },
   tablet: { width: '768px', height: '1024px' },
   mobile: { width: '375px', height: '667px' },
 };
@@ -42,19 +40,27 @@ const DeviceButton: React.FC<{
 
 const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
   const [device, setDevice] = useState<Device>('desktop');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
-  const renderPreviewComponent = () => {
-    switch (type) {
-      case 'games':
-        return <GamePreview data={data as Partial<Game>} />;
-      case 'blogs':
-        return <BlogPreview data={data as Partial<BlogPost>} />;
-      case 'products':
-        return <ProductPreview data={data as Partial<Product>} />;
-      default:
-        return <div className="text-center text-gray-500">Preview not available for this type.</div>;
-    }
+  // Map plural form types to singular preview page names
+  const previewPageMap: Partial<Record<FormType, string>> = {
+    games: 'game',
+    blogs: 'blog',
+    products: 'product',
   };
+
+  const previewTarget = previewPageMap[type];
+
+  useEffect(() => {
+    if (iframeRef.current && iframeLoaded && data && previewTarget) {
+      // Send data to the iframe for live updates
+      iframeRef.current.contentWindow?.postMessage(
+        { type: 'preview-update', payload: data },
+        window.location.origin
+      );
+    }
+  }, [data, iframeLoaded, previewTarget]);
 
   const dimensions = deviceDimensions[device];
 
@@ -73,18 +79,27 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
       </div>
       <div className="flex-grow flex items-center justify-center overflow-auto bg-gray-800 rounded-md p-2">
         <div
-          id="preview-frame"
-          className="bg-gray-900 shadow-2xl rounded-lg border-2 border-gray-700 overflow-hidden transition-all duration-500 ease-in-out"
+          id="preview-frame-container"
+          className="shadow-2xl rounded-lg border-2 border-gray-700 overflow-hidden transition-all duration-500 ease-in-out flex items-center justify-center"
           style={{ width: dimensions.width, height: dimensions.height, maxWidth: '100%', maxHeight: '100%' }}
         >
-          <div className="w-full h-full overflow-y-auto">
-            {/* We will simulate the app's layout here */}
-            <div className="bg-gray-900 text-white min-h-full">
-              <main className="p-4 sm:p-6 lg:p-8">
-                {renderPreviewComponent()}
-              </main>
+          {previewTarget ? (
+            <iframe
+              ref={iframeRef}
+              src={`/admin/previews/${previewTarget}`}
+              title={`${previewTarget} Preview`}
+              className="w-full h-full bg-gray-900"
+              onLoad={() => setIframeLoaded(true)}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          ) : type === 'social-links' ? (
+            // Direct component rendering for types without a full page preview
+            <div className="w-full h-full overflow-y-auto">
+                 <SocialLinkPreview data={data as Partial<SocialLink>} />
             </div>
-          </div>
+          ) : (
+            <div className="text-center text-gray-500">Preview not available for this type.</div>
+          )}
         </div>
       </div>
     </div>
