@@ -31,39 +31,45 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
 
   useEffect(() => {
     const container = adContainerRef.current;
-    // Only run if the container exists and we have ad code to inject.
     if (!container || !ad?.code) {
       return;
     }
 
-    // Set the innerHTML. This will render non-script tags but not execute scripts.
+    // Set the innerHTML, which creates the necessary DOM nodes (like the ad's target div)
+    // but does not execute the script tags for security reasons.
     container.innerHTML = ad.code;
 
-    // Find all the script tags that were injected.
+    // Find the inert script tags that were just added.
     const scripts = Array.from(container.getElementsByTagName('script'));
+    
     scripts.forEach(oldScript => {
-      // To execute the script, we need to create a new script element.
+      // To execute a script, a new script element must be created and added to the DOM.
       const newScript = document.createElement('script');
       
-      // Copy all attributes from the original script to the new one.
+      // Copy all attributes from the original script to the new one (e.g., src, data attributes).
       Array.from(oldScript.attributes).forEach(attr => {
         newScript.setAttribute(attr.name, attr.value);
       });
+      
+      // Set async to false. Dynamically added scripts are async by default.
+      // Some ad scripts may depend on a more sequential execution order.
+      newScript.async = false;
       
       // Copy the inline script content.
       newScript.text = oldScript.text;
       
       // Replace the old, non-executable script with the new, executable one.
+      // This ensures it runs in the correct place within the ad snippet's structure.
       oldScript.parentNode?.replaceChild(newScript, oldScript);
     });
 
-    // Cleanup function: remove the ad content when the component unmounts or the ad code changes.
+    // Cleanup function to remove ad content when the component unmounts or ad code changes.
     return () => {
       if (container) {
         container.innerHTML = '';
       }
     };
-  }, [ad?.code]); // The effect depends on the ad code.
+  }, [ad?.code]); // Re-run this effect only when the ad code changes.
 
   const adDimensionsStyle = { width: `${width}px`, height: `${height}px`, maxWidth: '100%' };
 
@@ -91,7 +97,7 @@ const Ad: React.FC<AdProps> = ({ placement }) => {
     );
   }
   
-  // If an ad code exists, render the container that the useEffect will populate.
+  // Render the container that the useEffect will populate with the executable ad code.
   return <div ref={adContainerRef} style={adDimensionsStyle} />;
 };
 
