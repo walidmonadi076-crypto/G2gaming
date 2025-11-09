@@ -1,19 +1,21 @@
 /** @type {import('next').NextConfig} */
 
-// Define a comprehensive Content Security Policy to allow ad scripts while maintaining security.
+// Define a permissive Content Security Policy to ensure ad networks can load all necessary resources.
 const csp = [
-  "default-src 'self'",
-  // Allow scripts from any HTTPS source, plus 'unsafe-inline' and 'unsafe-eval' which are often required by ad/analytics scripts.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:",
+  // Fallback for directives not explicitly set. Allows loading resources from any source (*).
+  // 'unsafe-inline' and 'unsafe-eval' are often required by ad and analytics scripts.
+  "default-src 'self' * 'unsafe-inline' 'unsafe-eval' data: blob:",
+  // Allow scripts from any source, plus inline scripts and dynamic execution.
+  "script-src 'self' * 'unsafe-inline' 'unsafe-eval'",
+  // Allow iframes from any source.
+  "frame-src 'self' *",
+  // Allow network connections (fetch, XHR, etc.) to any source.
+  "connect-src 'self' *",
+  // Allow images from any source, including data URIs and blobs.
+  "img-src 'self' * data: blob:",
   "style-src 'self' 'unsafe-inline'",
-  // Allow images and frames from any HTTPS source to accommodate ads and dynamic content.
-  "img-src 'self' data: https:",
-  "frame-src 'self' https:",
-  // Allow connections to any HTTPS source for ads and analytics.
-  "connect-src 'self' https:",
-  // Allow media from specific known sources.
+  "font-src 'self' data:",
   "media-src 'self' https://www.w3schools.com",
-  "font-src 'self'",
   // Lock down other directives for better security.
   "object-src 'none'",
   "base-uri 'self'",
