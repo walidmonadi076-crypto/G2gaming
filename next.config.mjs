@@ -1,5 +1,26 @@
 /** @type {import('next').NextConfig} */
 
+// Define a comprehensive Content Security Policy to allow ad scripts while maintaining security.
+const csp = [
+  "default-src 'self'",
+  // Allow scripts from any HTTPS source, plus 'unsafe-inline' and 'unsafe-eval' which are often required by ad/analytics scripts.
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:",
+  "style-src 'self' 'unsafe-inline'",
+  // Allow images and frames from any HTTPS source to accommodate ads and dynamic content.
+  "img-src 'self' data: https:",
+  "frame-src 'self' https:",
+  // Allow connections for Google Analytics.
+  "connect-src 'self' https://www.google-analytics.com",
+  // Allow media from specific known sources.
+  "media-src 'self' https://www.w3schools.com",
+  "font-src 'self'",
+  // Lock down other directives for better security.
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
 const securityHeaders = [
   {
     key: 'X-Content-Type-Options',
@@ -12,6 +33,16 @@ const securityHeaders = [
   {
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload',
+  },
+  {
+    // A sensible default that helps prevent referrer leakage while being compatible with ad networks.
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin'
+  },
+  {
+    // Apply the Content Security Policy to allow external ad scripts to load.
+    key: 'Content-Security-Policy',
+    value: csp.replace(/\s{2,}/g, ' ').trim()
   }
 ];
 
