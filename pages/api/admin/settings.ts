@@ -11,7 +11,8 @@ const SETTING_KEYS = [
   'recaptcha_site_key'
 ];
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// FIX: Add method to NextApiRequest type to resolve TypeScript error.
+export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   const client = await getDbClient();
 
   try {

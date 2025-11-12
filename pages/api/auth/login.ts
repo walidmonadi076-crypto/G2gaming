@@ -6,7 +6,8 @@ const loginAttempts = new Map<string, { count: number; expiry: number }>();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_PERIOD = 5 * 60 * 1000; // 5 minutes
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// FIX: Add method, headers, and socket to NextApiRequest type to resolve TypeScript errors.
+export default async function handler(req: NextApiRequest & { method?: string; headers: any; socket: any; }, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }

@@ -2,8 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSiteSettings } from '../../../lib/data';
 import type { SiteSettings } from '../../../types';
 
+// FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(
-  req: NextApiRequest,
+  req: NextApiRequest & { method?: string },
   res: NextApiResponse<SiteSettings | { error: string }>
 ) {
   if (req.method !== 'GET') {

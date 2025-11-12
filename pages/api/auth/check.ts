@@ -13,14 +13,17 @@ export function isAuthorized(req: NextApiRequest): boolean {
     return false;
   }
 
-  const isMutatingMethod = ['POST', 'PUT', 'DELETE'].includes(req.method || '');
+  // FIX: Cast req to include properties from http.IncomingMessage to fix TypeScript errors.
+  const extendedReq = req as { method?: string; headers: any; socket: any; };
+
+  const isMutatingMethod = ['POST', 'PUT', 'DELETE'].includes(extendedReq.method || '');
   if (isMutatingMethod) {
-    const csrfTokenFromHeader = req.headers['x-csrf-token'] as string;
+    const csrfTokenFromHeader = extendedReq.headers['x-csrf-token'] as string;
     // Utilisation de l'optional chaining ici aussi pour la robustesse.
     const csrfTokenFromCookie = req.cookies?.csrf_token;
 
     if (!csrfTokenFromHeader || !csrfTokenFromCookie || csrfTokenFromHeader !== csrfTokenFromCookie) {
-      console.warn(`Tentative d'action non autorisée (échec CSRF) depuis l'IP : ${req.socket.remoteAddress}`);
+      console.warn(`Tentative d'action non autorisée (échec CSRF) depuis l'IP : ${extendedReq.socket.remoteAddress}`);
       return false;
     }
   }

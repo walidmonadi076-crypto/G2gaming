@@ -28,7 +28,8 @@ async function generateUniqueSlug(client: any, title: string, currentId: number 
   return slug;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// FIX: Add method to NextApiRequest type to resolve TypeScript error.
+export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   const client = await getDbClient();
 
   try {
@@ -43,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const sortOrder = req.query.sortOrder as string || 'desc';
         const offset = (page - 1) * limit;
 
-        const allowedSortBy = ['id', 'title', 'category'];
+        const allowedSortBy = ['id', 'title', 'category', 'view_count'];
         const sanitizedSortBy = allowedSortBy.includes(sortBy) ? sortBy : 'id';
         const sanitizedSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
@@ -62,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const itemsResult = await client.query(`
             SELECT
                 id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
-                video_url AS "videoUrl", download_url AS "downloadUrl", gallery
+                video_url AS "videoUrl", download_url AS "downloadUrl", gallery, view_count
             FROM games
             ${whereClause}
             ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -44,6 +43,24 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
         setLightboxIndex(index);
         setLightboxOpen(true);
     };
+
+    useEffect(() => {
+        // Track view on page load
+        if (router.isReady && game.slug && process.env.NODE_ENV === 'production') {
+            const trackView = async () => {
+                try {
+                    await fetch('/api/views/track', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: 'games', slug: game.slug }),
+                    });
+                } catch (error) {
+                    console.error('Failed to track view:', error);
+                }
+            };
+            trackView();
+        }
+    }, [router.isReady, game.slug]);
 
     useEffect(() => {
         const handleUnlock = () => {

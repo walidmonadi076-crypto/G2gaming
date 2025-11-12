@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,6 +17,24 @@ interface BlogDetailPageProps { post: BlogPost; comments: Comment[]; }
 const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initialComments }) => {
     const router = useRouter();
     const [comments, setComments] = useState<Comment[]>(initialComments);
+
+    useEffect(() => {
+        if (router.isReady && post.slug && process.env.NODE_ENV === 'production') {
+            // Fire-and-forget request to track view
+            const trackView = async () => {
+                try {
+                    await fetch('/api/views/track', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: 'blogs', slug: post.slug }),
+                    });
+                } catch (error) {
+                    console.error('Failed to track view:', error);
+                }
+            };
+            trackView();
+        }
+    }, [router.isReady, post.slug]);
 
     if (router.isFallback) {
         return <div className="text-center p-10">Chargement de l'article...</div>;

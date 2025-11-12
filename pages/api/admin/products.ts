@@ -28,7 +28,8 @@ async function generateUniqueSlug(client: any, name: string, currentId: number |
   return slug;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// FIX: Add method to NextApiRequest type to resolve TypeScript error.
+export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   const client = await getDbClient();
 
   try {
@@ -43,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const sortOrder = req.query.sortOrder as string || 'desc';
       const offset = (page - 1) * limit;
 
-      const allowedSortBy = ['id', 'name', 'category'];
+      const allowedSortBy = ['id', 'name', 'category', 'view_count'];
       const sanitizedSortBy = allowedSortBy.includes(sortBy) ? sortBy : 'id';
       const sanitizedSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
@@ -60,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       queryParams.push(limit, offset);
       const itemsResult = await client.query(`
-        SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category
+        SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category, view_count
         FROM products
         ${whereClause}
         ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}

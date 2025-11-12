@@ -3,7 +3,8 @@ import { getDbClient } from '../../../db';
 import { isAuthorized } from '../auth/check';
 import { Ad } from '../../../types';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// FIX: Add method to NextApiRequest type to resolve TypeScript error.
+export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   if (!isAuthorized(req)) {
     return res.status(401).json({ error: 'Non autorisé' });
   }

@@ -12,6 +12,7 @@ export interface Game {
   videoUrl?: string;
   downloadUrl: string;
   gallery: string[];
+  view_count?: number;
 }
 
 export interface Product {
@@ -24,6 +25,7 @@ export interface Product {
   description: string;
   gallery: string[];
   category: string;
+  view_count?: number;
 }
 
 export interface Comment {
@@ -53,6 +55,7 @@ export interface BlogPost {
   affiliateUrl: string;
   content: string; // This will be markdown/html string
   category: string;
+  view_count?: number;
 }
 
 export interface SocialLink {
