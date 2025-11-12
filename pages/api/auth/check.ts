@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // Vérification simple de la présence du cookie d'authentification.
@@ -14,7 +15,9 @@ export function isAuthorized(req: NextApiRequest): boolean {
   }
 
   // FIX: Cast req to include properties from http.IncomingMessage to fix TypeScript errors.
-  const extendedReq = req as { method?: string; headers: any; socket: any; };
+  // Using 'as unknown' to bypass overly strict type overlap checks when TypeScript cannot see
+  // the full type of the NextApiRequest object in this context.
+  const extendedReq = req as unknown as { method?: string; headers: any; socket: any; };
 
   const isMutatingMethod = ['POST', 'PUT', 'DELETE'].includes(extendedReq.method || '');
   if (isMutatingMethod) {

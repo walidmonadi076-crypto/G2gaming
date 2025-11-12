@@ -24,8 +24,10 @@ async function fetchImage(url: string) {
         }
         const buffer = Buffer.from(await response.arrayBuffer());
         return {
-            mimeType,
-            data: buffer.toString('base64'),
+            inlineData: {
+                mimeType,
+                data: buffer.toString('base64'),
+            },
         };
     } catch (error) {
         if (error instanceof Error && error.name === 'TimeoutError') {

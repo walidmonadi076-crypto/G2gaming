@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -54,6 +55,176 @@ interface AnalyticsData {
   topBlogs: TopItem[];
   topProducts: TopItem[];
 }
+
+const TopContentList: React.FC<{title: string, items: TopItem[], type: 'games' | 'blogs' | 'products'}> = ({title, items, type}) => {
+    const maxViews = Math.max(...items.map(item => item.view_count), 1);
+
+    return (
+        <div className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-4">{title}</h3>
+            {items.length === 0 ? <p className="text-gray-400 text-sm">Pas encore de vues.</p> : (
+                <ol className="space-y-3">
+                    {items.map((item, index) => (
+                        <li key={item.slug} className="text-sm">
+                            <div className="flex justify-between items-center mb-1">
+                                <a href={`/${type}/${item.slug}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-purple-400 transition-colors truncate pr-4">{index + 1}. {item.name}</a>
+                                <span className="font-bold text-gray-300">{item.view_count.toLocaleString()} vues</span>
+                            </div>
+                            <div className="h-2 bg-gray-700 rounded-full">
+                                <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" style={{ width: `${(item.view_count / maxViews) * 100}%` }}></div>
+                            </div>
+                        </li>
+                    ))}
+                </ol>
+            )}
+        </div>
+    );
+};
+
+const AnalyticsPanel: React.FC<{ loading: boolean; data: AnalyticsData | null }> = ({ loading, data }) => {
+    if (loading) {
+        return (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
+                <div className="bg-gray-800 rounded-lg h-64"></div>
+                <div className="bg-gray-800 rounded-lg h-64"></div>
+                <div className="bg-gray-800 rounded-lg h-64"></div>
+            </div>
+        );
+    }
+
+    if (!data) {
+        return <div className="text-center py-10 text-gray-400">Aucune donnée d'analyse disponible.</div>;
+    }
+
+    return (
+      <div className="space-y-8">
+          <h2 className="text-2xl font-bold">Analyse du Site</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <TopContentList title="Jeux les Plus Vus" items={data.topGames} type="games" />
+              <TopContentList title="Blogs les Plus Lus" items={data.topBlogs} type="blogs" />
+              <TopContentList title="Produits les Plus Populaires" items={data.topProducts} type="products" />
+          </div>
+      </div>
+    );
+};
+
+const AIToolsPanel: React.FC<{ addToast: (message: string, type: ToastType) => void }> = ({ addToast }) => {
+    const [activeTool, setActiveTool] = useState<'text' | 'image'>('text');
+    const [textPrompt, setTextPrompt] = useState('');
+    const [textResult, setTextResult] = useState('');
+    const [isTextLoading, setIsTextLoading] = useState(false);
+    const [imageUrl, setImageUrl] = useState('');
+    const [imagePrompt, setImagePrompt] = useState('Is this image appropriate for a family-friendly gaming website? Does it contain any violence, gore, or adult content?');
+    const [imageResult, setImageResult] = useState('');
+    const [isImageLoading, setIsImageLoading] = useState(false);
+
+    const handleGenerateText = async () => {
+        if (!textPrompt.trim()) return addToast('Le prompt ne peut pas être vide.', 'error');
+        const csrfToken = getCookie('csrf_token');
+        if (!csrfToken) return addToast('Erreur de session.', 'error');
+
+        setIsTextLoading(true);
+        setTextResult('');
+        try {
+            const res = await fetch('/api/admin/ai/generate-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                body: JSON.stringify({ prompt: textPrompt }),
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Échec de la génération de texte.');
+            }
+            const data = await res.json();
+            setTextResult(data.text);
+        } catch (error) {
+            addToast((error as Error).message, 'error');
+        } finally {
+            setIsTextLoading(false);
+        }
+    };
+
+    const handleAnalyzeImage = async () => {
+        if (!imageUrl.trim() || !imagePrompt.trim()) return addToast('L\'URL de l\'image et le prompt sont requis.', 'error');
+        const csrfToken = getCookie('csrf_token');
+        if (!csrfToken) return addToast('Erreur de session.', 'error');
+
+        setIsImageLoading(true);
+        setImageResult('');
+        try {
+            const res = await fetch('/api/admin/ai/analyze-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                body: JSON.stringify({ imageUrl, prompt: imagePrompt }),
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Échec de l\'analyse de l\'image.');
+            }
+            const data = await res.json();
+            setImageResult(data.text);
+        } catch (error) {
+            addToast((error as Error).message, 'error');
+        } finally {
+            setIsImageLoading(false);
+        }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        addToast('Copié dans le presse-papiers!', 'success');
+    };
+
+    return (
+        <div className="bg-gray-800 rounded-lg p-6 space-y-6">
+            <div className="flex gap-2 border-b border-gray-700 pb-4">
+                <button onClick={() => setActiveTool('text')} className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTool === 'text' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Générateur de Texte</button>
+                <button onClick={() => setActiveTool('image')} className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTool === 'image' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Analyseur d'Image</button>
+            </div>
+
+            {activeTool === 'text' && (
+                <div className="space-y-4 animate-fade-in">
+                    <h3 className="text-xl font-bold">Générateur de Texte</h3>
+                    <div>
+                        <label htmlFor="text-prompt" className="block text-sm font-medium text-gray-300 mb-1">Votre demande</label>
+                        <textarea id="text-prompt" value={textPrompt} onChange={(e) => setTextPrompt(e.target.value)} rows={4} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ex: Écris une description marketing pour un jeu de course futuriste appelé 'CyberDrift'." />
+                    </div>
+                    <button onClick={handleGenerateText} disabled={isTextLoading} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">{isTextLoading ? 'Génération...' : 'Générer'}</button>
+                    {textResult && (
+                        <div className="bg-gray-900 p-4 rounded-lg relative">
+                            <h4 className="text-lg font-semibold mb-2 text-gray-200">Résultat</h4>
+                            <button onClick={() => copyToClipboard(textResult)} className="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 px-3 py-1 text-xs font-semibold rounded-md">Copier</button>
+                            <div className="prose prose-invert prose-sm max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: markdownToHtml(textResult) }} />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {activeTool === 'image' && (
+                <div className="space-y-4 animate-fade-in">
+                    <h3 className="text-xl font-bold">Analyseur d'Image</h3>
+                    <div>
+                        <label htmlFor="image-url" className="block text-sm font-medium text-gray-300 mb-1">URL de l'image</label>
+                        <input id="image-url" type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="https://..." />
+                    </div>
+                    {imageUrl && <div className="max-w-xs"><Image src={imageUrl} alt="Aperçu" width={400} height={300} className="object-contain rounded-md" onError={() => addToast("Impossible de charger l'image depuis l'URL.", 'error')} /></div>}
+                    <div>
+                        <label htmlFor="image-prompt" className="block text-sm font-medium text-gray-300 mb-1">Votre question</label>
+                        <textarea id="image-prompt" value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} rows={3} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                    <button onClick={handleAnalyzeImage} disabled={isImageLoading} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">{isImageLoading ? 'Analyse...' : 'Analyser l\'Image'}</button>
+                    {imageResult && (
+                        <div className="bg-gray-900 p-4 rounded-lg">
+                            <h4 className="text-lg font-semibold mb-2 text-gray-200">Résultat de l'analyse</h4>
+                            <div className="prose prose-invert prose-sm max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: markdownToHtml(imageResult) }} />
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -331,175 +502,6 @@ export default function AdminPanel() {
     }
     setSortConfig({ key, direction });
   };
-
-  const AnalyticsPanel = () => {
-      if (loading) {
-          return (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
-                  <div className="bg-gray-800 rounded-lg h-64"></div>
-                  <div className="bg-gray-800 rounded-lg h-64"></div>
-                  <div className="bg-gray-800 rounded-lg h-64"></div>
-              </div>
-          );
-      }
-
-      if (!analyticsData) {
-          return <div className="text-center py-10 text-gray-400">Aucune donnée d'analyse disponible.</div>;
-      }
-      
-      const TopContentList: React.FC<{title: string, items: TopItem[], type: 'games' | 'blogs' | 'products'}> = ({title, items, type}) => {
-          const maxViews = Math.max(...items.map(item => item.view_count), 1);
-
-          return (
-              <div className="bg-gray-800 rounded-lg p-6">
-                  <h3 className="text-xl font-bold mb-4">{title}</h3>
-                  {items.length === 0 ? <p className="text-gray-400 text-sm">Pas encore de vues.</p> : (
-                      <ol className="space-y-3">
-                          {items.map((item, index) => (
-                              <li key={item.slug} className="text-sm">
-                                  <div className="flex justify-between items-center mb-1">
-                                      <a href={`/${type}/${item.slug}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-purple-400 transition-colors truncate pr-4">{index + 1}. {item.name}</a>
-                                      <span className="font-bold text-gray-300">{item.view_count.toLocaleString()} vues</span>
-                                  </div>
-                                  <div className="h-2 bg-gray-700 rounded-full">
-                                      <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" style={{ width: `${(item.view_count / maxViews) * 100}%` }}></div>
-                                  </div>
-                              </li>
-                          ))}
-                      </ol>
-                  )}
-              </div>
-          );
-      };
-
-      return (
-        <div className="space-y-8">
-            <h2 className="text-2xl font-bold">Analyse du Site</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <TopContentList title="Jeux les Plus Vus" items={analyticsData.topGames} type="games" />
-                <TopContentList title="Blogs les Plus Lus" items={analyticsData.topBlogs} type="blogs" />
-                <TopContentList title="Produits les Plus Populaires" items={analyticsData.topProducts} type="products" />
-            </div>
-        </div>
-      );
-  };
-
-  const AIToolsPanel = () => {
-      const [activeTool, setActiveTool] = useState<'text' | 'image'>('text');
-      const [textPrompt, setTextPrompt] = useState('');
-      const [textResult, setTextResult] = useState('');
-      const [isTextLoading, setIsTextLoading] = useState(false);
-      const [imageUrl, setImageUrl] = useState('');
-      const [imagePrompt, setImagePrompt] = useState('Is this image appropriate for a family-friendly gaming website? Does it contain any violence, gore, or adult content?');
-      const [imageResult, setImageResult] = useState('');
-      const [isImageLoading, setIsImageLoading] = useState(false);
-
-      const handleGenerateText = async () => {
-          if (!textPrompt.trim()) return addToast('Le prompt ne peut pas être vide.', 'error');
-          const csrfToken = getCookie('csrf_token');
-          if (!csrfToken) return addToast('Erreur de session.', 'error');
-
-          setIsTextLoading(true);
-          setTextResult('');
-          try {
-              const res = await fetch('/api/admin/ai/generate-text', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                  body: JSON.stringify({ prompt: textPrompt }),
-              });
-              if (!res.ok) {
-                  const error = await res.json();
-                  throw new Error(error.error || 'Échec de la génération de texte.');
-              }
-              const data = await res.json();
-              setTextResult(data.text);
-          } catch (error) {
-              addToast((error as Error).message, 'error');
-          } finally {
-              setIsTextLoading(false);
-          }
-      };
-
-      const handleAnalyzeImage = async () => {
-          if (!imageUrl.trim() || !imagePrompt.trim()) return addToast('L\'URL de l\'image et le prompt sont requis.', 'error');
-          const csrfToken = getCookie('csrf_token');
-          if (!csrfToken) return addToast('Erreur de session.', 'error');
-
-          setIsImageLoading(true);
-          setImageResult('');
-          try {
-              const res = await fetch('/api/admin/ai/analyze-image', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                  body: JSON.stringify({ imageUrl, prompt: imagePrompt }),
-              });
-              if (!res.ok) {
-                  const error = await res.json();
-                  throw new Error(error.error || 'Échec de l\'analyse de l\'image.');
-              }
-              const data = await res.json();
-              setImageResult(data.text);
-          } catch (error) {
-              addToast((error as Error).message, 'error');
-          } finally {
-              setIsImageLoading(false);
-          }
-      };
-
-      const copyToClipboard = (text: string) => {
-          navigator.clipboard.writeText(text);
-          addToast('Copié dans le presse-papiers!', 'success');
-      };
-
-      return (
-          <div className="bg-gray-800 rounded-lg p-6 space-y-6">
-              <div className="flex gap-2 border-b border-gray-700 pb-4">
-                  <button onClick={() => setActiveTool('text')} className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTool === 'text' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Générateur de Texte</button>
-                  <button onClick={() => setActiveTool('image')} className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTool === 'image' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Analyseur d'Image</button>
-              </div>
-
-              {activeTool === 'text' && (
-                  <div className="space-y-4 animate-fade-in">
-                      <h3 className="text-xl font-bold">Générateur de Texte</h3>
-                      <div>
-                          <label htmlFor="text-prompt" className="block text-sm font-medium text-gray-300 mb-1">Votre demande</label>
-                          <textarea id="text-prompt" value={textPrompt} onChange={(e) => setTextPrompt(e.target.value)} rows={4} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ex: Écris une description marketing pour un jeu de course futuriste appelé 'CyberDrift'." />
-                      </div>
-                      <button onClick={handleGenerateText} disabled={isTextLoading} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">{isTextLoading ? 'Génération...' : 'Générer'}</button>
-                      {textResult && (
-                          <div className="bg-gray-900 p-4 rounded-lg relative">
-                              <h4 className="text-lg font-semibold mb-2 text-gray-200">Résultat</h4>
-                              <button onClick={() => copyToClipboard(textResult)} className="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 px-3 py-1 text-xs font-semibold rounded-md">Copier</button>
-                              <div className="prose prose-invert prose-sm max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: markdownToHtml(textResult) }} />
-                          </div>
-                      )}
-                  </div>
-              )}
-
-              {activeTool === 'image' && (
-                  <div className="space-y-4 animate-fade-in">
-                      <h3 className="text-xl font-bold">Analyseur d'Image</h3>
-                      <div>
-                          <label htmlFor="image-url" className="block text-sm font-medium text-gray-300 mb-1">URL de l'image</label>
-                          <input id="image-url" type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="https://..." />
-                      </div>
-                      {imageUrl && <div className="max-w-xs"><Image src={imageUrl} alt="Aperçu" width={400} height={300} className="object-contain rounded-md" onError={() => addToast("Impossible de charger l'image depuis l'URL.", 'error')} /></div>}
-                      <div>
-                          <label htmlFor="image-prompt" className="block text-sm font-medium text-gray-300 mb-1">Votre question</label>
-                          <textarea id="image-prompt" value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} rows={3} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                      </div>
-                      <button onClick={handleAnalyzeImage} disabled={isImageLoading} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">{isImageLoading ? 'Analyse...' : 'Analyser l\'Image'}</button>
-                      {imageResult && (
-                          <div className="bg-gray-900 p-4 rounded-lg">
-                              <h4 className="text-lg font-semibold mb-2 text-gray-200">Résultat de l'analyse</h4>
-                              <div className="prose prose-invert prose-sm max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: markdownToHtml(imageResult) }} />
-                          </div>
-                      )}
-                  </div>
-              )}
-          </div>
-      );
-  };
   
   if (checkingAuth) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Chargement...</div>;
@@ -582,7 +584,7 @@ export default function AdminPanel() {
             </div>
 
             {activeTab === 'analytics' ? (
-              <AnalyticsPanel />
+              <AnalyticsPanel loading={loading} data={analyticsData} />
             ) : activeTab === 'ads' ? (
               <div className="bg-gray-800 rounded-lg p-6 space-y-6">
                 {AD_PLACEMENTS.map(placement => (
@@ -644,7 +646,7 @@ export default function AdminPanel() {
                 <div className="flex justify-end"><button onClick={handleSaveSettings} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Paramètres</button></div>
               </div>
             ) : activeTab === 'ai-tools' ? (
-              <AIToolsPanel />
+              <AIToolsPanel addToast={addToast} />
             ) : (
               <>
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
