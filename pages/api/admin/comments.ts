@@ -8,9 +8,10 @@ export default async function handler(req: NextApiRequest & { method?: string },
     return res.status(401).json({ error: 'Non autorisé' });
   }
 
-  const client = await getDbClient();
+  let client;
 
   try {
+    client = await getDbClient();
     if (req.method === 'GET') {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
@@ -109,10 +110,14 @@ export default async function handler(req: NextApiRequest & { method?: string },
     res.status(405).json({ message: 'Method not allowed' });
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error("API Error in /api/admin/comments:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }

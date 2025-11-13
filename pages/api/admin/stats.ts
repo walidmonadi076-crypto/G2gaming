@@ -13,8 +13,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const client = await getDbClient();
+  let client;
   try {
+    client = await getDbClient();
     const [
       gamesResult,
       blogsResult,
@@ -54,6 +55,8 @@ export default async function handler(req: NextApiRequest & { method?: string },
     console.error("API Error in /api/admin/stats:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }

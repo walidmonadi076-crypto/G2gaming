@@ -13,8 +13,7 @@ const SETTING_KEYS = [
 
 // FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
-  const client = await getDbClient();
-
+  let client;
   try {
     if (req.method === 'GET') {
       if (!isAuthorized(req)) {
@@ -28,6 +27,8 @@ export default async function handler(req: NextApiRequest & { method?: string },
       if (!isAuthorized(req)) {
         return res.status(401).json({ error: 'Non autorisé' });
       }
+      
+      client = await getDbClient();
       const settings: Partial<SiteSettings> = req.body;
       
       await client.query('BEGIN');
@@ -61,10 +62,14 @@ export default async function handler(req: NextApiRequest & { method?: string },
     res.status(405).json({ message: 'Method not allowed' });
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error("API Error in /api/admin/settings:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }

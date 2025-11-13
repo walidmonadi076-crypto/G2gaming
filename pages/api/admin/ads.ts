@@ -9,8 +9,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
     return res.status(401).json({ error: 'Non autorisé' });
   }
 
-  const client = await getDbClient();
+  let client;
   try {
+    client = await getDbClient();
     if (req.method === 'GET') {
       const result = await client.query('SELECT placement, code FROM ads');
       res.status(200).json(result.rows);
@@ -38,10 +39,14 @@ export default async function handler(req: NextApiRequest & { method?: string },
       res.status(405).json({ message: 'Method not allowed' });
     }
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error("API Error in /api/admin/ads:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }

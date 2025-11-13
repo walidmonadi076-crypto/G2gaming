@@ -4,10 +4,10 @@ import { isAuthorized } from '../auth/check';
 
 // FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
-  const client = await getDbClient();
-
+  let client;
   try {
-     if (req.method === 'GET') {
+    client = await getDbClient();
+    if (req.method === 'GET') {
       if (!isAuthorized(req)) {
         return res.status(401).json({ error: 'Non autorisé' });
       }
@@ -118,6 +118,8 @@ export default async function handler(req: NextApiRequest & { method?: string },
     console.error("API Error in /api/admin/social-links:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }
