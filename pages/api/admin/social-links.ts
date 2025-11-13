@@ -76,6 +76,11 @@ export default async function handler(req: NextApiRequest & { method?: string },
         if (!icon_svg || typeof icon_svg !== 'string' || !icon_svg.includes('<svg')) {
             return res.status(400).json({ error: 'Un code SVG valide est obligatoire.' });
         }
+
+        // Security enhancement: reject SVGs with script tags
+        if (/<script/i.test(icon_svg)) {
+            return res.status(400).json({ error: 'Le SVG ne peut pas contenir de balises script.' });
+        }
     }
 
     if (req.method === 'POST') {

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { SocialLink } from '../types';
 
@@ -9,9 +10,10 @@ interface HeaderProps {
     onSearchBlur: () => void;
     onToggleMobileSidebar: () => void;
     socialLinks: SocialLink[];
+    isLoadingSocials: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSearchFocus, onSearchBlur, onToggleMobileSidebar, socialLinks }) => {
+const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSearchFocus, onSearchBlur, onToggleMobileSidebar, socialLinks, isLoadingSocials }) => {
   return (
     <header className="bg-gray-900/80 backdrop-blur-sm sticky top-0 z-40 flex-shrink-0 flex h-16 border-b border-gray-700 items-center justify-between px-4 sm:px-6 lg:px-8">
       <div className="flex-1 flex items-center min-w-0">
@@ -42,17 +44,25 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSearchFo
         </div>
       </div>
       <div className="flex items-center space-x-3 sm:space-x-4 ml-4 flex-shrink-0">
-        {socialLinks.map(link => (
-          <a
-            key={link.id}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={link.name}
-            className="text-gray-400 hover:text-white transition-colors"
-            dangerouslySetInnerHTML={{ __html: link.icon_svg }}
-          />
-        ))}
+        {isLoadingSocials ? (
+            <>
+                <div className="w-6 h-6 bg-gray-700 rounded-full animate-pulse"></div>
+                <div className="w-6 h-6 bg-gray-700 rounded-full animate-pulse"></div>
+                <div className="w-6 h-6 bg-gray-700 rounded-full animate-pulse"></div>
+            </>
+        ) : (
+            socialLinks.map(link => (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={link.name}
+                className="text-gray-400 hover:text-white transition-colors"
+                dangerouslySetInnerHTML={{ __html: link.icon_svg }}
+              />
+            ))
+        )}
       </div>
     </header>
   );

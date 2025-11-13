@@ -144,13 +144,16 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                 
                                 <div className="mt-8">
                                     {!isUnlocked ? (
-                                        <button 
-                                            onClick={handleVerificationClick}
-                                            disabled={!isOgadsReady}
-                                            className="inline-block w-full sm:w-auto text-center bg-purple-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-purple-700 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
-                                        >
-                                            {isOgadsReady ? 'Verify & Unlock Download' : 'Initialisation...'}
-                                        </button>
+                                        <div className="text-center sm:text-left">
+                                            <button 
+                                                onClick={handleVerificationClick}
+                                                disabled={!isOgadsReady}
+                                                className="inline-block w-full sm:w-auto text-center bg-purple-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-purple-700 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                            >
+                                                {isOgadsReady ? 'Verify & Unlock Download' : 'Initialisation...'}
+                                            </button>
+                                            <p className="text-xs text-gray-400 mt-3">Complete a quick offer to support us and start your download!</p>
+                                        </div>
                                     ) : (
                                         <a 
                                             href={game.downloadUrl} 

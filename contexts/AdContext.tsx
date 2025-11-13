@@ -112,22 +112,24 @@ const defaultSettings: SiteSettings = {
 
 interface SettingsContextType {
   settings: SiteSettings;
+  isLoading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType>({
   settings: defaultSettings,
+  isLoading: true,
 });
 
 export const useSettings = () => useContext(SettingsContext);
 
 interface SettingsProviderProps {
   children: ReactNode;
-  value: SiteSettings;
+  value: SettingsContextType;
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children, value }) => {
   return (
-    <SettingsContext.Provider value={{ settings: value || defaultSettings }}>
+    <SettingsContext.Provider value={value || { settings: defaultSettings, isLoading: true }}>
       {children}
     </SettingsContext.Provider>
   );

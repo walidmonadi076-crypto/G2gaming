@@ -135,12 +135,12 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       const Component = isTextArea ? 'textarea' : 'input';
 
       return (
-        <div>
+        <div key={name}>
             <label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
             <Component
                 id={name}
                 name={name}
-                type={type}
+                type={isTextArea ? undefined : type}
                 value={formData[name] || ''}
                 onChange={handleChange}
                 required={required}
@@ -152,7 +152,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   }
 
   const renderGalleryManager = () => (
-    <div>
+    <div key="gallery-manager">
         <label htmlFor="gallery" className="block text-sm font-medium text-gray-300 mb-1">Galerie d'images (URLs)</label>
         <div className="flex gap-2">
             <input id="gallery" name="gallery" type="url" value={galleryInput} onChange={(e) => setGalleryInput(e.target.value)} onKeyDown={handleGalleryKeyDown} className="flex-grow px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Coller une URL d'image et appuyez sur Entrée..."/>
@@ -173,12 +173,12 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     <>
       {renderField('title', 'Titre')}
       {renderField('imageUrl', 'URL de l\'image principale (Vignette)')}
-      <div>
+      <div key="category-game">
         <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-1">Catégorie</label>
         <input id="category" name="category" list="category-list" value={formData.category || ''} onChange={handleChange} required className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"/>
         <datalist id="category-list">{categories.map(cat => <option key={cat} value={cat} />)}</datalist>
       </div>
-      <div>
+      <div key="tags-game">
         <label htmlFor="tags" className="block text-sm font-medium text-gray-300 mb-1">Tags</label>
         <div className="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md border border-gray-600">
             {(formData.tags || []).filter((t:string) => t !== 'Featured').map((tag: string) => (<span key={tag} className="flex items-center bg-purple-600 text-white text-sm font-medium px-2 py-1 rounded-full">{tag}<button type="button" onClick={() => removeTag(tag)} className="ml-2 text-purple-200 hover:text-white">&times;</button></span>))}
@@ -186,7 +186,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             <datalist id="tag-list">{tags.filter(t => !(formData.tags || [])?.includes(t)).map(tag => <option key={tag} value={tag} />)}</datalist>
         </div>
       </div>
-      <div>
+      <div key="featured-game">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-300 cursor-pointer"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-4 h-4 bg-gray-700 rounded border-gray-600 text-purple-600 focus:ring-purple-500"/>Featured</label>
       </div>
       {renderField('description', 'Description', 'textarea')}
@@ -203,7 +203,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('imageUrl', 'URL de l\'image')}
       {renderField('author', 'Auteur')}
       {renderField('category', 'Catégorie')}
-       <div>
+       <div key="rating-blog">
         <label htmlFor="rating" className="block text-sm font-medium text-gray-300 mb-1">Note (sur 5)</label>
         <input id="rating" name="rating" type="number" value={formData.rating || ''} onChange={handleChange} step="0.1" min="0" max="5" required className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"/>
       </div>
@@ -229,21 +229,12 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     <>
       {renderField('name', 'Nom du réseau')}
       {renderField('url', 'URL (lien complet)')}
-      <div>
+      <div key="icon-svg-social">
         <label htmlFor="icon_svg" className="block text-sm font-medium text-gray-300 mb-1">Icône (code SVG)</label>
         <textarea id="icon_svg" name="icon_svg" value={formData.icon_svg || ''} onChange={handleChange} required rows={5} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm" placeholder='<svg width="24" height="24" ...>...</svg>'/>
         <p className="text-xs text-gray-400 mt-1">Collez le code SVG complet de l'icône ici. Pour un affichage optimal, utilisez une icône de 24x24 pixels.</p>
       </div>
     </>
-  );
-  
-  const formFields = (
-    <div className="p-6 space-y-4">
-        {type === 'games' && renderGameFields()}
-        {type === 'blogs' && renderBlogFields()}
-        {type === 'products' && renderProductFields()}
-        {type === 'social-links' && renderSocialLinkFields()}
-    </div>
   );
 
   return (
@@ -258,20 +249,19 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         </div>
         
         <div className={`flex-grow grid ${canPreview ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 p-6 overflow-hidden`}>
-            {canPreview ? (
-                <>
-                    <div className="overflow-y-auto pr-2">
-                        {formFields}
-                    </div>
-                    <div className="hidden md:block h-full">
-                        <AdminPreview data={formData} type={type as 'games' | 'blogs' | 'products'} />
-                    </div>
-                </>
-            ) : (
-                <div className="max-w-2xl mx-auto w-full overflow-y-auto">
-                    {formFields}
-                </div>
-            )}
+          <div className="overflow-y-auto pr-2">
+            <div className="p-6 space-y-4">
+              {type === 'games' && renderGameFields()}
+              {type === 'blogs' && renderBlogFields()}
+              {type === 'products' && renderProductFields()}
+              {type === 'social-links' && renderSocialLinkFields()}
+            </div>
+          </div>
+          {canPreview && (
+            <div className="hidden md:block h-full">
+              <AdminPreview data={formData} type={type as 'games' | 'blogs' | 'products' | 'social-links'} />
+            </div>
+          )}
         </div>
       </form>
     </div>

@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
@@ -6,6 +7,7 @@ import type { Game, SiteSettings } from '../types';
 import { getAllGames, getSiteSettings } from '../lib/data';
 import GameCarousel from '../components/GameCarousel';
 import Image from 'next/image';
+import { useSettings } from '../contexts/AdContext';
 
 const Section: React.FC<{ title: string; children: React.ReactNode, viewMore?: boolean, onViewMore?: () => void }> = ({ title, children, viewMore = true, onViewMore }) => (
     <section className="mb-12">
@@ -19,11 +21,12 @@ const Section: React.FC<{ title: string; children: React.ReactNode, viewMore?: b
 
 interface HomeProps {
     games: Game[];
-    settings: SiteSettings;
+    // settings are now provided by context
 }
 
-const Home: React.FC<HomeProps> = ({ games, settings }) => {
+const Home: React.FC<HomeProps> = ({ games }) => {
   const router = useRouter();
+  const { settings, isLoading } = useSettings();
 
   const sections = useMemo(() => {
     const priorityOrder = ['Play on Comet', 'New', 'Hot', 'Updated', 'Top', 'Featured'];
@@ -54,9 +57,21 @@ const Home: React.FC<HomeProps> = ({ games, settings }) => {
         query: { tags: tag }
     });
   };
-
-  return (
-    <div className="space-y-8">
+  
+  const renderHero = () => {
+    if (isLoading) {
+      return (
+        <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden mb-12 bg-gray-700 animate-pulse">
+          <div className="p-6 md:p-12">
+            <div className="h-12 w-3/4 bg-gray-600 rounded-md mb-4"></div>
+            <div className="h-6 w-1/2 bg-gray-600 rounded-md mb-6"></div>
+            <div className="h-12 w-40 bg-gray-600 rounded-lg"></div>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
         <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden mb-12">
             <Image src={settings.hero_bg_url} alt="Welcome banner" fill sizes="100vw" className="object-cover" priority />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent p-6 md:p-12 flex flex-col justify-center">
@@ -65,16 +80,32 @@ const Home: React.FC<HomeProps> = ({ games, settings }) => {
                 <button onClick={() => router.push(settings.hero_button_url)} className="mt-6 bg-purple-600 text-white font-bold py-2 px-5 text-base sm:py-3 sm:px-6 sm:text-lg rounded-lg w-fit hover:bg-purple-700 transition-colors">{settings.hero_button_text}</button>
             </div>
         </div>
+    );
+  };
 
-        {settings.promo_enabled && (
-            <div className="bg-gradient-to-r from-purple-800 to-indigo-800 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-6 my-12">
-                <div className="flex items-center space-x-4">
-                    <div className="bg-yellow-400 p-2 rounded-lg relative"><span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-purple-800">1</span><svg className="w-8 h-8 text-yellow-900" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg></div>
-                    <div><h3 className="text-lg sm:text-xl font-bold">{settings.promo_text}</h3></div>
-                </div>
-                <button onClick={() => router.push(settings.promo_button_url)} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex-shrink-0">{settings.promo_button_text}</button>
-            </div>
-        )}
+  const renderPromo = () => {
+      if (isLoading) {
+          return <div className="bg-gray-700 animate-pulse rounded-2xl h-24 my-12"></div>;
+      }
+
+      if (settings.promo_enabled) {
+          return (
+              <div className="bg-gradient-to-r from-purple-800 to-indigo-800 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-6 my-12">
+                  <div className="flex items-center space-x-4">
+                      <div className="bg-yellow-400 p-2 rounded-lg relative"><span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-purple-800">1</span><svg className="w-8 h-8 text-yellow-900" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg></div>
+                      <div><h3 className="text-lg sm:text-xl font-bold">{settings.promo_text}</h3></div>
+                  </div>
+                  <button onClick={() => router.push(settings.promo_button_url)} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex-shrink-0">{settings.promo_button_text}</button>
+              </div>
+          );
+      }
+      return null;
+  };
+
+  return (
+    <div className="space-y-8">
+        {renderHero()}
+        {renderPromo()}
         
         {sections.map(section => (
             <Section 
@@ -90,15 +121,12 @@ const Home: React.FC<HomeProps> = ({ games, settings }) => {
 };
 
 export const getStaticProps: GetStaticProps = async () => {
-    const [games, settings] = await Promise.all([
-        getAllGames(),
-        getSiteSettings(),
-    ]);
+    const games = await getAllGames();
 
     return {
         props: {
             games,
-            settings,
+            // Settings are no longer passed as props, they are fetched client-side
         },
         revalidate: 60,
     };

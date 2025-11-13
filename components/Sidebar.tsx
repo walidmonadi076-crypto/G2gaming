@@ -103,6 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
                    ${isFullyExpanded ? 'w-full' : 'w-12 h-12 justify-center'}`
                 }
                 title={isFullyExpanded ? '' : item.label}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {React.cloneElement(item.icon, { className: 'h-6 w-6 flex-shrink-0' })}
                 <span className={`whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-4 opacity-100' : 'w-0 opacity-0'}`}>
@@ -142,6 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
                               ${isFullyExpanded ? 'w-full' : 'w-12 h-12 justify-center'}`
                           }
                           title={isFullyExpanded ? '' : item.label}
+                          aria-current={isActive ? 'page' : undefined}
                         >
                           {React.cloneElement(item.icon, { className: 'h-6 w-6 flex-shrink-0' })}
                           <span className={`whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-4 opacity-100' : 'w-0 opacity-0'}`}>

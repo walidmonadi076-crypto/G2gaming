@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 
+// A more specific CSP to enhance security
+const ContentSecurityPolicy = `
+  frame-ancestors 'self';
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com *;
+  frame-src 'self' https://www.google.com *;
+  connect-src 'self' *;
+  img-src 'self' data: https://picsum.photos https://i.pravatar.cc *;
+  style-src 'self' 'unsafe-inline' *;
+`.replace(/\s{2,}/g, ' ').trim();
+
 const securityHeaders = [
   {
     key: 'X-Content-Type-Options',
@@ -19,7 +29,7 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
-    value: "frame-ancestors 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: *; frame-src 'self' *; connect-src 'self' *; img-src 'self' data: *; style-src 'self' 'unsafe-inline' *;",
+    value: ContentSecurityPolicy,
   }
 ];
 

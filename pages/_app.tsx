@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import App, { type AppProps, type AppContext } from 'next/app';
 import { useRouter } from 'next/router';
@@ -46,20 +47,17 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   const [searchActive, setSearchActive] = useState(false);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   
-  // State to hold the site settings. It's initialized with props from getInitialProps
-  // (which will be our defaults) and then updated client-side.
   const [settings, setSettings] = useState<SiteSettings>(pageProps.settings);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isLoadingSocials, setIsLoadingSocials] = useState(true);
 
-  // The admin panel should not have the public layout. We identify the login page
-  // specifically, allowing other `/admin/*` routes (like previews) to use the public layout.
   const isAdminPage = router.pathname === '/admin/login';
 
-
   useEffect(() => {
-    // This effect runs only on the client-side after hydration.
-    // It fetches the latest site settings and social links from the API.
     const fetchClientSideData = async () => {
-      // Fetch dynamic site settings.
+      setIsLoadingSettings(true);
+      setIsLoadingSocials(true);
+
       try {
         const settingsRes = await fetch('/api/settings');
         if (settingsRes.ok) {
@@ -70,9 +68,10 @@ function MyApp({ Component, pageProps }: MyAppProps) {
         }
       } catch (error) {
         console.error('Error fetching settings, using defaults:', error);
+      } finally {
+        setIsLoadingSettings(false);
       }
       
-      // Fetch social links if not on an admin page.
       if (!isAdminPage) {
         try {
           const socialLinksRes = await fetch('/api/social-links');
@@ -84,7 +83,11 @@ function MyApp({ Component, pageProps }: MyAppProps) {
           }
         } catch (error) {
            console.error('Failed to fetch social links:', error);
+        } finally {
+          setIsLoadingSocials(false);
         }
+      } else {
+        setIsLoadingSocials(false);
       }
     };
     
@@ -110,13 +113,13 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   if (isAdminPage) {
     return <Component {...pageProps} />;
   }
+  
+  const settingsValue = { settings, isLoading: isLoadingSettings };
 
   return (
     <ThemeProvider>
       <AdProvider>
-        {/* The SettingsProvider now uses the stateful `settings` variable,
-            which will update automatically after the client-side fetch. */}
-        <SettingsProvider value={settings}>
+        <SettingsProvider value={settingsValue}>
           <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans`}>
             {isMobileSidebarOpen && (
               <div
@@ -144,6 +147,7 @@ function MyApp({ Component, pageProps }: MyAppProps) {
                 onSearchBlur={() => setTimeout(() => setSearchActive(false), 200)}
                 onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
                 socialLinks={socialLinks}
+                isLoadingSocials={isLoadingSocials}
               />
               <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
                 <Component {...enhancedPageProps} />
@@ -156,10 +160,6 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   );
 }
 
-// FIX: getInitialProps is simplified to avoid server-side/build-time fetches.
-// It now only provides default settings for the initial render.
-// The actual, dynamic settings are fetched on the client-side in the `useEffect` hook.
-// This resolves the build error caused by trying to fetch from an undefined URL.
 MyApp.getInitialProps = async (appContext: AppContext) => {
   const appProps = await App.getInitialProps(appContext);
   appProps.pageProps.settings = defaultSettings;
