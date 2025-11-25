@@ -49,7 +49,7 @@ class MyDocument extends Document<MyDocumentProps> {
           {/* Favicon links - A modern, comprehensive set for all devices */}
           <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
           <link rel="icon" href={faviconSvg} type="image/svg+xml" />
-          <link rel="manifest" href="/site.webmanifest" />
+          {/* Manifest link removed to prevent console errors as per user request */}
           <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#7c3aed" />
           <meta name="msapplication-TileColor" content="#603cba" />
           <meta name="theme-color" content="#ffffff" />
