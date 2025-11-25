@@ -16,13 +16,15 @@ export function getPool(): Pool {
 
   if (process.env.NODE_ENV === "production") {
     // في Production كنخدمو ب pool عادي
+    // كنقصو عدد connexions (max: 2) باش منتجاوزوش الحدود ديال Vercel/Neon
     if (!pool) {
       pool = new Pool({
         connectionString: DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        max: 10, // زيادة عدد الاتصالات المسموح بها
+        max: 2, // Reduced to prevent "too many clients" errors on serverless
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000, // زيادة وقت الانتظار لتفادي Timeout
+        connectionTimeoutMillis: 15000, // Increased timeout to 15s
+        keepAlive: true,
       });
     }
     return pool;
@@ -34,7 +36,7 @@ export function getPool(): Pool {
         ssl: { rejectUnauthorized: false },
         max: 5,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
+        connectionTimeoutMillis: 15000,
       });
     }
     return globalThis.pgPool;
