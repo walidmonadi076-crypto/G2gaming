@@ -2,25 +2,43 @@ import { Pool } from "pg";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
-// التصريح بالنوع Pool أو null
-let pool: Pool | null = null;
+// تعريف global variable باش نتفاداو المشاكل ديال كثرة الاتصالات فاش كيوقع reload
+declare global {
+  var pgPool: Pool | undefined;
+}
+
+let pool: Pool;
 
 export function getPool(): Pool {
   if (!DATABASE_URL) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
 
-  if (!pool) {
-    pool = new Pool({
-      connectionString: DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      max: 5,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
+  if (process.env.NODE_ENV === "production") {
+    // في Production كنخدمو ب pool عادي
+    if (!pool) {
+      pool = new Pool({
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        max: 10, // زيادة عدد الاتصالات المسموح بها
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000, // زيادة وقت الانتظار لتفادي Timeout
+      });
+    }
+    return pool;
+  } else {
+    // في Development كنستعملو global variable باش ميتعاودش يتكريا pool كل مرة
+    if (!globalThis.pgPool) {
+      globalThis.pgPool = new Pool({
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
+      });
+    }
+    return globalThis.pgPool;
   }
-
-  return pool;
 }
 
 export async function query(text: string, params?: any[]) {
@@ -51,6 +69,7 @@ export async function testConnection() {
     const res = await pool.query("SELECT NOW()");
     return res.rows[0];
   } catch (err) {
+    console.error("Database Connection Test Failed:", err);
     throw err;
   }
 }
