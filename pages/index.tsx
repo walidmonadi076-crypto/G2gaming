@@ -51,7 +51,8 @@ const Home: React.FC<HomeProps> = ({ games }) => {
           key: tag.toLowerCase().replace(/\s+/g, '-'),
           title: title,
           games: sectionGames,
-          carouselProps: { cardVariant: 'default' as const },
+          // Changed to 'vertical' to match the 15% width / 23% height request
+          carouselProps: { cardVariant: 'vertical' as const },
           tag: tag,
         };
       })

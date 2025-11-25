@@ -68,8 +68,10 @@ const GameCarousel: React.FC<GameCarouselProps> = ({ games, cardVariant = 'defau
     );
   };
   
+  // Updated width: lg:w-[15%] exactly as requested for desktop.
+  // Responsive adjustments: 45% on mobile, 30% on small tablets, 20% on tablets.
   const cardWidthClass = cardVariant === 'vertical' 
-    ? "w-[45%] sm:w-[30%] md:w-1/4 lg:w-1/5"
+    ? "w-[45%] sm:w-[30%] md:w-[20%] lg:w-[15%]"
     : "w-11/12 sm:w-[48%] lg:w-[32%]";
 
   return (

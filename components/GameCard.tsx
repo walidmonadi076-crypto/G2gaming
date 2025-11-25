@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -35,7 +36,8 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
   const getTitleClasses = () => {
     switch(variant) {
       case 'vertical':
-        return 'text-lg';
+        // Reduced font size for vertical cards to fit the narrower 15% width
+        return 'text-sm md:text-base';
       case 'featured':
         return 'text-lg md:text-xl';
       case 'default':
