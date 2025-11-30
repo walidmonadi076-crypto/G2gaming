@@ -30,32 +30,31 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
   const getAdConfig = () => {
     switch (placement) {
       case 'game_vertical':
-        return { width: 300, height: 600, label: 'Sponsored' };
+        return { width: 300, height: 600, label: 'Sponsored', mobileScale: false };
       case 'game_horizontal':
-        // Matched to Admin Panel config: "Game Page Mobile (Horizontal)"
-        // Using 300x250 as a standard mobile-friendly rectangle.
-        return { width: 300, height: 250, label: 'Advertisement' };
+        return { width: 300, height: 250, label: 'Advertisement', mobileScale: true };
       case 'shop_square':
-        return { width: 300, height: 250, label: 'Partner Offer' };
+        return { width: 300, height: 250, label: 'Partner Offer', mobileScale: true };
       case 'blog_skyscraper_left':
       case 'blog_skyscraper_right':
-        return { width: 160, height: 600, label: 'Ad' };
+        return { width: 160, height: 600, label: 'Ad', mobileScale: false };
       case 'home_quest_banner':
-        return { width: 728, height: 90, label: 'Quest Sponsor' };
+        // 728px is too wide for mobile (usually < 400px). We enable scaling.
+        return { width: 728, height: 90, label: 'Quest Sponsor', mobileScale: true };
       case 'home_native_game':
-        return { width: 300, height: 250, label: 'Sponsored' };
+        return { width: 300, height: 250, label: 'Sponsored', mobileScale: true };
       case 'deals_strip':
-        return { width: 120, height: 600, label: 'Hot Deals' };
+        return { width: 160, height: 600, label: 'Hot Deals', mobileScale: false };
       case 'quest_page_wall':
-        return { width: '100%', height: 800, label: 'Offers' };
+        return { width: '100%', height: 800, label: 'Offers', mobileScale: false };
       case 'footer_partner':
-        return { width: 300, height: 100, label: 'Partner' };
+        return { width: 728, height: 90, label: 'Partner', mobileScale: true };
       default:
-        return { width: 300, height: 250, label: 'Ad' };
+        return { width: 300, height: 250, label: 'Ad', mobileScale: true };
     }
   };
   
-  const { width, height, label } = getAdConfig();
+  const { width, height, label, mobileScale } = getAdConfig();
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.self !== window.top) {
@@ -71,6 +70,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
       const tempEl = document.createElement('div');
       tempEl.innerHTML = ad.code;
 
+      // Execute scripts
       tempEl.childNodes.forEach(node => {
         if (node.nodeName === 'SCRIPT') {
           const script = document.createElement('script');
@@ -93,7 +93,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
   const isTransparent = ['deals_strip', 'footer_partner'].includes(placement);
   const baseStyles = isTransparent 
     ? '' 
-    : 'bg-gray-900/80 border border-white/5 backdrop-blur-sm shadow-sm hover:border-white/10';
+    : 'bg-gray-900/80 border border-white/5 backdrop-blur-sm shadow-lg hover:border-purple-500/20';
 
   const containerClasses = `relative rounded-xl overflow-hidden flex flex-col items-center justify-center p-2 transition-all ${baseStyles} ${className}`;
 
@@ -102,11 +102,9 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
     <div 
       style={{ 
         width: typeof width === 'number' ? width : '100%', 
-        maxWidth: '100%', // Ensure it doesn't overflow mobile screens
         height: height, 
-        maxHeight: '100%' 
       }} 
-      className={`bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-lg flex items-center justify-center ${animate ? 'animate-pulse' : ''}`}
+      className={`bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-lg flex items-center justify-center max-w-full ${animate ? 'animate-pulse' : ''}`}
     >
       <span className="text-gray-600 text-xs font-bold uppercase tracking-widest text-center px-2">{text}</span>
     </div>
@@ -115,13 +113,13 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
   return (
     <div className={containerClasses}>
       {showLabel && !isTransparent && (
-        <span className="absolute top-1 left-2 text-[9px] font-bold text-gray-600 uppercase tracking-widest select-none z-10">
+        <span className="absolute top-0 left-0 bg-gray-800/90 text-[9px] font-bold text-gray-500 px-2 py-0.5 rounded-br-lg uppercase tracking-widest select-none z-10 border-b border-r border-white/5">
           {label}
         </span>
       )}
       
       <div 
-        className="w-full flex justify-center items-center overflow-hidden relative z-0"
+        className={`w-full flex justify-center items-center relative z-0 ${mobileScale ? 'origin-top scale-90 sm:scale-100' : ''}`}
         style={{ minHeight: typeof height === 'number' && height > 90 ? height : undefined }} 
       >
         {isIframe ? (
@@ -131,7 +129,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
         ) : (!ad || !ad.code) ? (
           renderPlaceholder('Space Available')
         ) : (
-          <div ref={adContainerRef} className="ad-content-wrapper w-full h-full flex justify-center" />
+          <div ref={adContainerRef} className="ad-content-wrapper flex justify-center" />
         )}
       </div>
     </div>

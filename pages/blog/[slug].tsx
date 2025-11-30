@@ -89,7 +89,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
                         
-                        {/* --- LEFT SIDEBAR (Ad - Desktop) --- */}
+                        {/* --- LEFT SIDEBAR (Ad - Desktop ONLY) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
                             <div className="sticky top-24 flex flex-col items-center">
                                 <Ad placement="blog_skyscraper_left" />
@@ -124,8 +124,8 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                                 </div>
                             </header>
 
-                            {/* Horizontal Ad - Visible on all devices */}
-                            <div className="my-8 w-full">
+                            {/* Mobile/Tablet Ad - Visible ONLY on smaller screens */}
+                            <div className="my-8 w-full flex justify-center lg:hidden">
                                 <Ad placement="game_horizontal" className="shadow-lg" />
                             </div>
 
@@ -221,7 +221,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                             </div>
                         </main>
 
-                        {/* --- RIGHT SIDEBAR (Social + Ad - Desktop) --- */}
+                        {/* --- RIGHT SIDEBAR (Social + Ad - Desktop ONLY) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
                             <div className="sticky top-24 flex flex-col gap-8">
                                 {/* Share Widget */}

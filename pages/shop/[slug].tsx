@@ -167,7 +167,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
                                     </div>
                                 </div>
 
-                                {/* Buy Action */}
+                                {/* Buy Action Box */}
                                 <div className="p-1 rounded-2xl bg-gradient-to-r from-green-500/20 to-emerald-500/20">
                                     <div className="bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
                                         <a 
@@ -182,15 +182,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
                                             </span>
                                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                         </a>
-                                        <p className="text-center text-xs text-gray-500 mt-3 font-medium uppercase tracking-wider">
+                                        <p className="text-center text-xs text-gray-500 mt-3 font-medium uppercase tracking-wider mb-4">
                                             Secure Transaction via Partner
                                         </p>
-                                    </div>
-                                </div>
 
-                                {/* Ad Area - Strategically placed under CTA for maximum visibility */}
-                                <div className="w-full flex justify-center py-4">
-                                    <Ad placement="shop_square" className="shadow-lg" />
+                                        {/* Sponsored Ad Area - Inside Buy Box */}
+                                        <div className="w-full flex justify-center border-t border-white/5 pt-4">
+                                            <Ad placement="shop_square" className="shadow-none border-none bg-black/20" />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Description */}

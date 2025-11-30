@@ -267,8 +267,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     </div>
                                 </div>
                                 
-                                {/* Horizontal Ad - Visible on all devices */}
-                                <div className="mt-6 w-full">
+                                {/* Mobile/Horizontal Ad - Placed immediately below CTA for high visibility */}
+                                <div className="mt-4 w-full flex justify-center lg:hidden">
                                     <Ad placement="game_horizontal" className="shadow-lg" />
                                 </div>
 
@@ -332,8 +332,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     </div>
                                 </div>
 
-                                {/* Vertical Ad Area (Sticky) */}
-                                <div className="hidden lg:block w-full">
+                                {/* Vertical Ad Area (Sticky) - Visible only on desktop */}
+                                <div className="hidden lg:flex w-full justify-center">
                                     <Ad placement="game_vertical" className="shadow-2xl" />
                                 </div>
 
