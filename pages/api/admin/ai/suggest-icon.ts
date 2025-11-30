@@ -56,22 +56,20 @@ Just output the icon name string directly (example: Zap).
 
         // 👇 لائحة الأيقونات المسموح بها (مطابقة للـ constants ديالك)
         const allowedIcons = [
-            'Gamepad2',
-            'Zap',
-            'Target',
-            'Car',
-            'Sword',
-            'ShoppingBag',
-            'Book',
-            'Headphones',
-            'Shirt',
-            'Cpu',
-            'Star',
-            'Trophy',
-            'Ghost',
-            'Rocket',
-            'Users',
-            'Puzzle'
+            // Gaming Core
+            'Gamepad2', 'Zap', 'Target', 'Car', 'Sword',
+            'Ghost', 'Rocket', 'Puzzle', 'Flame', 'Shield',
+            'Crosshair', 'Castle', 'Joystick', 'Controller',
+            'LightningBolt', 'Skull', 'SwordShield', 'Planet',
+
+            // Blog / Content
+            'Book', 'PenTool', 'FileText', 'Lightbulb', 'MessageSquare',
+            'Newspaper', 'Star', 'Camera', 'Clock',
+
+            // Shop / Products
+            'ShoppingBag', 'Shirt', 'Headphones', 'Cpu', 'Trophy',
+            'Users', 'Tag', 'BadgeDollar', 'Monitor', 'Mouse',
+            'Keyboard', 'VR', 'Box', 'Gift'
         ] as const;
 
         const DEFAULT_ICON = 'Gamepad2';
