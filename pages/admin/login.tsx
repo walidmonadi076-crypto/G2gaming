@@ -22,7 +22,21 @@ function getCookie(name: string): string | null {
 type FormItem = Game | BlogPost | Product | SocialLink;
 type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
-const AD_PLACEMENTS = ['game_vertical', 'game_horizontal', 'shop_square', 'blog_skyscraper_left', 'blog_skyscraper_right'];
+// New Ad Config with Descriptive Labels and Dimensions
+const AD_CONFIG: Record<string, { label: string; size: string }> = {
+  game_vertical: { label: 'Game Page Sidebar (Vertical)', size: '300x600' },
+  game_horizontal: { label: 'Game Page Mobile (Horizontal)', size: '300x250 or 320x100' },
+  shop_square: { label: 'Shop Product (Square)', size: '300x250' },
+  blog_skyscraper_left: { label: 'Blog Left Sidebar', size: '160x600' },
+  blog_skyscraper_right: { label: 'Blog Right Sidebar', size: '160x600' },
+  home_quest_banner: { label: 'Home Quest Banner (Wide)', size: '728x90 or Responsive' },
+  home_native_game: { label: 'Home Native Game Card', size: '300x250 (Scaled to Card)' },
+  deals_strip: { label: 'Desktop Deals Strip (Right)', size: '120x600' },
+  quest_page_wall: { label: 'Quest Page Offerwall', size: 'Responsive / Full Width' },
+  footer_partner: { label: 'Footer Partner Grid', size: '300x100' }
+};
+
+const AD_PLACEMENTS = Object.keys(AD_CONFIG);
 
 type TabType = 'games' | 'blogs' | 'products' | 'social-links' | 'comments' | 'ads' | 'settings' | 'analytics' | 'categories';
 
@@ -625,10 +639,31 @@ export default function AdminPanel() {
               </div>
             ) : activeTab === 'ads' ? (
               <div className="bg-gray-800 rounded-lg p-6 space-y-6">
+                <div className="mb-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                    <h4 className="font-bold text-lg mb-2 text-purple-300">Guide des Publicités</h4>
+                    <p className="text-sm text-gray-300">Collez votre code HTML/JS (Adsterra, OGAds, Google Adsense) pour chaque emplacement. Les dimensions recommandées sont indiquées pour un affichage optimal.</p>
+                </div>
                 {AD_PLACEMENTS.map(placement => (
-                  <div key={placement}><label htmlFor={`ad-${placement}`} className="block text-lg font-semibold text-gray-200 mb-2 capitalize">{placement.replace(/_/g, ' ')}</label><textarea id={`ad-${placement}`} value={ads[placement] || ''} onChange={(e) => setAds(prev => ({...prev, [placement]: e.target.value}))} rows={6} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" /></div>
+                  <div key={placement} className="border-b border-gray-700 pb-6 last:border-0">
+                      <div className="flex justify-between items-end mb-2">
+                        <label htmlFor={`ad-${placement}`} className="block text-lg font-semibold text-gray-200 capitalize">
+                            {AD_CONFIG[placement]?.label || placement.replace(/_/g, ' ')}
+                        </label>
+                        <span className="text-xs font-mono bg-gray-700 px-2 py-1 rounded text-purple-300">
+                            {AD_CONFIG[placement]?.size || 'Auto'}
+                        </span>
+                      </div>
+                      <textarea 
+                        id={`ad-${placement}`} 
+                        value={ads[placement] || ''} 
+                        onChange={(e) => setAds(prev => ({...prev, [placement]: e.target.value}))} 
+                        rows={4} 
+                        className="w-full px-3 py-2 bg-gray-900 rounded-md border border-gray-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-600" 
+                        placeholder={`<!-- Collez le code ici pour ${AD_CONFIG[placement]?.label} -->`}
+                      />
+                  </div>
                 ))}
-                <div className="flex justify-end"><button onClick={handleSaveAds} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Publicités</button></div>
+                <div className="flex justify-end pt-4"><button onClick={handleSaveAds} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Publicités</button></div>
               </div>
             ) : activeTab === 'settings' ? (
               <div className="bg-gray-800 rounded-lg p-6 space-y-8">
