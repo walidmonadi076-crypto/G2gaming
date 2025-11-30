@@ -267,8 +267,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     </div>
                                 </div>
                                 
-                                {/* Mobile/Tablet Ad - Horizontal - High Visibility Position */}
-                                <div className="block lg:hidden mt-2 w-full">
+                                {/* Horizontal Ad - Visible on all devices */}
+                                <div className="mt-6 w-full">
                                     <Ad placement="game_horizontal" className="shadow-lg" />
                                 </div>
 

@@ -124,8 +124,8 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                                 </div>
                             </header>
 
-                            {/* Mobile/Tablet Ad - Horizontal (Replaces skyscrapers on small screens) */}
-                            <div className="block lg:hidden my-8 w-full">
+                            {/* Horizontal Ad - Visible on all devices */}
+                            <div className="my-8 w-full">
                                 <Ad placement="game_horizontal" className="shadow-lg" />
                             </div>
 
