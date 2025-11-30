@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -9,7 +8,6 @@ import AdminForm from '../../components/AdminForm';
 import ToastContainer from '../../components/ToastContainer';
 import type { ToastData, ToastType } from '../../components/Toast';
 import { useDebounce } from '../../hooks/useDebounce';
-import { markdownToHtml } from '../../lib/markdown';
 
 // Define a base URL for all API calls in this file.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : '');
@@ -25,7 +23,7 @@ type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
 const AD_PLACEMENTS = ['game_vertical', 'game_horizontal', 'shop_square', 'blog_skyscraper_left', 'blog_skyscraper_right'];
 
-type TabType = 'games' | 'blogs' | 'products' | 'social-links' | 'comments' | 'ads' | 'settings' | 'ai-tools' | 'analytics';
+type TabType = 'games' | 'blogs' | 'products' | 'social-links' | 'comments' | 'ads' | 'settings' | 'analytics';
 
 type Item = Game | BlogPost | Product | SocialLink | Comment;
 
@@ -112,124 +110,6 @@ const AnalyticsPanel: React.FC<{ loading: boolean; data: AnalyticsData | null }>
     );
 };
 
-const AIToolsPanel: React.FC<{ addToast: (message: string, type: ToastType) => void }> = ({ addToast }) => {
-    const [activeTool, setActiveTool] = useState<'text' | 'image'>('text');
-    const [textPrompt, setTextPrompt] = useState('');
-    const [textResult, setTextResult] = useState('');
-    const [isTextLoading, setIsTextLoading] = useState(false);
-    const [imageUrl, setImageUrl] = useState('');
-    const [imagePrompt, setImagePrompt] = useState('Is this image appropriate for a family-friendly gaming website? Does it contain any violence, gore, or adult content?');
-    const [imageResult, setImageResult] = useState('');
-    const [isImageLoading, setIsImageLoading] = useState(false);
-
-    const handleGenerateText = async () => {
-        if (!textPrompt.trim()) return addToast('Le prompt ne peut pas être vide.', 'error');
-        const csrfToken = getCookie('csrf_token');
-        if (!csrfToken) return addToast('Erreur de session.', 'error');
-
-        setIsTextLoading(true);
-        setTextResult('');
-        try {
-            const res = await fetch(`${API_BASE}/api/admin/ai/generate-text`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                body: JSON.stringify({ prompt: textPrompt }),
-            });
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.error || 'Échec de la génération de texte.');
-            }
-            const data = await res.json();
-            setTextResult(data.text);
-        } catch (error) {
-            addToast((error as Error).message, 'error');
-        } finally {
-            setIsTextLoading(false);
-        }
-    };
-
-    const handleAnalyzeImage = async () => {
-        if (!imageUrl.trim() || !imagePrompt.trim()) return addToast('L\'URL de l\'image et le prompt sont requis.', 'error');
-        const csrfToken = getCookie('csrf_token');
-        if (!csrfToken) return addToast('Erreur de session.', 'error');
-
-        setIsImageLoading(true);
-        setImageResult('');
-        try {
-            const res = await fetch(`${API_BASE}/api/admin/ai/analyze-image`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                body: JSON.stringify({ imageUrl, prompt: imagePrompt }),
-            });
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.error || 'Échec de l\'analyse de l\'image.');
-            }
-            const data = await res.json();
-            setImageResult(data.text);
-        } catch (error) {
-            addToast((error as Error).message, 'error');
-        } finally {
-            setIsImageLoading(false);
-        }
-    };
-
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        addToast('Copié dans le presse-papiers!', 'success');
-    };
-
-    return (
-        <div className="bg-gray-800 rounded-lg p-6 space-y-6">
-            <div className="flex gap-2 border-b border-gray-700 pb-4">
-                <button onClick={() => setActiveTool('text')} className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTool === 'text' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Générateur de Texte</button>
-                <button onClick={() => setActiveTool('image')} className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTool === 'image' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Analyseur d'Image</button>
-            </div>
-
-            {activeTool === 'text' && (
-                <div className="space-y-4 animate-fade-in">
-                    <h3 className="text-xl font-bold">Générateur de Texte</h3>
-                    <div>
-                        <label htmlFor="text-prompt" className="block text-sm font-medium text-gray-300 mb-1">Votre demande</label>
-                        <textarea id="text-prompt" value={textPrompt} onChange={(e) => setTextPrompt(e.target.value)} rows={4} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ex: Écris une description marketing pour un jeu de course futuriste appelé 'CyberDrift'." />
-                    </div>
-                    <button onClick={handleGenerateText} disabled={isTextLoading} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">{isTextLoading ? 'Génération...' : 'Générer'}</button>
-                    {textResult && (
-                        <div className="bg-gray-900 p-4 rounded-lg relative">
-                            <h4 className="text-lg font-semibold mb-2 text-gray-200">Résultat</h4>
-                            <button onClick={() => copyToClipboard(textResult)} className="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 px-3 py-1 text-xs font-semibold rounded-md">Copier</button>
-                            <div className="prose prose-invert prose-sm max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: markdownToHtml(textResult) }} />
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {activeTool === 'image' && (
-                <div className="space-y-4 animate-fade-in">
-                    <h3 className="text-xl font-bold">Analyseur d'Image</h3>
-                    <div>
-                        <label htmlFor="image-url" className="block text-sm font-medium text-gray-300 mb-1">URL de l'image</label>
-                        <input id="image-url" type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="https://..." />
-                    </div>
-                    {imageUrl && <div className="max-w-xs"><Image src={imageUrl} alt="Aperçu" width={400} height={300} className="object-contain rounded-md" onError={() => addToast("Impossible de charger l'image depuis l'URL.", 'error')} /></div>}
-                    <div>
-                        <label htmlFor="image-prompt" className="block text-sm font-medium text-gray-300 mb-1">Votre question</label>
-                        <textarea id="image-prompt" value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} rows={3} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                    </div>
-                    <button onClick={handleAnalyzeImage} disabled={isImageLoading} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">{isImageLoading ? 'Analyse...' : 'Analyser l\'Image'}</button>
-                    {imageResult && (
-                        <div className="bg-gray-900 p-4 rounded-lg">
-                            <h4 className="text-lg font-semibold mb-2 text-gray-200">Résultat de l'analyse</h4>
-                            <div className="prose prose-invert prose-sm max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: markdownToHtml(imageResult) }} />
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-};
-
-
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -297,7 +177,7 @@ export default function AdminPanel() {
   }, [addToast]);
 
   const fetchDataForTab = useCallback(async (tab: TabType, page: number, search: string, sortKey: string, sortDir: string) => {
-      if (['ads', 'settings', 'ai-tools', 'analytics'].includes(tab)) return;
+      if (['ads', 'settings', 'analytics'].includes(tab)) return;
       setLoading(true);
       try {
         const url = `${API_BASE}/api/admin/${tab}?page=${page}&search=${encodeURIComponent(search)}&limit=${pagination.itemsPerPage}&sortBy=${sortKey}&sortOrder=${sortDir}`;
@@ -550,7 +430,6 @@ export default function AdminPanel() {
     { id: 'comments', label: 'Comments', count: stats?.totalComments },
     { id: 'ads', label: 'Ads', count: stats?.totalAds },
     { id: 'settings', label: 'Personnalisation' },
-    { id: 'ai-tools', label: 'AI Tools' },
   ];
   
   const SortableHeader: React.FC<{ label: string; columnKey: string; className?: string }> = ({ label, columnKey, className }) => {
@@ -660,8 +539,6 @@ export default function AdminPanel() {
 
                 <div className="flex justify-end"><button onClick={handleSaveSettings} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Paramètres</button></div>
               </div>
-            ) : activeTab === 'ai-tools' ? (
-              <AIToolsPanel addToast={addToast} />
             ) : (
               <>
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-4">

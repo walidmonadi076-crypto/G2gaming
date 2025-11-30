@@ -2,6 +2,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import type { Game, BlogPost, Product, SocialLink } from '../types';
 import AdminPreview from './AdminPreview'; // Import the new preview component
+import AIHelperPanel from './admin/AIHelperPanel'; // Import the new AI component
 
 type Item = Game | BlogPost | Product | SocialLink;
 type ItemType = 'games' | 'blogs' | 'products' | 'social-links';
@@ -60,6 +61,11 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       ...prev, 
       [name]: isNumber ? parseFloat(value) : value 
     }));
+  };
+
+  // Helper to programmatically update a field (used by AI Panel)
+  const setFieldValue = (field: string, value: string) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
   
   const handleTagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,6 +199,14 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('downloadUrl', 'URL de Téléchargement', 'url')}
       {renderField('videoUrl', 'URL Vidéo (Optionnel)', 'url', false)}
       {renderGalleryManager()}
+      
+      {/* AI Helper for Games */}
+      <AIHelperPanel
+        contextType="game"
+        onApplyTitle={(text) => setFieldValue('title', text)}
+        onApplyShortDescription={(text) => setFieldValue('description', text)}
+        onApplyLongDescription={(text) => setFieldValue('description', text)}
+      />
     </>
   );
 
@@ -210,6 +224,14 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('content', 'Contenu', 'textarea')}
       {renderField('affiliateUrl', 'URL d\'affiliation', 'url', false)}
       {renderField('publishDate', 'Date de publication', 'date', false)}
+
+      {/* AI Helper for Blogs */}
+      <AIHelperPanel
+        contextType="blog"
+        onApplyTitle={(text) => setFieldValue('title', text)}
+        onApplyShortDescription={(text) => setFieldValue('summary', text)}
+        onApplyLongDescription={(text) => setFieldValue('content', text)}
+      />
     </>
   );
 
@@ -222,6 +244,13 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('category', 'Catégorie')}
       {renderField('description', 'Description', 'textarea')}
       {renderGalleryManager()}
+
+      {/* AI Helper for Products */}
+      <AIHelperPanel
+        contextType="product"
+        onApplyTitle={(text) => setFieldValue('name', text)}
+        onApplyLongDescription={(text) => setFieldValue('description', text)}
+      />
     </>
   );
 
