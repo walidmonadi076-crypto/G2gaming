@@ -22,18 +22,78 @@ function getCookie(name: string): string | null {
 type FormItem = Game | BlogPost | Product | SocialLink;
 type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
-// New Ad Config with Descriptive Labels and Dimensions
-const AD_CONFIG: Record<string, { label: string; size: string }> = {
-  game_vertical: { label: 'Game Page Sidebar (Vertical)', size: '300x600' },
-  game_horizontal: { label: 'Game Page Mobile (Horizontal)', size: '300x250 or 320x100' },
-  shop_square: { label: 'Shop Product (Square)', size: '300x250' },
-  blog_skyscraper_left: { label: 'Blog Left Sidebar', size: '160x600' },
-  blog_skyscraper_right: { label: 'Blog Right Sidebar', size: '160x600' },
-  home_quest_banner: { label: 'Home Quest Banner (Wide)', size: '728x90 or Responsive' },
-  home_native_game: { label: 'Home Native Game Card', size: '300x250 (Scaled to Card)' },
-  deals_strip: { label: 'Desktop Deals Strip (Right)', size: '120x600' },
-  quest_page_wall: { label: 'Quest Page Offerwall', size: 'Responsive / Full Width' },
-  footer_partner: { label: 'Footer Partner Grid', size: '300x100' }
+// Enhanced Ad Config with detailed mapping
+const AD_CONFIG: Record<string, { label: string; size: string; type: string; device: string; tip: string }> = {
+  home_quest_banner: { 
+    label: 'Home Quest Banner', 
+    size: '728x90 (Desktop) / 320x50 (Mobile)', 
+    type: 'Leaderboard', 
+    device: 'All', 
+    tip: 'Appears after Hero section. Best for high-impact CPM banners.' 
+  },
+  home_native_game: { 
+    label: 'Home Native Game Card', 
+    size: '300x250', 
+    type: 'Native / Rect', 
+    device: 'All', 
+    tip: 'Blends into game grid. Use Native Banner or Square ads.' 
+  },
+  deals_strip: { 
+    label: 'Desktop Deals Strip', 
+    size: '120x600 or 160x600', 
+    type: 'Skyscraper', 
+    device: 'Desktop Only', 
+    tip: 'Right-side fixed strip. Good for vertical banners.' 
+  },
+  game_vertical: { 
+    label: 'Game Page Sidebar', 
+    size: '300x600 or 160x600', 
+    type: 'Skyscraper / Half Page', 
+    device: 'Desktop Only', 
+    tip: 'Sticky sidebar ad. Stays visible while scrolling description.' 
+  },
+  game_horizontal: { 
+    label: 'Game Page Mobile Area', 
+    size: '300x250 or 320x100', 
+    type: 'Rectangle', 
+    device: 'Mobile & Tablet', 
+    tip: 'Appears below the Download button. High conversion spot.' 
+  },
+  blog_skyscraper_left: { 
+    label: 'Blog Left Sidebar', 
+    size: '160x600', 
+    type: 'Skyscraper', 
+    device: 'Desktop Only', 
+    tip: 'Sticky left column on blog posts.' 
+  },
+  blog_skyscraper_right: { 
+    label: 'Blog Right Sidebar', 
+    size: '160x600 or 300x250', 
+    type: 'Skyscraper / Rect', 
+    device: 'Desktop Only', 
+    tip: 'Sticky right column on blog posts.' 
+  },
+  shop_square: { 
+    label: 'Shop Product Ad', 
+    size: '300x250', 
+    type: 'Medium Rectangle', 
+    device: 'All', 
+    tip: 'Appears under the Buy Now button. Highly visible.' 
+  },
+  quest_page_wall: { 
+    label: 'Quest Page Offerwall', 
+    size: 'Responsive (Full Width)', 
+    type: 'Offerwall / Content Locker', 
+    device: 'All', 
+    tip: 'Main script for the Rewards/Quests page.' 
+  },
+  footer_partner: { 
+    label: 'Footer Partner Grid', 
+    size: '728x90 or 300x100', 
+    type: 'Leaderboard', 
+    device: 'All', 
+    tip: 'Appears above footer. Good for "Partner" logos or CPA.' 
+  }
 };
 
 const AD_PLACEMENTS = Object.keys(AD_CONFIG);
@@ -273,7 +333,7 @@ export default function AdminPanel() {
         fetchDataForTab(activeTab, currentPage, debouncedSearchQuery, sortConfig.key, sortConfig.direction);
       }
     }
-  }, [isAuthenticated, activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab, fetchAnalyticsData, fetchCategories]);
+  }, [isAuthenticated, activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab, fetchInitialAdminData, fetchAnalyticsData, fetchCategories]);
 
   useEffect(() => {
       setCurrentPage(1);
@@ -641,29 +701,44 @@ export default function AdminPanel() {
               <div className="bg-gray-800 rounded-lg p-6 space-y-6">
                 <div className="mb-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
                     <h4 className="font-bold text-lg mb-2 text-purple-300">Guide des Publicités</h4>
-                    <p className="text-sm text-gray-300">Collez votre code HTML/JS (Adsterra, OGAds, Google Adsense) pour chaque emplacement. Les dimensions recommandées sont indiquées pour un affichage optimal.</p>
+                    <p className="text-sm text-gray-300">Collez votre code HTML/JS (Adsterra, OGAds, Google Adsense) pour chaque emplacement. Suivez les recommandations de taille pour un affichage parfait.</p>
                 </div>
-                {AD_PLACEMENTS.map(placement => (
-                  <div key={placement} className="border-b border-gray-700 pb-6 last:border-0">
-                      <div className="flex justify-between items-end mb-2">
-                        <label htmlFor={`ad-${placement}`} className="block text-lg font-semibold text-gray-200 capitalize">
-                            {AD_CONFIG[placement]?.label || placement.replace(/_/g, ' ')}
-                        </label>
-                        <span className="text-xs font-mono bg-gray-700 px-2 py-1 rounded text-purple-300">
-                            {AD_CONFIG[placement]?.size || 'Auto'}
-                        </span>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  {AD_PLACEMENTS.map(placement => {
+                    const config = AD_CONFIG[placement];
+                    return (
+                      <div key={placement} className="bg-gray-900/50 p-4 rounded-xl border border-gray-700 hover:border-purple-500/30 transition-colors">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <label htmlFor={`ad-${placement}`} className="block text-base font-bold text-gray-200">
+                                    {config?.label || placement.replace(/_/g, ' ')}
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">{config?.tip}</p>
+                            </div>
+                            <div className="text-right">
+                                <span className="block text-xs font-mono bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded border border-purple-500/20 mb-1">
+                                    {config?.size || 'Auto'}
+                                </span>
+                                <span className="block text-[10px] text-gray-500 uppercase tracking-wider">{config?.device}</span>
+                            </div>
+                          </div>
+                          <textarea 
+                            id={`ad-${placement}`} 
+                            value={ads[placement] || ''} 
+                            onChange={(e) => setAds(prev => ({...prev, [placement]: e.target.value}))} 
+                            rows={3} 
+                            className="w-full px-3 py-2 bg-gray-800 rounded-md border border-gray-600 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-600 text-gray-300" 
+                            placeholder={`<!-- Code pour ${config?.type || 'Ad'} -->`}
+                          />
                       </div>
-                      <textarea 
-                        id={`ad-${placement}`} 
-                        value={ads[placement] || ''} 
-                        onChange={(e) => setAds(prev => ({...prev, [placement]: e.target.value}))} 
-                        rows={4} 
-                        className="w-full px-3 py-2 bg-gray-900 rounded-md border border-gray-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-600" 
-                        placeholder={`<!-- Collez le code ici pour ${AD_CONFIG[placement]?.label} -->`}
-                      />
-                  </div>
-                ))}
-                <div className="flex justify-end pt-4"><button onClick={handleSaveAds} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md font-semibold transition-colors">Sauvegarder les Publicités</button></div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-end pt-4 border-t border-gray-700">
+                    <button onClick={handleSaveAds} className="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg font-bold shadow-lg hover:shadow-purple-500/20 transition-all transform hover:-translate-y-0.5">
+                        Sauvegarder les Publicités
+                    </button>
+                </div>
               </div>
             ) : activeTab === 'settings' ? (
               <div className="bg-gray-800 rounded-lg p-6 space-y-8">

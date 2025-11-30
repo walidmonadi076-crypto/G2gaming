@@ -32,7 +32,9 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
       case 'game_vertical':
         return { width: 300, height: 600, label: 'Sponsored' };
       case 'game_horizontal':
-        return { width: 728, height: 90, label: 'Advertisement' };
+        // Matched to Admin Panel config: "Game Page Mobile (Horizontal)"
+        // Using 300x250 as a standard mobile-friendly rectangle.
+        return { width: 300, height: 250, label: 'Advertisement' };
       case 'shop_square':
         return { width: 300, height: 250, label: 'Partner Offer' };
       case 'blog_skyscraper_left':
@@ -98,10 +100,15 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
   // Content for Preview/Loading/Error states
   const renderPlaceholder = (text: string, animate: boolean = false) => (
     <div 
-      style={{ width: typeof width === 'number' ? width : '100%', height: height, maxHeight: '100%' }} 
+      style={{ 
+        width: typeof width === 'number' ? width : '100%', 
+        maxWidth: '100%', // Ensure it doesn't overflow mobile screens
+        height: height, 
+        maxHeight: '100%' 
+      }} 
       className={`bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-lg flex items-center justify-center ${animate ? 'animate-pulse' : ''}`}
     >
-      <span className="text-gray-600 text-xs font-bold uppercase tracking-widest">{text}</span>
+      <span className="text-gray-600 text-xs font-bold uppercase tracking-widest text-center px-2">{text}</span>
     </div>
   );
 
