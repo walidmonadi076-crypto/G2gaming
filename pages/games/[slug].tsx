@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -265,9 +266,16 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                         )}
                                     </div>
                                 </div>
+                                
+                                {/* Mobile/Tablet Ad - Horizontal (Visible mostly on smaller screens where sidebar drops) */}
+                                <div className="block lg:hidden mt-4 w-full">
+                                    <div className="bg-gray-900/50 rounded-xl border border-white/5 p-4 flex justify-center items-center">
+                                        <Ad placement="game_horizontal" />
+                                    </div>
+                                </div>
 
                                 {/* About Section */}
-                                <div className="mt-8 border-t border-white/5 pt-8">
+                                <div className="mt-4 border-t border-white/5 pt-8">
                                     <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2">
                                         <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
                                         About This Game
@@ -281,12 +289,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                             Whether you are a casual player or a hardcore gamer, this title offers something unique. 
                                             Master the controls, climb the leaderboards, and discover all the secrets hidden within.
                                         </p>
-                                    </div>
-                                </div>
-                                
-                                <div className="mt-8 flex justify-center">
-                                    <div className="w-full bg-gray-900/50 rounded-xl border border-white/5 p-4 flex justify-center items-center">
-                                        <Ad placement="game_horizontal" />
                                     </div>
                                 </div>
                             </div>
@@ -331,7 +333,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     </div>
                                 </div>
 
-                                {/* Vertical Ad Area */}
+                                {/* Vertical Ad Area (Sticky) */}
                                 <div className="bg-gray-900 rounded-2xl p-6 border border-white/5 shadow-xl flex flex-col items-center text-center">
                                     <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">Sponsored Content</span>
                                     <div className="w-full flex justify-center min-h-[600px] bg-black/20 rounded-xl overflow-hidden">
