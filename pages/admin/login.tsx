@@ -22,7 +22,7 @@ function getCookie(name: string): string | null {
 type FormItem = Game | BlogPost | Product | SocialLink;
 type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
-// Enhanced Ad Config with detailed recommendation engine data
+// --- AD INTELLIGENCE ENGINE CONFIGURATION ---
 const AD_CONFIG: Record<string, { 
     label: string; 
     size: string; 
@@ -30,17 +30,26 @@ const AD_CONFIG: Record<string, {
     device: string; 
     visibility: string; 
     uxScore: string; 
-    problem?: string; 
+    revenuePotential: string;
+    issue?: string;
+    rootCause?: string;
+    recommended?: string;
+    fallback?: string;
     fix?: string; 
 }> = {
   home_quest_banner: { 
     label: 'Home Quest Banner', 
     size: '728x90', 
     type: 'Banner / Leaderboard', 
-    device: 'All Devices (Scaled on Mobile)', 
-    visibility: '100% (High Impact)',
+    device: 'All Devices', 
+    visibility: '96% (High Impact)',
     uxScore: '9/10',
-    fix: 'Smart scaling applied for mobile devices.'
+    revenuePotential: 'High',
+    issue: 'Too wide on mobile (clips)',
+    rootCause: 'Container width mismatch',
+    recommended: '728x90 (Desktop)',
+    fallback: '320x50 (Mobile)',
+    fix: 'Smart scaling + responsive wrapper applied.'
   },
   home_native_game: { 
     label: 'Home Native Game Card', 
@@ -49,7 +58,8 @@ const AD_CONFIG: Record<string, {
     device: 'All Devices', 
     visibility: '85% (In-Grid)',
     uxScore: '10/10',
-    fix: 'Blends perfectly with content.'
+    revenuePotential: 'Medium',
+    fix: 'Blends perfectly with content grid.'
   },
   deals_strip: { 
     label: 'Desktop Deals Strip', 
@@ -58,7 +68,8 @@ const AD_CONFIG: Record<string, {
     device: 'Desktop Only (XL)', 
     visibility: '90% (Always Visible)',
     uxScore: '8/10',
-    problem: 'Can overlap content on small laptops.',
+    revenuePotential: 'High',
+    issue: 'Can overlap content on small laptops',
     fix: 'Hidden on screens < 1536px.'
   },
   game_vertical: { 
@@ -66,9 +77,11 @@ const AD_CONFIG: Record<string, {
     size: '300x600', 
     type: 'Skyscraper / Half Page', 
     device: 'Desktop Only', 
-    visibility: '75%',
+    visibility: '100% (Sticky)',
     uxScore: '9/10',
-    fix: 'Sticky sidebar behavior ensures visibility.'
+    revenuePotential: 'Very High',
+    issue: 'Layout shift if late load',
+    fix: 'Sticky sidebar behavior + pre-reserved height.'
   },
   game_horizontal: { 
     label: 'Game Page Mobile Area', 
@@ -76,8 +89,10 @@ const AD_CONFIG: Record<string, {
     type: 'Medium Rectangle', 
     device: 'Mobile & Tablet', 
     visibility: '80%',
-    uxScore: '8/10',
-    fix: 'Placed immediately below CTA.'
+    uxScore: '8.5/10',
+    revenuePotential: 'Medium',
+    recommended: '300x250 or 320x100',
+    fix: 'Placed immediately below CTA for max conversion.'
   },
   blog_skyscraper_left: { 
     label: 'Blog Left Sidebar', 
@@ -86,7 +101,8 @@ const AD_CONFIG: Record<string, {
     device: 'Desktop Only', 
     visibility: '60%',
     uxScore: '8/10',
-    problem: 'Breaks layout on mobile.',
+    revenuePotential: 'Medium',
+    issue: 'Breaks layout on mobile',
     fix: 'Strictly hidden on mobile/tablet.'
   },
   blog_skyscraper_right: { 
@@ -96,7 +112,8 @@ const AD_CONFIG: Record<string, {
     device: 'Desktop Only', 
     visibility: '60%',
     uxScore: '8/10',
-    problem: 'Breaks layout on mobile.',
+    revenuePotential: 'Medium',
+    issue: 'Breaks layout on mobile',
     fix: 'Strictly hidden on mobile/tablet.'
   },
   shop_square: { 
@@ -106,6 +123,7 @@ const AD_CONFIG: Record<string, {
     device: 'All Devices', 
     visibility: '95% (Near Buy Button)',
     uxScore: '9/10',
+    revenuePotential: 'Medium',
     fix: 'Positioned in the "Buy Box" zone.'
   },
   quest_page_wall: { 
@@ -115,6 +133,7 @@ const AD_CONFIG: Record<string, {
     device: 'All Devices', 
     visibility: '100% (Dedicated Page)',
     uxScore: 'N/A',
+    revenuePotential: 'Maximum',
     fix: 'Full page focus.'
   },
   footer_partner: { 
@@ -124,6 +143,7 @@ const AD_CONFIG: Record<string, {
     device: 'All Devices', 
     visibility: '20% (Footer)',
     uxScore: '10/10',
+    revenuePotential: 'Low',
     fix: 'Scaled for mobile.'
   }
 };
@@ -766,8 +786,8 @@ export default function AdminPanel() {
                           
                           {/* Intelligent Tip Box */}
                           <div className="mb-4 bg-gray-800/50 p-3 rounded-lg border border-gray-700/50 text-xs space-y-1">
-                                {config?.problem && (
-                                    <p className="text-red-300"><span className="font-bold">⚠️ Warning:</span> {config.problem}</p>
+                                {config?.issue && (
+                                    <p className="text-red-300"><span className="font-bold">⚠️ Warning:</span> {config.issue}</p>
                                 )}
                                 {config?.fix && (
                                     <p className="text-blue-300"><span className="font-bold">💡 Optimization:</span> {config.fix}</p>

@@ -24,6 +24,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
   const { ads, isLoading } = useAds();
   const adContainerRef = useRef<HTMLDivElement>(null);
   const [isIframe, setIsIframe] = useState(false);
+  const [scale, setScale] = useState(1);
   
   const ad = ads.find(a => a.placement === placement);
 
@@ -39,12 +40,12 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
       case 'blog_skyscraper_right':
         return { width: 160, height: 600, label: 'Ad', mobileScale: false };
       case 'home_quest_banner':
-        // 728px is too wide for mobile (usually < 400px). We enable scaling.
+        // 728px is too wide for mobile (usually < 400px). We enable smart scaling.
         return { width: 728, height: 90, label: 'Quest Sponsor', mobileScale: true };
       case 'home_native_game':
         return { width: 300, height: 250, label: 'Sponsored', mobileScale: true };
       case 'deals_strip':
-        return { width: 160, height: 600, label: 'Hot Deals', mobileScale: false };
+        return { width: 120, height: 600, label: 'Hot Deals', mobileScale: false };
       case 'quest_page_wall':
         return { width: '100%', height: 800, label: 'Offers', mobileScale: false };
       case 'footer_partner':
@@ -61,6 +62,29 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
       setIsIframe(true);
     }
   }, []);
+
+  // Smart Scaling Logic
+  useEffect(() => {
+    if (mobileScale && typeof window !== 'undefined') {
+      const handleResize = () => {
+        // Calculate scaling factor based on window width vs ad width
+        // Adding 32px buffer for padding
+        const availableWidth = window.innerWidth - 32; 
+        const adWidth = typeof width === 'number' ? width : 300; 
+        
+        if (availableWidth < adWidth) {
+          setScale(availableWidth / adWidth);
+        } else {
+          setScale(1);
+        }
+      };
+      
+      window.addEventListener('resize', handleResize);
+      handleResize(); // Initial check
+      
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, [mobileScale, width]);
   
   useEffect(() => {
     if (ad?.code && adContainerRef.current && !isIframe) {
@@ -119,8 +143,14 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
       )}
       
       <div 
-        className={`w-full flex justify-center items-center relative z-0 ${mobileScale ? 'origin-top scale-90 sm:scale-100' : ''}`}
-        style={{ minHeight: typeof height === 'number' && height > 90 ? height : undefined }} 
+        className={`w-full flex justify-center items-center relative z-0`}
+        style={{ 
+            minHeight: typeof height === 'number' && height > 90 ? height * scale : undefined,
+            // Apply scale transform if needed
+            transform: scale < 1 ? `scale(${scale})` : 'none',
+            transformOrigin: 'top center',
+            marginBottom: scale < 1 ? -((typeof height === 'number' ? height : 0) * (1 - scale)) : 0
+        }} 
       >
         {isIframe ? (
           renderPlaceholder('Ad Preview Disabled')
