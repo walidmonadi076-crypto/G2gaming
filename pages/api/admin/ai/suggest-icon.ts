@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { isAuthorized } from '../../auth/check';
 import { GoogleGenAI } from '@google/genai';
@@ -34,7 +35,7 @@ You are helping me choose an icon for navigation categories in a gaming website 
 
 I use the "lucide-react" icon library in my React app.
 These are the ONLY allowed icons:
-Gamepad2, Zap, Target, Car, Sword, ShoppingBag, Book, Headphones, Shirt, Cpu, Star, Trophy
+Gamepad2, Zap, Target, Car, Sword, ShoppingBag, Book, Headphones, Shirt, Cpu, Star, Trophy, Ghost, Rocket, Users, Puzzle
 
 Given this data:
 - Section type: ${section}
@@ -67,6 +68,10 @@ Just output the icon name string directly (example: Zap).
             'Cpu',
             'Star',
             'Trophy',
+            'Ghost',
+            'Rocket',
+            'Users',
+            'Puzzle'
         ] as const;
 
         const DEFAULT_ICON = 'Gamepad2';
