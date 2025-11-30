@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
 import type { Game, SiteSettings } from '../types';
