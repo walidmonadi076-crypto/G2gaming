@@ -9,8 +9,7 @@ import Image from 'next/image';
 import { useSettings } from '../contexts/AdContext';
 import SEO from '../components/SEO';
 import QuestBanner from '../components/QuestBanner';
-import SponsoredGameCard from '../components/SponsoredGameCard';
-import DealsStrip from '../components/DealsStrip';
+import Ad from '../components/Ad';
 
 const Section: React.FC<{ title: string; children: React.ReactNode, viewMore?: boolean, onViewMore?: () => void }> = ({ title, children, viewMore = true, onViewMore }) => (
     <section className="mb-16 animate-fade-in relative z-10">
@@ -64,15 +63,6 @@ const Home: React.FC<HomeProps> = ({ games }) => {
       .map(tag => {
         const sectionGames = games.filter(g => g.tags?.includes(tag));
         const title = tag === 'Play on Comet' ? 'Play on Comet' : `${tag} Games`;
-        
-        // --- Native Ad Injection Logic ---
-        // Insert a SponsoredGameCard every 5th item if list is long enough
-        // Note: Since GameCarousel takes explicit Game objects, we handle injection differently.
-        // For simplicity in this carousel structure, we are NOT injecting into the array 
-        // to avoid breaking TypeScript types. SponsoredGameCards are better placed in grid views.
-        // However, for the purpose of the requirement "Sponsored Game Card (Native Ad)",
-        // we will manually add a "Fake Game" object that represents an ad if needed, 
-        // or place them between sections. Here we rely on QuestBanner and DealsStrip for homepage ads.
         
         return {
           key: tag.toLowerCase().replace(/\s+/g, '-'),
@@ -175,9 +165,6 @@ const Home: React.FC<HomeProps> = ({ games }) => {
     <>
       <SEO />
       
-      {/* Desktop Only Deals Strip */}
-      <DealsStrip />
-
       <div className="min-h-screen bg-[#0d0d0d] text-white selection:bg-purple-500 selection:text-white">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-6">
             
@@ -200,11 +187,15 @@ const Home: React.FC<HomeProps> = ({ games }) => {
                 ))}
             </div>
 
-            {/* Native Ad Insert Example (if there was a grid view here) */}
-            {/* <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <SponsoredGameCard />
-                <SponsoredGameCard /> 
-            </div> */}
+            {/* Footer Partner Ad - High visibility exit placement */}
+            <div className="mt-20 border-t border-white/5 pt-10">
+                <div className="text-center mb-6">
+                    <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">Sponsored Partners</p>
+                </div>
+                <div className="flex justify-center">
+                    <Ad placement="footer_partner" className="w-full max-w-[728px] bg-transparent shadow-none border-0" />
+                </div>
+            </div>
         </div>
       </div>
     </>

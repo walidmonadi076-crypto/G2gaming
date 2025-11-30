@@ -56,22 +56,12 @@ const AD_CONFIG: Record<string, {
     size: '300x250', 
     type: 'Native / Rect', 
     device: 'All Devices', 
-    visibility: '85% (In-Grid)',
+    visibility: '100% (Games Grid)',
     uxScore: '10/10',
-    revenuePotential: 'Medium',
-    fix: 'Blends perfectly with content grid.'
-  },
-  deals_strip: { 
-    label: 'Desktop Deals Strip', 
-    size: '120x600', 
-    type: 'Skyscraper', 
-    device: 'Desktop Only (XL)', 
-    visibility: '90% (Always Visible)',
-    uxScore: '8/10',
     revenuePotential: 'High',
-    issue: 'Can overlap content on small laptops',
-    fix: 'Hidden on screens < 1536px.'
+    fix: 'Injected into "All Games" grid (Slot #6).'
   },
+  // Removed deals_strip as it was intrusive and low value.
   game_vertical: { 
     label: 'Game Page Sidebar', 
     size: '300x600', 
@@ -141,10 +131,10 @@ const AD_CONFIG: Record<string, {
     size: '728x90', 
     type: 'Leaderboard', 
     device: 'All Devices', 
-    visibility: '20% (Footer)',
+    visibility: '80% (Bottom)',
     uxScore: '10/10',
     revenuePotential: 'Low',
-    fix: 'Scaled for mobile.'
+    fix: 'Active on Home & Games page footer.'
   }
 };
 
@@ -770,7 +760,7 @@ export default function AdminPanel() {
                                         {config?.size}
                                     </span>
                                     <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-800 text-gray-400 px-2 py-1 rounded">
-                                        {config?.device}
+                                        {config?.type}
                                     </span>
                                 </div>
                             </div>

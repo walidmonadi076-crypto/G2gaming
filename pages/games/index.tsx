@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
 import type { Game } from '../../types';
@@ -6,6 +7,8 @@ import { getAllGames } from '../../lib/data';
 import GameCard from '../../components/GameCard';
 import SEO from '../../components/SEO';
 import FilterButton from '../../components/FilterButton';
+import SponsoredGameCard from '../../components/SponsoredGameCard';
+import Ad from '../../components/Ad';
 
 interface GamesPageProps {
   searchQuery: string;
@@ -93,11 +96,15 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
                 </div>
             </div>
 
-            {/* --- Game Grid --- */}
+            {/* --- Game Grid with Native Ad Injection --- */}
             {filteredGames.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-                    {filteredGames.map(game => (
-                        <GameCard key={game.id} game={game} />
+                    {filteredGames.map((game, index) => (
+                        <React.Fragment key={game.id}>
+                            <GameCard game={game} />
+                            {/* Inject Sponsored Native Ad after the 6th game (index 5) */}
+                            {index === 5 && <SponsoredGameCard />}
+                        </React.Fragment>
                     ))}
                 </div>
             ) : (
@@ -119,6 +126,11 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
                     </button>
                 </div>
             )}
+
+            {/* Footer Ad Placement */}
+            <div className="mt-20 border-t border-white/5 pt-10 pb-8 flex justify-center">
+               <Ad placement="footer_partner" className="w-full max-w-[728px] bg-transparent shadow-none border-0" />
+            </div>
         </div>
       </div>
     </>
