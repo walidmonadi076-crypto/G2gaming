@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -13,9 +12,9 @@ interface AdProps {
     | 'blog_skyscraper_right'
     | 'home_quest_banner'
     | 'home_native_game'
-    | 'deals_strip'
     | 'quest_page_wall'
-    | 'footer_partner';
+    | 'footer_partner'
+    | 'deals_strip';
   className?: string;
   showLabel?: boolean;
 }
@@ -44,12 +43,12 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
         return { width: 728, height: 90, label: 'Quest Sponsor', mobileScale: true };
       case 'home_native_game':
         return { width: 300, height: 250, label: 'Sponsored', mobileScale: true };
-      case 'deals_strip':
-        return { width: 120, height: 600, label: 'Hot Deals', mobileScale: false };
       case 'quest_page_wall':
         return { width: '100%', height: 800, label: 'Offers', mobileScale: false };
       case 'footer_partner':
         return { width: 728, height: 90, label: 'Partner', mobileScale: true };
+      case 'deals_strip':
+        return { width: 120, height: 600, label: 'Hot Deals', mobileScale: false };
       default:
         return { width: 300, height: 250, label: 'Ad', mobileScale: true };
     }
@@ -114,7 +113,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
   }, [ad, isIframe]);
 
   // Special container styling based on placement
-  const isTransparent = ['deals_strip', 'footer_partner'].includes(placement);
+  const isTransparent = ['footer_partner'].includes(placement);
   const baseStyles = isTransparent 
     ? '' 
     : 'bg-gray-900/80 border border-white/5 backdrop-blur-sm shadow-lg hover:border-purple-500/20';

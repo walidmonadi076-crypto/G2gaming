@@ -22,7 +22,7 @@ function getCookie(name: string): string | null {
 type FormItem = Game | BlogPost | Product | SocialLink;
 type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
-// --- AD INTELLIGENCE ENGINE CONFIGURATION ---
+// --- AD INTELLIGENCE & ROLE MAP ---
 const AD_CONFIG: Record<string, { 
     label: string; 
     size: string; 
@@ -31,6 +31,7 @@ const AD_CONFIG: Record<string, {
     visibility: string; 
     uxScore: string; 
     revenuePotential: string;
+    role: string; // Strategic role for the ad unit
     issue?: string;
     rootCause?: string;
     recommended?: string;
@@ -45,6 +46,7 @@ const AD_CONFIG: Record<string, {
     visibility: '96% (High Impact)',
     uxScore: '9/10',
     revenuePotential: 'High',
+    role: 'Gamified Entry Point',
     issue: 'Too wide on mobile (clips)',
     rootCause: 'Container width mismatch',
     recommended: '728x90 (Desktop)',
@@ -52,16 +54,16 @@ const AD_CONFIG: Record<string, {
     fix: 'Smart scaling + responsive wrapper applied.'
   },
   home_native_game: { 
-    label: 'Home Native Game Card', 
+    label: 'Games Grid Native Card', 
     size: '300x250', 
     type: 'Native / Rect', 
     device: 'All Devices', 
-    visibility: '100% (Games Grid)',
+    visibility: '100% (Games Library)',
     uxScore: '10/10',
     revenuePotential: 'High',
-    fix: 'Injected into "All Games" grid (Slot #6).'
+    role: 'The Chameleon (In-Feed)',
+    fix: 'Injected into "All Games" grid (Slot #6) to fix rendering issues.'
   },
-  // Removed deals_strip as it was intrusive and low value.
   game_vertical: { 
     label: 'Game Page Sidebar', 
     size: '300x600', 
@@ -70,6 +72,7 @@ const AD_CONFIG: Record<string, {
     visibility: '100% (Sticky)',
     uxScore: '9/10',
     revenuePotential: 'Very High',
+    role: 'High Visibility Anchor',
     issue: 'Layout shift if late load',
     fix: 'Sticky sidebar behavior + pre-reserved height.'
   },
@@ -78,9 +81,10 @@ const AD_CONFIG: Record<string, {
     size: '300x250', 
     type: 'Medium Rectangle', 
     device: 'Mobile & Tablet', 
-    visibility: '80%',
+    visibility: '90%',
     uxScore: '8.5/10',
     revenuePotential: 'Medium',
+    role: 'The Conversion King (Post-CTA)',
     recommended: '300x250 or 320x100',
     fix: 'Placed immediately below CTA for max conversion.'
   },
@@ -92,6 +96,7 @@ const AD_CONFIG: Record<string, {
     visibility: '60%',
     uxScore: '8/10',
     revenuePotential: 'Medium',
+    role: 'Desktop Density Filler',
     issue: 'Breaks layout on mobile',
     fix: 'Strictly hidden on mobile/tablet.'
   },
@@ -103,6 +108,7 @@ const AD_CONFIG: Record<string, {
     visibility: '60%',
     uxScore: '8/10',
     revenuePotential: 'Medium',
+    role: 'Desktop Density Filler',
     issue: 'Breaks layout on mobile',
     fix: 'Strictly hidden on mobile/tablet.'
   },
@@ -114,6 +120,7 @@ const AD_CONFIG: Record<string, {
     visibility: '95% (Near Buy Button)',
     uxScore: '9/10',
     revenuePotential: 'Medium',
+    role: 'Buy Box Sponsor',
     fix: 'Positioned in the "Buy Box" zone.'
   },
   quest_page_wall: { 
@@ -124,6 +131,7 @@ const AD_CONFIG: Record<string, {
     visibility: '100% (Dedicated Page)',
     uxScore: 'N/A',
     revenuePotential: 'Maximum',
+    role: 'The High Ticket (CPA Engine)',
     fix: 'Full page focus.'
   },
   footer_partner: { 
@@ -131,10 +139,22 @@ const AD_CONFIG: Record<string, {
     size: '728x90', 
     type: 'Leaderboard', 
     device: 'All Devices', 
-    visibility: '80% (Bottom)',
+    visibility: '20% (Bottom)',
     uxScore: '10/10',
     revenuePotential: 'Low',
+    role: 'Exit Intent / SEO Partner',
     fix: 'Active on Home & Games page footer.'
+  },
+  deals_strip: { 
+    label: 'Deals Strip', 
+    size: '120x600', 
+    type: 'Skyscraper', 
+    device: 'Desktop Only (2XL+)', 
+    visibility: 'High (Sticky Right)',
+    uxScore: '8/10',
+    revenuePotential: 'High',
+    role: 'Monetization Sidebar',
+    fix: 'Visible only on very wide screens.'
   }
 };
 
@@ -776,6 +796,10 @@ export default function AdminPanel() {
                           
                           {/* Intelligent Tip Box */}
                           <div className="mb-4 bg-gray-800/50 p-3 rounded-lg border border-gray-700/50 text-xs space-y-1">
+                                <div className="flex items-center gap-2 border-b border-gray-700/50 pb-2 mb-2">
+                                    <span className="font-bold text-purple-300">ROLE:</span>
+                                    <span className="text-gray-200">{config?.role}</span>
+                                </div>
                                 {config?.issue && (
                                     <p className="text-red-300"><span className="font-bold">⚠️ Warning:</span> {config.issue}</p>
                                 )}
