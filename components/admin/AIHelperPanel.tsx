@@ -74,6 +74,12 @@ const AIHelperPanel: React.FC<AIHelperPanelProps> = ({
     </button>
   );
 
+  const placeholders = {
+    game: "Ex: Écris une description marketing intense pour un jeu de course futuriste avec des graphismes néon...",
+    blog: "Ex: Rédige une introduction captivante pour un article sur 'Les meilleurs claviers mécaniques en 2024'...",
+    product: "Ex: Crée une description produit persuasive pour un casque gaming sans fil avec réduction de bruit..."
+  };
+
   return (
     <div className="mt-8 bg-gray-900 border border-purple-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden">
       {/* Decorative background glow */}
@@ -94,7 +100,7 @@ const AIHelperPanel: React.FC<AIHelperPanelProps> = ({
             <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={`Ex: Write a catchy description for this ${contextType}...`}
+            placeholder={placeholders[contextType]}
             className="w-full bg-gray-800 text-gray-200 text-sm rounded-lg border border-gray-700 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 p-3 h-24 resize-none transition-all placeholder-gray-500"
             />
         </div>

@@ -18,7 +18,6 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
   const handleMouseEnter = () => {
     setIsPlaying(true);
     if (videoRef.current) {
-      // Force reload/play logic
       videoRef.current.currentTime = 0;
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
@@ -44,10 +43,10 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
       href={`/games/${game.slug}`}
       className={`
         group relative block w-full rounded-xl bg-gray-900 overflow-hidden 
-        transition-all duration-300 ease-out 
+        transition-all duration-200 ease-out 
         hover:z-20 hover:scale-105 hover:-translate-y-1
         ring-0 hover:ring-2 hover:ring-purple-500
-        hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]
+        hover:shadow-[0_0_25px_rgba(168,85,247,0.6)]
         ${aspectRatioClass}
       `}
       onMouseEnter={handleMouseEnter}
@@ -77,21 +76,21 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
         />
       )}
       
-      {/* 3. Gradient Overlay (Bottom Fade) - Improves text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-transparent to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+      {/* 3. Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
       
-      {/* 4. Content (Title & Badge) - Compact Layout */}
+      {/* 4. Content (Title & Badge) - Arcade Style Typography */}
       <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col justify-end h-full pointer-events-none">
         
-        {/* Category Tag - Slides up slightly on hover */}
-        <div className="transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 mb-1">
-           <span className="inline-block px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold uppercase tracking-wider bg-purple-600 text-white shadow-[0_0_8px_rgba(147,51,234,0.6)]">
+        {/* Category Tag */}
+        <div className="transform translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-200 mb-1">
+           <span className="inline-block px-1.5 py-0.5 rounded-[2px] text-[9px] font-black uppercase tracking-widest bg-purple-600 text-white shadow-[0_0_8px_rgba(147,51,234,0.8)]">
              {game.category}
            </span>
         </div>
 
         {/* Title */}
-        <h3 className="text-white font-bold text-sm leading-tight tracking-tight drop-shadow-md group-hover:text-purple-100 transition-colors truncate">
+        <h3 className="text-white font-black text-sm uppercase leading-none tracking-tighter drop-shadow-lg group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-purple-200 transition-all truncate">
           {game.title}
         </h3>
       </div>
