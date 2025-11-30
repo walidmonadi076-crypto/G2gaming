@@ -1,4 +1,3 @@
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { isAuthorized } from '../../auth/check';
 import { GoogleGenAI } from '@google/genai';
@@ -10,7 +9,10 @@ if (!apiKey) {
 
 const ai = new GoogleGenAI({ apiKey });
 
-export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
+export default async function handler(
+    req: NextApiRequest & { method?: string },
+    res: NextApiResponse
+) {
     if (!isAuthorized(req)) {
         return res.status(401).json({ error: 'Non autorisé' });
     }
@@ -48,11 +50,39 @@ Just output the icon name string directly (example: Zap).
             contents: prompt,
         });
 
-        const iconName = response.text.trim();
-        res.status(200).json({ iconName });
+        // 👇 FIX: تأكد أن response.text ديما string
+        const rawText = (response.text ?? '').trim();
+
+        // 👇 لائحة الأيقونات المسموح بها (مطابقة للـ constants ديالك)
+        const allowedIcons = [
+            'Gamepad2',
+            'Zap',
+            'Target',
+            'Car',
+            'Sword',
+            'ShoppingBag',
+            'Book',
+            'Headphones',
+            'Shirt',
+            'Cpu',
+            'Star',
+            'Trophy',
+        ] as const;
+
+        const DEFAULT_ICON = 'Gamepad2';
+
+        // 👇 تحقق واش الجواب ديال Gemini فعلاً أيقونة مسموح بها
+        const iconName = allowedIcons.includes(rawText as (typeof allowedIcons)[number])
+            ? rawText
+            : DEFAULT_ICON;
+
+        return res.status(200).json({ iconName });
 
     } catch (error) {
         console.error("API Error in /api/admin/ai/suggest-icon:", error);
-        res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
+        return res.status(500).json({
+            error: 'Erreur interne du serveur.',
+            details: (error as Error).message,
+        });
     }
 }
