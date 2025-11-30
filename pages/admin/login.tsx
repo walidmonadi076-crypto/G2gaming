@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
-import type { Game, BlogPost, Product, SocialLink, Ad, Comment, SiteSettings } from '../../types';
+import type { Game, BlogPost, Product, SocialLink, Ad, Comment, SiteSettings, CategorySetting } from '../../types';
 import AdminDashboard from '../../components/AdminDashboard';
 import AdminForm from '../../components/AdminForm';
 import ToastContainer from '../../components/ToastContainer';
 import type { ToastData, ToastType } from '../../components/Toast';
 import { useDebounce } from '../../hooks/useDebounce';
+import { ICON_MAP } from '../../constants';
 
 // Define a base URL for all API calls in this file.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : '');
@@ -23,7 +24,7 @@ type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
 const AD_PLACEMENTS = ['game_vertical', 'game_horizontal', 'shop_square', 'blog_skyscraper_left', 'blog_skyscraper_right'];
 
-type TabType = 'games' | 'blogs' | 'products' | 'social-links' | 'comments' | 'ads' | 'settings' | 'analytics';
+type TabType = 'games' | 'blogs' | 'products' | 'social-links' | 'comments' | 'ads' | 'settings' | 'analytics' | 'categories';
 
 type Item = Game | BlogPost | Product | SocialLink | Comment;
 
@@ -123,6 +124,9 @@ export default function AdminPanel() {
   const [settings, setSettings] = useState<Partial<SiteSettings>>({});
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   
+  const [categories, setCategories] = useState<CategorySetting[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<'games' | 'blogs' | 'products'>('games');
+  
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -155,18 +159,11 @@ export default function AdminPanel() {
     setLoading(true);
     try {
         const res = await fetch(`${API_BASE}/api/admin/analytics`);
-
-        // Gracefully handle 401 Unauthorized, which can happen before the initial auth check completes.
-        // This prevents unnecessary console errors.
         if (res.status === 401) {
           setAnalyticsData(null);
           return;
         }
-        
-        if (!res.ok) {
-            throw new Error('Failed to fetch analytics');
-        }
-
+        if (!res.ok) throw new Error('Failed to fetch analytics');
         const data = await res.json();
         setAnalyticsData(data);
     } catch (error) {
@@ -176,8 +173,23 @@ export default function AdminPanel() {
     }
   }, [addToast]);
 
+  const fetchCategories = useCallback(async () => {
+      setLoading(true);
+      try {
+          const res = await fetch(`${API_BASE}/api/admin/categories`);
+          if (res.ok) {
+              const data = await res.json();
+              setCategories(data);
+          }
+      } catch (error) {
+          addToast('Erreur lors du chargement des catégories.', 'error');
+      } finally {
+          setLoading(false);
+      }
+  }, [addToast]);
+
   const fetchDataForTab = useCallback(async (tab: TabType, page: number, search: string, sortKey: string, sortDir: string) => {
-      if (['ads', 'settings', 'analytics'].includes(tab)) return;
+      if (['ads', 'settings', 'analytics', 'categories'].includes(tab)) return;
       setLoading(true);
       try {
         const url = `${API_BASE}/api/admin/${tab}?page=${page}&search=${encodeURIComponent(search)}&limit=${pagination.itemsPerPage}&sortBy=${sortKey}&sortOrder=${sortDir}`;
@@ -241,11 +253,13 @@ export default function AdminPanel() {
     if (isAuthenticated) {
       if (activeTab === 'analytics') {
         fetchAnalyticsData();
+      } else if (activeTab === 'categories') {
+        fetchCategories();
       } else {
         fetchDataForTab(activeTab, currentPage, debouncedSearchQuery, sortConfig.key, sortConfig.direction);
       }
     }
-  }, [isAuthenticated, activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab, fetchAnalyticsData]);
+  }, [isAuthenticated, activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab, fetchAnalyticsData, fetchCategories]);
 
   useEffect(() => {
       setCurrentPage(1);
@@ -275,11 +289,13 @@ export default function AdminPanel() {
   const refreshCurrentTab = useCallback(() => {
     if (activeTab === 'analytics') {
       fetchAnalyticsData();
+    } else if (activeTab === 'categories') {
+      fetchCategories();
     } else {
       fetchDataForTab(activeTab, currentPage, debouncedSearchQuery, sortConfig.key, sortConfig.direction);
     }
     fetchInitialAdminData();
-  }, [activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab, fetchInitialAdminData, fetchAnalyticsData]);
+  }, [activeTab, currentPage, debouncedSearchQuery, sortConfig, fetchDataForTab, fetchInitialAdminData, fetchAnalyticsData, fetchCategories]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément?')) return;
@@ -390,6 +406,55 @@ export default function AdminPanel() {
     setSettings(prev => ({ ...prev, [name]: isCheckbox ? e.target.checked : value }));
   };
   
+  // Category Management Handlers
+  const handleUpdateCategory = async (cat: CategorySetting, field: string, value: any) => {
+      const updatedCat = { ...cat, [field]: value };
+      
+      // Optimistic Update
+      setCategories(prev => prev.map(c => (c.section === cat.section && c.name === cat.name) ? updatedCat : c));
+
+      const csrfToken = getCookie('csrf_token');
+      if (!csrfToken) return addToast('Erreur de session.', 'error');
+
+      try {
+          const res = await fetch(`${API_BASE}/api/admin/categories`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+              body: JSON.stringify(updatedCat)
+          });
+          if (!res.ok) throw new Error('Update failed');
+      } catch (error) {
+          addToast('Erreur de mise à jour.', 'error');
+          // Revert on failure
+          setCategories(prev => prev.map(c => (c.section === cat.section && c.name === cat.name) ? cat : c));
+      }
+  };
+
+  const handleSuggestIcon = async (cat: CategorySetting) => {
+      addToast('Suggestion IA en cours...', 'success');
+      const csrfToken = getCookie('csrf_token');
+      try {
+          const res = await fetch(`${API_BASE}/api/admin/ai/suggest-icon`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken || '' },
+              body: JSON.stringify({ categoryName: cat.name, section: cat.section })
+          });
+          
+          if (res.ok) {
+              const { iconName } = await res.json();
+              if (iconName) {
+                  await handleUpdateCategory(cat, 'icon_name', iconName);
+                  addToast(`Icône suggérée: ${iconName}`, 'success');
+              } else {
+                  addToast('Aucune icône trouvée.', 'error');
+              }
+          }
+      } catch (e) {
+          addToast('Erreur IA.', 'error');
+      }
+  };
+
+  
   const requestSort = (key: string) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -426,6 +491,7 @@ export default function AdminPanel() {
     { id: 'games', label: 'Games', count: stats?.totalGames },
     { id: 'blogs', label: 'Blogs', count: stats?.totalBlogs },
     { id: 'products', label: 'Products', count: stats?.totalProducts },
+    { id: 'categories', label: 'Categories' },
     { id: 'social-links', label: 'Social-Links', count: stats?.totalSocialLinks },
     { id: 'comments', label: 'Comments', count: stats?.totalComments },
     { id: 'ads', label: 'Ads', count: stats?.totalAds },
@@ -479,6 +545,84 @@ export default function AdminPanel() {
 
             {activeTab === 'analytics' ? (
               <AnalyticsPanel loading={loading} data={analyticsData} />
+            ) : activeTab === 'categories' ? (
+              <div className="bg-gray-800 rounded-lg p-6">
+                  <div className="flex gap-4 mb-6">
+                      {['games', 'blogs', 'products'].map(cat => (
+                          <button 
+                            key={cat} 
+                            onClick={() => setCategoryFilter(cat as any)} 
+                            className={`px-4 py-2 rounded-full text-sm font-bold capitalize ${categoryFilter === cat ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                          >
+                              {cat}
+                          </button>
+                      ))}
+                  </div>
+                  <div className="overflow-x-auto">
+                      <table className="w-full">
+                          <thead>
+                              <tr className="text-left border-b border-gray-700">
+                                  <th className="p-3">Catégorie</th>
+                                  <th className="p-3">Articles</th>
+                                  <th className="p-3">Visible</th>
+                                  <th className="p-3">Ordre</th>
+                                  <th className="p-3">Icône</th>
+                                  <th className="p-3">Actions</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {categories.filter(c => c.section === categoryFilter).map(cat => (
+                                  <tr key={cat.name} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                      <td className="p-3 font-medium">{cat.name}</td>
+                                      <td className="p-3 text-gray-400">{cat.count || 0}</td>
+                                      <td className="p-3">
+                                          <input 
+                                            type="checkbox" 
+                                            checked={cat.show_in_sidebar} 
+                                            onChange={(e) => handleUpdateCategory(cat, 'show_in_sidebar', e.target.checked)}
+                                            className="w-5 h-5 rounded border-gray-600 text-purple-600 bg-gray-700 focus:ring-purple-500"
+                                          />
+                                      </td>
+                                      <td className="p-3">
+                                          <input 
+                                            type="number" 
+                                            value={cat.sort_order} 
+                                            onChange={(e) => handleUpdateCategory(cat, 'sort_order', parseInt(e.target.value))}
+                                            className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-center"
+                                          />
+                                      </td>
+                                      <td className="p-3 flex items-center gap-2">
+                                          <div className="w-8 h-8 flex items-center justify-center bg-gray-900 rounded text-gray-300">
+                                              {ICON_MAP[cat.icon_name] || ICON_MAP['Gamepad2']}
+                                          </div>
+                                          <select 
+                                            value={cat.icon_name || 'Gamepad2'} 
+                                            onChange={(e) => handleUpdateCategory(cat, 'icon_name', e.target.value)}
+                                            className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm max-w-[120px]"
+                                          >
+                                              {Object.keys(ICON_MAP).map(key => (
+                                                  <option key={key} value={key}>{key}</option>
+                                              ))}
+                                          </select>
+                                      </td>
+                                      <td className="p-3">
+                                          <button 
+                                            onClick={() => handleSuggestIcon(cat)} 
+                                            className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded flex items-center gap-1"
+                                          >
+                                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                              IA Suggest
+                                          </button>
+                                      </td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                      {categories.filter(c => c.section === categoryFilter).length === 0 && (
+                          <div className="p-8 text-center text-gray-500">Aucune catégorie trouvée. Ajoutez du contenu pour voir apparaître les catégories.</div>
+                      )}
+                  </div>
+              </div>
             ) : activeTab === 'ads' ? (
               <div className="bg-gray-800 rounded-lg p-6 space-y-6">
                 {AD_PLACEMENTS.map(placement => (

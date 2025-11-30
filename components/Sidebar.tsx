@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ICONS, POPULAR_GAME_CATEGORIES, POPULAR_BLOG_CATEGORIES, POPULAR_SHOP_CATEGORIES } from '../constants';
+import { ICONS, ICON_MAP } from '../constants';
 import { useTheme, useSettings } from '../contexts/AdContext';
 
 interface SidebarProps {
@@ -10,6 +11,13 @@ interface SidebarProps {
     onMouseLeave: () => void;
     isMobileOpen: boolean;
     onMobileClose: () => void;
+}
+
+interface SidebarCategory {
+    id: string;
+    name: string;
+    slug: string;
+    icon_name: string;
 }
 
 const SunIcon = () => (
@@ -49,6 +57,8 @@ const ThemeToggle: React.FC<{ isExpanded: boolean }> = ({ isExpanded }) => {
 const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobileClose }) => {
   const router = useRouter();
   const { settings } = useSettings();
+  const [popularCategories, setPopularCategories] = useState<SidebarCategory[]>([]);
+  const [loadingCats, setLoadingCats] = useState(false);
   
   const navItems = [
     { href: '/', icon: ICONS.HOME, label: 'Home' },
@@ -57,17 +67,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
     { href: '/shop', icon: ICONS.STORE, label: 'Shop' },
   ];
 
-  const { popularLinks, parentPath } = useMemo(() => {
+  const currentSection = useMemo(() => {
     const path = router.pathname;
-    if (path.startsWith('/blog')) {
-      return { popularLinks: POPULAR_BLOG_CATEGORIES, parentPath: '/blog' };
-    }
-    if (path.startsWith('/shop')) {
-      return { popularLinks: POPULAR_SHOP_CATEGORIES, parentPath: '/shop' };
-    }
-    // Default to games for '/', '/games', and '/ai-chat'
-    return { popularLinks: POPULAR_GAME_CATEGORIES, parentPath: '/games' };
+    if (path.startsWith('/blog')) return 'blog';
+    if (path.startsWith('/shop')) return 'shop';
+    return 'games';
   }, [router.pathname]);
+
+  const parentPath = useMemo(() => {
+      if (currentSection === 'blog') return '/blog';
+      if (currentSection === 'shop') return '/shop';
+      return '/games';
+  }, [currentSection]);
+
+  useEffect(() => {
+      const fetchCategories = async () => {
+          setLoadingCats(true);
+          try {
+              const res = await fetch(`/api/public/sidebar-categories?section=${currentSection}`);
+              if (res.ok) {
+                  const data = await res.json();
+                  setPopularCategories(data);
+              } else {
+                  setPopularCategories([]);
+              }
+          } catch (e) {
+              console.error("Failed to fetch sidebar categories", e);
+              setPopularCategories([]);
+          } finally {
+              setLoadingCats(false);
+          }
+      };
+      
+      fetchCategories();
+  }, [currentSection]);
 
   const isFullyExpanded = isExpanded || isMobileOpen;
 
@@ -115,44 +148,56 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeav
         })}
       </ul>
 
-      <div className="mt-auto pt-4 w-full">
+      <div className="mt-auto pt-4 w-full flex-1 overflow-y-auto no-scrollbar">
          <div className="w-full px-4 mb-2">
             <ThemeToggle isExpanded={isFullyExpanded} />
         </div>
-        <div className={`w-full px-4 mb-2 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
+        
+        {/* Popular Categories */}
+        <div className={`w-full px-4 mb-2 mt-4 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
             <h3 className={`text-xs font-semibold text-gray-500 uppercase tracking-wider transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
                 Popular
             </h3>
         </div>
-        <ul className="w-full px-4 space-y-2">
-            {popularLinks.map(item => {
-                const href = {
-                  pathname: parentPath,
-                  query: { category: item.value },
-                };
-                const isActive = router.pathname === href.pathname && router.query.category === item.value;
-                
-                return (
-                    <li key={item.value}>
-                        <Link
-                          href={href}
-                          onClick={onMobileClose}
-                          className={
-                              `flex items-center p-3 rounded-lg transition-all duration-200
-                              ${isActive ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}
-                              ${isFullyExpanded ? 'w-full' : 'w-12 h-12 justify-center'}`
-                          }
-                          title={isFullyExpanded ? '' : item.label}
-                          aria-current={isActive ? 'page' : undefined}
-                        >
-                          {React.cloneElement(item.icon, { className: 'h-6 w-6 flex-shrink-0' })}
-                          <span className={`whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-4 opacity-100' : 'w-0 opacity-0'}`}>
-                              {item.label}
-                          </span>
-                        </Link>
-                    </li>
-                );
-            })}
+        
+        <ul className="w-full px-4 space-y-1">
+            {loadingCats ? (
+                // Loading Skeleton
+                [1, 2, 3, 4].map(i => (
+                    <li key={i} className={`h-10 rounded-lg bg-gray-700/30 animate-pulse ${isFullyExpanded ? 'w-full' : 'w-10 mx-auto'}`}></li>
+                ))
+            ) : (
+                popularCategories.map(item => {
+                    const href = {
+                      pathname: parentPath,
+                      query: { category: item.name },
+                    };
+                    const isActive = router.pathname === href.pathname && router.query.category === item.name;
+                    const IconComponent = ICON_MAP[item.icon_name] || ICON_MAP['Gamepad2'];
+                    
+                    return (
+                        <li key={item.id}>
+                            <Link
+                              href={href}
+                              onClick={onMobileClose}
+                              className={
+                                  `flex items-center p-2 rounded-lg transition-all duration-200 group
+                                  ${isActive ? 'bg-purple-600/20 text-purple-300' : 'text-gray-400 hover:bg-gray-800/70 hover:text-white'}
+                                  ${isFullyExpanded ? 'w-full' : 'w-10 h-10 justify-center mx-auto'}`
+                              }
+                              title={isFullyExpanded ? '' : item.name}
+                            >
+                              <div className={`flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-purple-400' : 'text-gray-500 group-hover:text-white'}`}>
+                                {React.isValidElement(IconComponent) ? React.cloneElement(IconComponent as React.ReactElement<any>, { width: 18, height: 18 }) : IconComponent}
+                              </div>
+                              <span className={`whitespace-nowrap text-sm font-medium transition-all duration-200 overflow-hidden ${isFullyExpanded ? 'ml-3 opacity-100 w-auto' : 'w-0 opacity-0 ml-0'}`}>
+                                  {item.name}
+                              </span>
+                            </Link>
+                        </li>
+                    );
+                })
+            )}
         </ul>
       </div>
     </nav>

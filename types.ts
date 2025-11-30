@@ -1,3 +1,4 @@
+
 import type { ReactElement } from 'react';
 
 export interface Game {
@@ -89,4 +90,13 @@ export interface SiteSettings {
 export interface ChatMessage {
   role: 'user' | 'model';
   content: string;
+}
+
+export interface CategorySetting {
+  section: 'games' | 'blogs' | 'products';
+  name: string;
+  icon_name: string;
+  show_in_sidebar: boolean;
+  sort_order: number;
+  count?: number; // Virtual field for admin display
 }
