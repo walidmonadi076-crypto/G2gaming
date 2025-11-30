@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
@@ -53,7 +54,7 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
   const areFiltersActive = searchQuery || (selectedCategory && selectedCategory !== 'All') || selectedTag;
 
   return (
-    <div>
+    <div className="pb-12">
       <h1 className="text-4xl font-bold mb-4">
         {areFiltersActive ? `Results (${filteredGames.length})` : 'All Games'}
       </h1>
@@ -65,7 +66,8 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {/* Increased gap from gap-4 to gap-6 to allow space for hover scaling */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 p-2">
         {filteredGames.map(game => (
             <GameCard key={game.id} game={game} />
         ))}
