@@ -267,11 +267,9 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     </div>
                                 </div>
                                 
-                                {/* Mobile/Tablet Ad - Horizontal (Visible mostly on smaller screens where sidebar drops) */}
-                                <div className="block lg:hidden mt-4 w-full">
-                                    <div className="bg-gray-900/50 rounded-xl border border-white/5 p-4 flex justify-center items-center">
-                                        <Ad placement="game_horizontal" />
-                                    </div>
+                                {/* Mobile/Tablet Ad - Horizontal - High Visibility Position */}
+                                <div className="block lg:hidden mt-2 w-full">
+                                    <Ad placement="game_horizontal" className="shadow-lg" />
                                 </div>
 
                                 {/* About Section */}
@@ -296,6 +294,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
 
                         {/* --- RIGHT COLUMN (Sticky Sidebar) --- */}
                         <div className="lg:col-span-4 relative">
+                            {/* Sticky container needs top position to stick */}
                             <div className="sticky top-24 flex flex-col gap-8">
                                 
                                 {/* Screenshots Widget */}
@@ -334,11 +333,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                 </div>
 
                                 {/* Vertical Ad Area (Sticky) */}
-                                <div className="bg-gray-900 rounded-2xl p-6 border border-white/5 shadow-xl flex flex-col items-center text-center">
-                                    <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">Sponsored Content</span>
-                                    <div className="w-full flex justify-center min-h-[600px] bg-black/20 rounded-xl overflow-hidden">
-                                        <Ad placement="game_vertical" />
-                                    </div>
+                                <div className="hidden lg:block w-full">
+                                    <Ad placement="game_vertical" className="shadow-2xl" />
                                 </div>
 
                             </div>

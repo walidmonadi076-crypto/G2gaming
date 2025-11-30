@@ -89,13 +89,10 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
                         
-                        {/* --- LEFT SIDEBAR (Ad) --- */}
+                        {/* --- LEFT SIDEBAR (Ad - Desktop) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
                             <div className="sticky top-24 flex flex-col items-center">
-                                <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest mb-4">Advertisement</span>
-                                <div className="bg-gray-900/50 rounded-2xl border border-white/5 p-2 shadow-lg backdrop-blur-sm">
-                                    <Ad placement="blog_skyscraper_left" />
-                                </div>
+                                <Ad placement="blog_skyscraper_left" />
                             </div>
                         </aside>
                         
@@ -127,12 +124,9 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                                 </div>
                             </header>
 
-                            {/* Mobile Ad (Only visible on small screens where sidebars are hidden) */}
+                            {/* Mobile/Tablet Ad - Horizontal (Replaces skyscrapers on small screens) */}
                             <div className="block lg:hidden my-8 w-full">
-                                <div className="bg-gray-900/50 rounded-2xl border border-white/5 p-4 flex justify-center items-center shadow-inner">
-                                    <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest absolute top-2 left-2">Sponsored</span>
-                                    <Ad placement="blog_skyscraper_left" /> {/* Reusing skyscraper slot, CSS ensures it fits container */}
-                                </div>
+                                <Ad placement="game_horizontal" className="shadow-lg" />
                             </div>
 
                             {/* Hero Media */}
@@ -227,7 +221,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                             </div>
                         </main>
 
-                        {/* --- RIGHT SIDEBAR (Social + Ad) --- */}
+                        {/* --- RIGHT SIDEBAR (Social + Ad - Desktop) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
                             <div className="sticky top-24 flex flex-col gap-8">
                                 {/* Share Widget */}
@@ -238,10 +232,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
 
                                 {/* Ad Widget */}
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest mb-4">Sponsored</span>
-                                    <div className="bg-gray-900/50 rounded-2xl border border-white/5 p-2 shadow-lg backdrop-blur-sm w-full flex justify-center">
-                                        <Ad placement="blog_skyscraper_right" />
-                                    </div>
+                                    <Ad placement="blog_skyscraper_right" />
                                 </div>
                             </div>
                         </aside>

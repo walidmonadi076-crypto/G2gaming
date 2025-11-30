@@ -188,12 +188,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
                                     </div>
                                 </div>
 
-                                {/* Ad Area - Moved UP here for better visibility */}
-                                <div className="bg-gray-900 rounded-2xl p-6 border border-white/5 shadow-xl flex flex-col items-center">
-                                    <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">Sponsored Offer</span>
-                                    <div className="w-full flex justify-center">
-                                        <Ad placement="shop_square" />
-                                    </div>
+                                {/* Ad Area - Strategically placed under CTA for maximum visibility */}
+                                <div className="w-full flex justify-center py-4">
+                                    <Ad placement="shop_square" className="shadow-lg" />
                                 </div>
 
                                 {/* Description */}
