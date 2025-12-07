@@ -1,3 +1,4 @@
+
 import Head from 'next/head';
 
 interface SEOProps {
@@ -44,7 +45,6 @@ export default function SEO({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
 
-      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
       <meta name="theme-color" content="#7c3aed" />
       <link rel="canonical" href={fullUrl} />
 

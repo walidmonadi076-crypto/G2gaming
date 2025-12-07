@@ -1,8 +1,8 @@
 
-
 import React, { useState, useEffect } from 'react';
 import App, { type AppProps, type AppContext } from 'next/app';
 import { useRouter } from 'next/router';
+import Head from 'next/head'; // Import Head
 import { Inter } from 'next/font/google';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -16,7 +16,6 @@ const inter = Inter({
 });
 
 // Define default settings to be used for the initial server render and as a fallback.
-// This prevents crashes during the build process.
 const defaultSettings: SiteSettings = {
   site_name: 'G2gaming',
   site_icon_url: '/favicon.ico',
@@ -55,7 +54,6 @@ function MyApp({ Component, pageProps }: MyAppProps) {
 
   useEffect(() => {
     const fetchClientSideData = async () => {
-      // Define a base URL for API calls, falling back to a relative path.
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : '');
 
       setIsLoadingSettings(true);
@@ -123,7 +121,12 @@ function MyApp({ Component, pageProps }: MyAppProps) {
     <ThemeProvider>
       <AdProvider>
         <SettingsProvider value={settingsValue}>
-          <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans`}>
+          <Head>
+            {/* Critical Viewport Meta Tag for Auto-Sizing */}
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <meta name="HandheldFriendly" content="true" />
+          </Head>
+          <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans overflow-x-hidden`}>
             {isMobileSidebarOpen && (
               <div
                 className="fixed inset-0 bg-black/60 z-50 md:hidden"
@@ -139,7 +142,7 @@ function MyApp({ Component, pageProps }: MyAppProps) {
               onMobileClose={() => setIsMobileSidebarOpen(false)}
             />
             <div
-              className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+              className={`flex-1 flex flex-col transition-all duration-300 ease-in-out w-full max-w-full ${
                 isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
               }`}
             >
@@ -152,7 +155,7 @@ function MyApp({ Component, pageProps }: MyAppProps) {
                 socialLinks={socialLinks}
                 isLoadingSocials={isLoadingSocials}
               />
-              <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+              <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 w-full">
                 <Component {...enhancedPageProps} />
               </main>
             </div>

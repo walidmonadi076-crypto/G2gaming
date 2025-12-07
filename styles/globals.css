@@ -8,6 +8,14 @@
   providing a consistent look across the application, similar to mobile UIs.
 */
 @layer base {
+  /* Prevent horizontal scroll rubber-banding which causes zoom issues */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap */
+  }
+
   /* For Firefox */
   html {
     scrollbar-width: thin;
@@ -133,5 +141,11 @@
   .no-scrollbar {
       -ms-overflow-style: none;  /* IE and Edge */
       scrollbar-width: none;  /* Firefox */
+  }
+  
+  /* Mask Gradient Utility for scrollers */
+  .mask-gradient-right {
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
 }
