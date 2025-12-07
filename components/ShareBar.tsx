@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -19,14 +18,12 @@ const socialPlatforms = [
 
 const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', initialCount = 142 }) => {
   const router = useRouter();
-  // Start with a static number (e.g. 142) so it never shows 0.
   const [shareCount, setShareCount] = useState(initialCount);
   const [currentUrl, setCurrentUrl] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [hasShared, setHasShared] = useState(false);
 
   useEffect(() => {
-    // Ensuring we are on the client
     if (typeof window !== 'undefined') {
         setCurrentUrl(window.location.href);
     }
@@ -37,10 +34,8 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
       .replace('{url}', encodeURIComponent(currentUrl))
       .replace('{title}', encodeURIComponent(title));
     
-    // Open share window
     window.open(finalUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
     
-    // Increment visual counter instantly (Instant Gratification)
     if (!hasShared) {
         setShareCount(prev => prev + 1);
         setHasShared(true);
@@ -54,11 +49,11 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
     return (
         <div 
             className={`
-                fixed left-4 top-1/2 -translate-y-1/2 z-[50]
+                fixed left-4 top-1/2 -translate-y-1/2 z-[100]
                 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                bg-gray-900/90 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]
+                bg-gray-900 border border-white/20 shadow-[0_0_30px_rgba(0,0,0,0.7)]
                 flex flex-col items-center
-                ${isMinimized ? 'w-12 py-3 rounded-full opacity-70 hover:opacity-100 cursor-pointer' : 'w-16 py-6 rounded-2xl'}
+                ${isMinimized ? 'w-12 py-3 rounded-full opacity-80 hover:opacity-100 cursor-pointer' : 'w-16 py-6 rounded-2xl'}
             `}
             style={{ willChange: 'transform, opacity' }}
             onClick={isMinimized ? () => setIsMinimized(false) : undefined}
@@ -85,7 +80,7 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
                 `}>
                     {shareCount}
                 </span>
-                {!isMinimized && <span className="text-[8px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">Shares</span>}
+                {!isMinimized && <span className="text-[8px] text-gray-400 uppercase font-bold tracking-widest mt-0.5">Shares</span>}
             </button>
 
             {/* Expandable Icons Area */}
@@ -98,7 +93,7 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
                         key={platform.name}
                         onClick={(e) => { e.stopPropagation(); handleShare(platform.shareUrl); }}
                         className={`
-                            w-10 h-10 rounded-full flex items-center justify-center text-gray-400 bg-gray-800/50 border border-white/5
+                            w-10 h-10 rounded-full flex items-center justify-center text-gray-400 bg-gray-800 border border-white/10
                             transition-all duration-300 transform hover:scale-110 hover:text-white hover:shadow-[0_0_15px_currentColor] hover:-translate-y-1
                             ${platform.color}
                         `}
@@ -114,7 +109,7 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
             {!isMinimized && (
                 <button 
                     onClick={(e) => { e.stopPropagation(); setIsMinimized(true); }}
-                    className="mt-4 text-gray-600 hover:text-purple-400 transition-colors group"
+                    className="mt-4 text-gray-500 hover:text-purple-400 transition-colors group"
                     aria-label="Minimize"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">

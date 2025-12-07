@@ -135,6 +135,17 @@ const AD_CONFIG: Record<string, {
     revenuePotential: 'Low',
     role: 'Exit Catch / SEO',
     fix: 'Added to main layout footer.'
+  },
+  deals_strip: {
+    label: 'Deals Strip (Right)',
+    size: '120x600',
+    type: 'Skyscraper',
+    device: 'Desktop (2XL+)',
+    visibility: 'Medium',
+    uxScore: '9/10',
+    revenuePotential: 'Medium',
+    role: 'Side Promotion',
+    fix: 'Visible only on very wide screens.'
   }
 };
 

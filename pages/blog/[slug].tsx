@@ -96,7 +96,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                         
                         {/* --- LEFT SIDEBAR (Ad - Desktop ONLY) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
-                            <div className="sticky top-24 flex flex-col items-center">
+                            <div className="sticky top-24 flex flex-col items-center w-full">
                                 <Ad placement="blog_skyscraper_left" />
                             </div>
                         </aside>
@@ -228,7 +228,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
 
                         {/* --- RIGHT SIDEBAR (Ad - Desktop ONLY) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
-                            <div className="sticky top-24 flex flex-col gap-8 items-center">
+                            <div className="sticky top-24 flex flex-col gap-8 items-center w-full">
                                 {/* Ad Widget */}
                                 <div className="w-full flex flex-col items-center">
                                     <Ad placement="blog_skyscraper_right" />
