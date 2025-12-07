@@ -189,7 +189,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                             {/* Mobile Share (Visible only on small screens) */}
                             <div className="my-12 lg:hidden p-6 bg-gray-900 rounded-2xl border border-white/5">
                                 <h3 className="text-center text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Share this Article</h3>
-                                <ShareBar title={post.title} orientation="horizontal" />
+                                <ShareBar title={post.title} orientation="horizontal" initialCount={142} />
                             </div>
 
                             {/* Comments Section */}
@@ -223,15 +223,12 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
 
                         {/* --- RIGHT SIDEBAR (Social + Ad - Desktop ONLY) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
-                            <div className="sticky top-24 flex flex-col gap-8">
-                                {/* Share Widget */}
-                                <div className="bg-gray-900 rounded-2xl p-6 border border-white/5 shadow-lg flex flex-col items-center">
-                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Share</span>
-                                    <ShareBar title={post.title} orientation="vertical" />
-                                </div>
+                            <div className="sticky top-24 flex flex-col gap-8 items-center">
+                                {/* Share Widget - Now cleaner and handles its own container styles */}
+                                <ShareBar title={post.title} orientation="vertical" initialCount={142} />
 
                                 {/* Ad Widget */}
-                                <div className="flex flex-col items-center">
+                                <div className="w-full flex flex-col items-center">
                                     <Ad placement="blog_skyscraper_right" />
                                 </div>
                             </div>
