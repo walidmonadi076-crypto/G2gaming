@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -9,6 +8,7 @@ import ToastContainer from '../../components/ToastContainer';
 import type { ToastData, ToastType } from '../../components/Toast';
 import { useDebounce } from '../../hooks/useDebounce';
 import { ICON_MAP } from '../../constants';
+import AdComponent from '../../components/Ad'; // Renaming import to avoid conflict with Ad type
 
 // Define a base URL for all API calls in this file.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : '');
@@ -266,6 +266,9 @@ export default function AdminPanel() {
 
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
 
+  // Preview States
+  const [previewModes, setPreviewModes] = useState<Record<string, boolean>>({});
+
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const addToast = useCallback((message: string, type: ToastType) => {
@@ -281,6 +284,10 @@ export default function AdminPanel() {
     await fetch('/api/auth/logout');
     setIsAuthenticated(false);
   }, []);
+
+  const togglePreview = (placement: string) => {
+    setPreviewModes(prev => ({ ...prev, [placement]: !prev[placement] }));
+  };
 
   const fetchAnalyticsData = useCallback(async () => {
     setLoading(true);
@@ -782,6 +789,13 @@ export default function AdminPanel() {
                                 <div className="text-xs font-bold text-purple-400">
                                     UX Score: {config?.uxScore}
                                 </div>
+                                <button 
+                                    type="button" 
+                                    onClick={() => togglePreview(placement)} 
+                                    className="mt-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded transition-all flex items-center gap-1 ml-auto"
+                                >
+                                    {previewModes[placement] ? 'Hide Preview' : '👁️ Live Preview'}
+                                </button>
                             </div>
                           </div>
                           
@@ -807,6 +821,27 @@ export default function AdminPanel() {
                             className="w-full px-3 py-2 bg-black rounded-md border border-gray-700 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-purple-600 placeholder-gray-600 text-gray-300 transition-all" 
                             placeholder={`<!-- Insert script code for ${config?.type || 'Ad'} here -->`}
                           />
+
+                          {previewModes[placement] && (
+                            <div className="mt-4 p-4 bg-black/40 rounded-lg border border-indigo-500/30 animate-fade-in">
+                                <p className="text-[10px] text-indigo-300 mb-3 font-bold uppercase tracking-wider flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                                    Live Render Preview
+                                </p>
+                                <div className="flex justify-center bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] bg-gray-900/50 rounded-lg p-6 border border-dashed border-gray-700 overflow-hidden relative">
+                                     {/* Device Mockup Context */}
+                                     <AdComponent 
+                                        placement={placement as any} 
+                                        overrideCode={ads[placement]} 
+                                        showLabel={true}
+                                        className="shadow-2xl z-10"
+                                     />
+                                </div>
+                                <p className="text-center text-[10px] text-gray-500 mt-2">
+                                    This preview renders the code exactly as it appears on the site. If it's blank, the ad network might not be serving an ad.
+                                </p>
+                            </div>
+                          )}
                       </div>
                     );
                   })}

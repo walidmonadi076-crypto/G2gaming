@@ -17,15 +17,18 @@ interface AdProps {
     | 'deals_strip';
   className?: string;
   showLabel?: boolean;
+  overrideCode?: string; // New prop for Live Preview
 }
 
-const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) => {
+const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, overrideCode }) => {
   const { ads, isLoading } = useAds();
   const adContainerRef = useRef<HTMLDivElement>(null);
   const [isIframe, setIsIframe] = useState(false);
   const [scale, setScale] = useState(1);
   
-  const ad = ads.find(a => a.placement === placement);
+  // If overrideCode is provided (even empty string), use it. Otherwise fall back to context.
+  const adFromContext = ads.find(a => a.placement === placement);
+  const codeToRender = overrideCode !== undefined ? overrideCode : adFromContext?.code;
 
   const getAdConfig = () => {
     switch (placement) {
@@ -81,12 +84,12 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
   }, [mobileScale, width]);
   
   useEffect(() => {
-    if (ad?.code && adContainerRef.current && !isIframe) {
+    if (codeToRender && adContainerRef.current && !isIframe) {
       const container = adContainerRef.current;
       container.innerHTML = ''; 
 
       const tempEl = document.createElement('div');
-      tempEl.innerHTML = ad.code;
+      tempEl.innerHTML = codeToRender;
 
       // Execute scripts
       tempEl.childNodes.forEach(node => {
@@ -104,22 +107,21 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
           container.appendChild(node.cloneNode(true));
         }
       });
+    } else if (adContainerRef.current) {
+        adContainerRef.current.innerHTML = ''; // Clear if no code
     }
-  }, [ad, isIframe]);
+  }, [codeToRender, isIframe]);
 
-  const isTransparent = ['footer_partner', 'home_native_game'].includes(placement);
+  const isTransparent = ['footer_partner', 'home_native_game', 'deals_strip'].includes(placement);
   const baseStyles = isTransparent 
     ? '' 
     : 'bg-gray-900/80 border border-white/5 backdrop-blur-sm shadow-lg';
 
-  // Important: Removed overflow-hidden to prevent clipping, added flex to center content
   const containerClasses = `relative flex flex-col items-center justify-center p-2 rounded-xl transition-all ${baseStyles} ${className}`;
 
-  // Helper for sizing style - Enforce min-dimensions to prevent collapse
   const containerStyle = { 
     width: typeof width === 'number' ? `${width}px` : width,
     minHeight: typeof height === 'number' ? `${height}px` : 'auto',
-    // Apply scale transform if needed
     transform: scale < 1 ? `scale(${scale})` : 'none',
     transformOrigin: 'top center',
     marginBottom: scale < 1 && typeof height === 'number' ? -(height * (1 - scale)) : 0
@@ -142,14 +144,13 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
         </span>
       )}
       
-      {/* Wrapper that holds the dimension */}
       <div style={containerStyle} className="relative z-0 flex items-center justify-center">
         {isIframe ? (
           renderPlaceholder('Ad Preview Disabled')
-        ) : isLoading ? (
+        ) : isLoading && overrideCode === undefined ? (
           renderPlaceholder('Loading...', true)
-        ) : (!ad || !ad.code) ? (
-          renderPlaceholder('Space Available')
+        ) : (!codeToRender) ? (
+          renderPlaceholder(overrideCode !== undefined ? 'No Code Entered' : 'Space Available')
         ) : (
           <div ref={adContainerRef} className="ad-content-wrapper w-full h-full flex justify-center items-center" />
         )}
