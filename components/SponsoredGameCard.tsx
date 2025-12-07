@@ -4,13 +4,14 @@ import Ad from './Ad';
 
 const SponsoredGameCard: React.FC = () => {
   return (
-    <div className="group relative block w-full rounded-xl bg-gray-900 overflow-hidden ring-1 ring-purple-500/30 hover:ring-2 hover:ring-purple-500 hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-all duration-300 ease-out hover:-translate-y-1 aspect-video">
+    <div className="group relative block w-full rounded-xl bg-gray-900 overflow-hidden ring-1 ring-purple-500/30 hover:ring-2 hover:ring-purple-500 hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-all duration-300 ease-out hover:-translate-y-1 aspect-[3/4]">
       {/* Content Container - Mimics Game Card Layout */}
       <div className="absolute inset-0 flex flex-col">
-        {/* Ad Slot fills the image area */}
+        {/* Ad Slot fills the image area - Removed padding/margins */}
         <div className="flex-grow relative bg-gray-800 flex items-center justify-center overflow-hidden">
+             {/* Removed pointer-events-none from gradient to ensure clicks work if ad is behind */}
              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-50 z-10 pointer-events-none" />
-             <Ad placement="home_native_game" showLabel={false} className="w-full h-full p-0 bg-transparent border-0 rounded-none" />
+             <Ad placement="home_native_game" showLabel={false} className="w-full h-full p-0 bg-transparent border-0 rounded-none shadow-none" />
         </div>
 
         {/* Footer Area - Mimics Game Details */}

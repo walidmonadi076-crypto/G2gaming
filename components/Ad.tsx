@@ -14,7 +14,7 @@ interface AdProps {
     | 'home_native_game'
     | 'quest_page_wall'
     | 'footer_partner'
-    | 'deals_strip';
+    | 'deals_strip'; // Kept for type safety though logic removed
   className?: string;
   showLabel?: boolean;
 }
@@ -34,21 +34,20 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
       case 'game_horizontal':
         return { width: 300, height: 250, label: 'Advertisement', mobileScale: true };
       case 'shop_square':
-        return { width: 300, height: 250, label: 'Partner Offer', mobileScale: true };
+        // Changed to 100% width to fill the container nicely
+        return { width: '100%', height: 250, label: 'Partner Offer', mobileScale: false };
       case 'blog_skyscraper_left':
       case 'blog_skyscraper_right':
         return { width: 160, height: 600, label: 'Ad', mobileScale: false };
       case 'home_quest_banner':
-        // 728px is too wide for mobile (usually < 400px). We enable smart scaling.
         return { width: 728, height: 90, label: 'Quest Sponsor', mobileScale: true };
       case 'home_native_game':
-        return { width: 300, height: 250, label: 'Sponsored', mobileScale: true };
+        // Native ads should be flexible to fit the grid card
+        return { width: '100%', height: '100%', label: 'Sponsored', mobileScale: false };
       case 'quest_page_wall':
         return { width: '100%', height: 800, label: 'Offers', mobileScale: false };
       case 'footer_partner':
         return { width: 728, height: 90, label: 'Partner', mobileScale: true };
-      case 'deals_strip':
-        return { width: 120, height: 600, label: 'Hot Deals', mobileScale: false };
       default:
         return { width: 300, height: 250, label: 'Ad', mobileScale: true };
     }
@@ -64,15 +63,11 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
 
   // Smart Scaling Logic
   useEffect(() => {
-    if (mobileScale && typeof window !== 'undefined') {
+    if (mobileScale && typeof window !== 'undefined' && typeof width === 'number') {
       const handleResize = () => {
-        // Calculate scaling factor based on window width vs ad width
-        // Adding 32px buffer for padding
         const availableWidth = window.innerWidth - 32; 
-        const adWidth = typeof width === 'number' ? width : 300; 
-        
-        if (availableWidth < adWidth) {
-          setScale(availableWidth / adWidth);
+        if (availableWidth < width) {
+          setScale(availableWidth / width);
         } else {
           setScale(1);
         }
@@ -112,21 +107,24 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
     }
   }, [ad, isIframe]);
 
-  // Special container styling based on placement
-  const isTransparent = ['footer_partner'].includes(placement);
+  // Styling: Removed 'overflow-hidden' which was clipping ads
+  const isTransparent = ['footer_partner', 'home_native_game'].includes(placement);
   const baseStyles = isTransparent 
     ? '' 
     : 'bg-gray-900/80 border border-white/5 backdrop-blur-sm shadow-lg hover:border-purple-500/20';
 
-  const containerClasses = `relative rounded-xl overflow-hidden flex flex-col items-center justify-center p-2 transition-all ${baseStyles} ${className}`;
+  const containerClasses = `relative flex flex-col items-center justify-center p-2 transition-all rounded-xl ${baseStyles} ${className}`;
 
-  // Content for Preview/Loading/Error states
+  // Helper for sizing style
+  const sizingStyle = { 
+    width: typeof width === 'number' ? width : '100%', 
+    height: typeof height === 'number' ? height : 'auto',
+    minHeight: typeof height === 'number' ? height : 250 // Ensure space is reserved
+  };
+
   const renderPlaceholder = (text: string, animate: boolean = false) => (
     <div 
-      style={{ 
-        width: typeof width === 'number' ? width : '100%', 
-        height: height, 
-      }} 
+      style={sizingStyle} 
       className={`bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-lg flex items-center justify-center max-w-full ${animate ? 'animate-pulse' : ''}`}
     >
       <span className="text-gray-600 text-xs font-bold uppercase tracking-widest text-center px-2">{text}</span>
@@ -145,10 +143,9 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
         className={`w-full flex justify-center items-center relative z-0`}
         style={{ 
             minHeight: typeof height === 'number' && height > 90 ? height * scale : undefined,
-            // Apply scale transform if needed
             transform: scale < 1 ? `scale(${scale})` : 'none',
             transformOrigin: 'top center',
-            marginBottom: scale < 1 ? -((typeof height === 'number' ? height : 0) * (1 - scale)) : 0
+            marginBottom: scale < 1 && typeof height === 'number' ? -(height * (1 - scale)) : 0
         }} 
       >
         {isIframe ? (
@@ -158,7 +155,8 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true }) 
         ) : (!ad || !ad.code) ? (
           renderPlaceholder('Space Available')
         ) : (
-          <div ref={adContainerRef} className="ad-content-wrapper flex justify-center" />
+          // ad-content-wrapper must NOT have overflow-hidden to allow popups/overlays if needed
+          <div ref={adContainerRef} className="ad-content-wrapper flex justify-center w-full" />
         )}
       </div>
     </div>
