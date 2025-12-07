@@ -80,7 +80,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                 <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
                     
                     {/* Breadcrumb */}
-                    <div className="mb-8 pl-12 lg:pl-0"> {/* Padding added for mobile where ShareBar is hidden, but consistent for layout */}
+                    <div className="mb-8">
                         <Link 
                             href="/blog" 
                             className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors"

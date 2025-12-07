@@ -54,7 +54,7 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
     return (
         <div 
             className={`
-                fixed left-4 top-1/2 -translate-y-1/2 z-[100]
+                fixed right-4 top-1/2 -translate-y-1/2 z-[100]
                 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                 bg-gray-900/90 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]
                 flex flex-col items-center
