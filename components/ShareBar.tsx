@@ -26,7 +26,10 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
   const [hasShared, setHasShared] = useState(false);
 
   useEffect(() => {
-    setCurrentUrl(window.location.href);
+    // Ensuring we are on the client
+    if (typeof window !== 'undefined') {
+        setCurrentUrl(window.location.href);
+    }
   }, [router.asPath]);
 
   const handleShare = (shareUrl: string) => {
@@ -38,7 +41,6 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
     window.open(finalUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
     
     // Increment visual counter instantly (Instant Gratification)
-    // We only increment once per session to keep it somewhat realistic visually
     if (!hasShared) {
         setShareCount(prev => prev + 1);
         setHasShared(true);
@@ -47,24 +49,29 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
 
   const isVertical = orientation === 'vertical';
 
-  // --- VERTICAL MODE (Smart Sticky Widget) ---
+  // --- VERTICAL MODE (Smart Fixed HUD Widget) ---
   if (isVertical) {
     return (
-        <div className={`
-            transition-all duration-500 ease-in-out
-            bg-gray-900/80 backdrop-blur-md border border-white/10 shadow-2xl
-            flex flex-col items-center
-            ${isMinimized ? 'w-12 py-3 rounded-full' : 'w-16 py-6 rounded-2xl'}
-        `}>
+        <div 
+            className={`
+                fixed left-4 top-1/2 -translate-y-1/2 z-[50]
+                transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                bg-gray-900/90 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]
+                flex flex-col items-center
+                ${isMinimized ? 'w-12 py-3 rounded-full opacity-70 hover:opacity-100 cursor-pointer' : 'w-16 py-6 rounded-2xl'}
+            `}
+            style={{ willChange: 'transform, opacity' }}
+            onClick={isMinimized ? () => setIsMinimized(false) : undefined}
+        >
             {/* Header: Share Icon + Count */}
             <button 
-                onClick={() => setIsMinimized(!isMinimized)}
+                onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
                 className="flex flex-col items-center mb-4 group w-full"
                 title={isMinimized ? "Show Share Options" : "Hide"}
             >
                 <div className={`
                     flex items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/30 transition-all duration-300
-                    ${isMinimized ? 'w-8 h-8 scale-100' : 'w-10 h-10 group-hover:scale-110'}
+                    ${isMinimized ? 'w-8 h-8 scale-100 ring-2 ring-white/10' : 'w-10 h-10 group-hover:scale-110 ring-4 ring-purple-500/20'}
                 `}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
@@ -74,10 +81,11 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
                 <span className={`
                     mt-2 font-black text-white text-xs tracking-wider transition-all duration-300
                     ${hasShared ? 'text-green-400 scale-110' : ''}
+                    ${isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}
                 `}>
                     {shareCount}
                 </span>
-                {!isMinimized && <span className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">Shares</span>}
+                {!isMinimized && <span className="text-[8px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">Shares</span>}
             </button>
 
             {/* Expandable Icons Area */}
@@ -85,15 +93,16 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
                 flex flex-col gap-3 transition-all duration-500 overflow-hidden
                 ${isMinimized ? 'max-h-0 opacity-0' : 'max-h-[300px] opacity-100'}
             `}>
-                {socialPlatforms.map(platform => (
+                {socialPlatforms.map((platform, idx) => (
                     <button
                         key={platform.name}
-                        onClick={() => handleShare(platform.shareUrl)}
+                        onClick={(e) => { e.stopPropagation(); handleShare(platform.shareUrl); }}
                         className={`
                             w-10 h-10 rounded-full flex items-center justify-center text-gray-400 bg-gray-800/50 border border-white/5
-                            transition-all duration-200 transform hover:scale-110 hover:text-white hover:shadow-lg hover:-translate-y-1
+                            transition-all duration-300 transform hover:scale-110 hover:text-white hover:shadow-[0_0_15px_currentColor] hover:-translate-y-1
                             ${platform.color}
                         `}
+                        style={{ transitionDelay: `${idx * 50}ms` }}
                         title={`Share on ${platform.name}`}
                     >
                         {platform.icon}
@@ -101,14 +110,14 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
                 ))}
             </div>
 
-            {/* Toggle Arrow (Only visible when expanded to offer a clear 'close' action) */}
+            {/* Toggle Arrow */}
             {!isMinimized && (
                 <button 
-                    onClick={() => setIsMinimized(true)}
-                    className="mt-4 text-gray-600 hover:text-purple-400 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); setIsMinimized(true); }}
+                    className="mt-4 text-gray-600 hover:text-purple-400 transition-colors group"
                     aria-label="Minimize"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                     </svg>
                 </button>
@@ -117,7 +126,7 @@ const ShareBar: React.FC<ShareBarProps> = ({ title, orientation = 'vertical', in
     );
   }
 
-  // --- HORIZONTAL MODE (Standard for Mobile/Footer) ---
+  // --- HORIZONTAL MODE (Mobile/Footer) ---
   return (
     <div className="flex flex-wrap justify-center gap-4">
       {socialPlatforms.map(platform => (

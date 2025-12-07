@@ -23,6 +23,7 @@ type FormItem = Game | BlogPost | Product | SocialLink;
 type FormItemType = 'games' | 'blogs' | 'products' | 'social-links';
 
 // --- AD INTELLIGENCE & ROLE MAP ---
+// Defines the exact purpose and behavior of every ad slot.
 const AD_CONFIG: Record<string, { 
     label: string; 
     size: string; 
@@ -31,62 +32,54 @@ const AD_CONFIG: Record<string, {
     visibility: string; 
     uxScore: string; 
     revenuePotential: string;
-    role: string; // Strategic role for the ad unit
+    role: string; // New Field: The strategic role of the ad
     issue?: string;
-    rootCause?: string;
-    recommended?: string;
-    fallback?: string;
     fix?: string; 
 }> = {
   home_quest_banner: { 
     label: 'Home Quest Banner', 
     size: '728x90', 
-    type: 'Banner / Leaderboard', 
+    type: 'Banner', 
     device: 'All Devices', 
-    visibility: '96% (High Impact)',
+    visibility: '95% (High)',
     uxScore: '9/10',
     revenuePotential: 'High',
     role: 'Gamified Entry Point',
     issue: 'Too wide on mobile (clips)',
-    rootCause: 'Container width mismatch',
-    recommended: '728x90 (Desktop)',
-    fallback: '320x50 (Mobile)',
-    fix: 'Smart scaling + responsive wrapper applied.'
+    fix: 'Applied smart scaling CSS to fit 360px screens.'
   },
   home_native_game: { 
     label: 'Games Grid Native Card', 
     size: '300x250', 
-    type: 'Native / Rect', 
+    type: 'Native', 
     device: 'All Devices', 
-    visibility: '100% (Games Library)',
+    visibility: '100% (In-Grid)',
     uxScore: '10/10',
     revenuePotential: 'High',
     role: 'The Chameleon (In-Feed)',
-    fix: 'Injected into "All Games" grid (Slot #6) to fix rendering issues.'
+    fix: 'Moved to /games page grid (Slot #6) to fix rendering issues.'
   },
   game_vertical: { 
     label: 'Game Page Sidebar', 
     size: '300x600', 
-    type: 'Skyscraper / Half Page', 
+    type: 'Skyscraper', 
     device: 'Desktop Only', 
     visibility: '100% (Sticky)',
     uxScore: '9/10',
     revenuePotential: 'Very High',
     role: 'High Visibility Anchor',
-    issue: 'Layout shift if late load',
-    fix: 'Sticky sidebar behavior + pre-reserved height.'
+    fix: 'Made sticky to remain visible during scroll.'
   },
   game_horizontal: { 
     label: 'Game Page Mobile Area', 
     size: '300x250', 
-    type: 'Medium Rectangle', 
+    type: 'Rect', 
     device: 'Mobile & Tablet', 
     visibility: '90%',
     uxScore: '8.5/10',
     revenuePotential: 'Medium',
-    role: 'The Conversion King (Post-CTA)',
-    recommended: '300x250 or 320x100',
-    fix: 'Placed immediately below CTA for max conversion.'
+    role: 'Conversion King (Post-CTA)',
+    fix: 'Placed immediately below Download button.'
   },
   blog_skyscraper_left: { 
     label: 'Blog Left Sidebar', 
@@ -96,9 +89,8 @@ const AD_CONFIG: Record<string, {
     visibility: '60%',
     uxScore: '8/10',
     revenuePotential: 'Medium',
-    role: 'Desktop Density Filler',
-    issue: 'Breaks layout on mobile',
-    fix: 'Strictly hidden on mobile/tablet.'
+    role: 'Desktop Filler',
+    fix: 'Hidden on mobile to prevent layout breakage.'
   },
   blog_skyscraper_right: { 
     label: 'Blog Right Sidebar', 
@@ -108,53 +100,41 @@ const AD_CONFIG: Record<string, {
     visibility: '60%',
     uxScore: '8/10',
     revenuePotential: 'Medium',
-    role: 'Desktop Density Filler',
-    issue: 'Breaks layout on mobile',
-    fix: 'Strictly hidden on mobile/tablet.'
+    role: 'Desktop Filler',
+    fix: 'Hidden on mobile to prevent layout breakage.'
   },
   shop_square: { 
     label: 'Shop Product Ad', 
     size: '300x250', 
-    type: 'Medium Rectangle', 
+    type: 'Rect', 
     device: 'All Devices', 
-    visibility: '95% (Near Buy Button)',
+    visibility: '95%',
     uxScore: '9/10',
     revenuePotential: 'Medium',
     role: 'Buy Box Sponsor',
-    fix: 'Positioned in the "Buy Box" zone.'
+    fix: 'Positioned inside the purchase area.'
   },
   quest_page_wall: { 
     label: 'Quest Page Offerwall', 
     size: 'Responsive', 
-    type: 'Content Locker / Wall', 
+    type: 'Offerwall', 
     device: 'All Devices', 
-    visibility: '100% (Dedicated Page)',
+    visibility: '100%',
     uxScore: 'N/A',
     revenuePotential: 'Maximum',
-    role: 'The High Ticket (CPA Engine)',
-    fix: 'Full page focus.'
+    role: 'High Ticket Monetization',
+    fix: 'Dedicated page execution.'
   },
   footer_partner: { 
     label: 'Footer Partner Grid', 
     size: '728x90', 
     type: 'Leaderboard', 
     device: 'All Devices', 
-    visibility: '20% (Bottom)',
+    visibility: 'Low (Bottom)',
     uxScore: '10/10',
     revenuePotential: 'Low',
-    role: 'Exit Intent / SEO Partner',
-    fix: 'Active on Home & Games page footer.'
-  },
-  deals_strip: { 
-    label: 'Deals Strip', 
-    size: '120x600', 
-    type: 'Skyscraper', 
-    device: 'Desktop Only (2XL+)', 
-    visibility: 'High (Sticky Right)',
-    uxScore: '8/10',
-    revenuePotential: 'High',
-    role: 'Monetization Sidebar',
-    fix: 'Visible only on very wide screens.'
+    role: 'Exit Catch / SEO',
+    fix: 'Added to main layout footer.'
   }
 };
 

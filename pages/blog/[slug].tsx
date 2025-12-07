@@ -68,6 +68,11 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                 schema={blogSchema}
             />
 
+            {/* Smart Floating Share Bar (Desktop Only) - Placed outside main grid to handle fixed positioning */}
+            <div className="hidden lg:block">
+                <ShareBar title={post.title} orientation="vertical" initialCount={142} />
+            </div>
+
             <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 selection:text-white pb-20">
                 {/* Ambient Background Glow */}
                 <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none z-0" />
@@ -75,7 +80,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                 <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
                     
                     {/* Breadcrumb */}
-                    <div className="mb-8">
+                    <div className="mb-8 pl-12 lg:pl-0"> {/* Padding added for mobile where ShareBar is hidden, but consistent for layout */}
                         <Link 
                             href="/blog" 
                             className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
@@ -189,7 +194,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                             {/* Mobile Share (Visible only on small screens) */}
                             <div className="my-12 lg:hidden p-6 bg-gray-900 rounded-2xl border border-white/5">
                                 <h3 className="text-center text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Share this Article</h3>
-                                <ShareBar title={post.title} orientation="horizontal" initialCount={142} />
+                                <ShareBar title={post.title} orientation="horizontal" />
                             </div>
 
                             {/* Comments Section */}
@@ -221,12 +226,9 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                             </div>
                         </main>
 
-                        {/* --- RIGHT SIDEBAR (Social + Ad - Desktop ONLY) --- */}
+                        {/* --- RIGHT SIDEBAR (Ad - Desktop ONLY) --- */}
                         <aside className="hidden lg:block lg:col-span-2">
                             <div className="sticky top-24 flex flex-col gap-8 items-center">
-                                {/* Share Widget - Now cleaner and handles its own container styles */}
-                                <ShareBar title={post.title} orientation="vertical" initialCount={142} />
-
                                 {/* Ad Widget */}
                                 <div className="w-full flex flex-col items-center">
                                     <Ad placement="blog_skyscraper_right" />
