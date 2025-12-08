@@ -1,5 +1,10 @@
-
 // lib/suggestions.ts
+
+interface SuggestionQuery {
+  tag?: string;
+  category?: string;
+  limit?: number;
+}
 
 // Helper to fetch related free deals client-side
 export async function getRelatedFreeDeals(tag?: string, store?: string) {

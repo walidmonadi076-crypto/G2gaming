@@ -1,4 +1,3 @@
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 
@@ -12,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const limit = parseInt(req.query.limit as string) || 12;
   const offset = (page - 1) * limit;
   
-  const store = req.query.store as string; // Filter by store (e.g. 'Steam')
+  const store = req.query.store as string; // Filter by store name (e.g. 'Steam')
   const platform = req.query.platform as string; // Filter by platform
   const tag = req.query.tag as string; // Filter by tag
   const sortBy = req.query.sortBy as string || 'newest'; // 'newest', 'ending_soon', 'value'
@@ -20,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const client = await getDbClient();
 
   try {
-    // Check if table exists (graceful degradation)
+    // Check if table exists (graceful degradation if migration hasn't run)
     const tableCheck = await client.query(`
         SELECT EXISTS (
             SELECT FROM information_schema.tables 
@@ -58,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Sort Logic
     let orderBy = 'ORDER BY created_at DESC';
     if (sortBy === 'ending_soon') {
-      orderBy = 'ORDER BY ends_at ASC NULLS LAST'; 
+      orderBy = 'ORDER BY ends_at ASC NULLS LAST'; // Nulls last because null means "unknown expiry"
     } else if (sortBy === 'value') {
       orderBy = 'ORDER BY normal_price DESC';
     }

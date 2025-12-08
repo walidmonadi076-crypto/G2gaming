@@ -1,8 +1,8 @@
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../../db';
 
 // CheapShark Store ID Mapping (Partial list for key stores)
+// This list can be dynamically fetched from https://www.cheapshark.com/api/1.0/stores
 const STORE_MAP: Record<string, string> = {
   "1": "Steam",
   "2": "GamersGate",
@@ -17,6 +17,7 @@ const STORE_MAP: Record<string, string> = {
   "15": "Fanatical",
   "25": "Epic Games Store",
   "35": "Blizzard Shop"
+  // Add others as needed
 };
 
 interface CheapSharkDeal {
@@ -36,9 +37,9 @@ interface CheapSharkDeal {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Only allow POST for syncing
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
+  // Allow POST (for cron/manual trigger) or GET (for testing)
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    res.setHeader('Allow', ['POST', 'GET']);
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
@@ -71,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Infer platform/tags based on store
       const tags = ['free'];
-      let platform = 'PC';
+      let platform = 'PC'; // Default assumption for CheapShark
       
       if (storeName.includes('Steam')) { tags.push('steam'); }
       if (storeName.includes('Epic')) { tags.push('epic'); }
