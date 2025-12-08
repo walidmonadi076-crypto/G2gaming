@@ -36,9 +36,9 @@ interface CheapSharkDeal {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Allow POST (for cron/manual trigger) or GET (for testing)
-  if (req.method !== 'POST' && req.method !== 'GET') {
-    res.setHeader('Allow', ['POST', 'GET']);
+  // Only allow POST for syncing
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
@@ -61,31 +61,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await client.query('BEGIN');
 
-    // Create table if it doesn't exist (safety check for first run)
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS free_game_deals (
-        id SERIAL PRIMARY KEY,
-        source TEXT NOT NULL,
-        source_deal_id TEXT,
-        title TEXT NOT NULL,
-        store_name TEXT,
-        store_id TEXT,
-        normal_price NUMERIC(10,2),
-        sale_price NUMERIC(10,2),
-        currency TEXT DEFAULT 'USD',
-        deal_url TEXT,
-        image_url TEXT,
-        starts_at TIMESTAMP WITH TIME ZONE,
-        ends_at TIMESTAMP WITH TIME ZONE,
-        is_active BOOLEAN DEFAULT TRUE,
-        tags TEXT[],
-        platform TEXT,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        CONSTRAINT unique_source_deal UNIQUE (source, source_deal_id)
-      );
-    `);
-
     for (const deal of deals) {
       // Double check it's actually free or close to it
       if (parseFloat(deal.salePrice) > 0) continue; 
@@ -96,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Infer platform/tags based on store
       const tags = ['free'];
-      let platform = 'PC'; // Default assumption for CheapShark
+      let platform = 'PC';
       
       if (storeName.includes('Steam')) { tags.push('steam'); }
       if (storeName.includes('Epic')) { tags.push('epic'); }

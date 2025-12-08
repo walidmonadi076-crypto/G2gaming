@@ -10,8 +10,9 @@ interface FreeDeal {
   id: number;
   title: string;
   store_name: string;
-  normal_price: string;
-  sale_price: string;
+  // Handle both string (from JSON) and number (from DB)
+  normal_price: string | number;
+  sale_price: string | number;
   image_url: string;
   deal_url: string;
   ends_at: string | null;

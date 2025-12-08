@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const client = await getDbClient();
 
   try {
-    // Graceful handling if migration hasn't run yet
+    // Check if table exists (graceful degradation)
     const tableCheck = await client.query(`
         SELECT EXISTS (
             SELECT FROM information_schema.tables 
@@ -32,8 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          return res.status(200).json({ deals: [], pagination: { total: 0, page, limit } });
     }
 
-    // Build WHERE clause
-    // We only want active deals that haven't expired
+    // Build Query
     let whereClause = `WHERE is_active = TRUE AND (ends_at IS NULL OR ends_at > NOW())`;
     const values: any[] = [];
     let paramCounter = 1;
