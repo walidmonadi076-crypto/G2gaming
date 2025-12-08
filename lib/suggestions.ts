@@ -1,3 +1,4 @@
+
 // lib/suggestions.ts
 
 interface SuggestionQuery {
@@ -18,7 +19,7 @@ export async function getRelatedFreeDeals(tag?: string, store?: string) {
     if (store) params.append('store', store);
     params.append('limit', '4');
 
-    // Use relative URL for client-side fetching
+    // Use relative URL for client-side fetching to support both dev and prod
     const res = await fetch(`/api/free-games?${params.toString()}`);
     
     if (!res.ok) return [];

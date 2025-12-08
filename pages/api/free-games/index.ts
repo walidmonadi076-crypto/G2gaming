@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 
@@ -11,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const limit = parseInt(req.query.limit as string) || 12;
   const offset = (page - 1) * limit;
   
-  const store = req.query.store as string; // Filter by store name (e.g. 'Steam')
+  const store = req.query.store as string; // Filter by store (e.g. 'Steam')
   const platform = req.query.platform as string; // Filter by platform
   const tag = req.query.tag as string; // Filter by tag
   const sortBy = req.query.sortBy as string || 'newest'; // 'newest', 'ending_soon', 'value'
@@ -31,7 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          return res.status(200).json({ deals: [], pagination: { total: 0, page, limit } });
     }
 
-    // Build Query
+    // Build WHERE clause
+    // We only want active deals that haven't expired
     let whereClause = `WHERE is_active = TRUE AND (ends_at IS NULL OR ends_at > NOW())`;
     const values: any[] = [];
     let paramCounter = 1;
@@ -57,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Sort Logic
     let orderBy = 'ORDER BY created_at DESC';
     if (sortBy === 'ending_soon') {
-      orderBy = 'ORDER BY ends_at ASC NULLS LAST'; // Nulls last because null means "unknown expiry"
+      orderBy = 'ORDER BY ends_at ASC NULLS LAST'; 
     } else if (sortBy === 'value') {
       orderBy = 'ORDER BY normal_price DESC';
     }

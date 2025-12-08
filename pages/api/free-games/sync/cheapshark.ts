@@ -1,7 +1,8 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../../db';
 
-// CheapShark Store ID Mapping (Partial list for key stores)
+// CheapShark Store ID Mapping (Cached or hardcoded for efficiency)
 // This list can be dynamically fetched from https://www.cheapshark.com/api/1.0/stores
 const STORE_MAP: Record<string, string> = {
   "1": "Steam",
