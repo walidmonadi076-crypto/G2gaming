@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { getBlogPostBySlug, getAllBlogPosts, getCommentsByBlogId } from '../../lib/data';
+import { getRelatedFreeDeals } from '../../lib/suggestions';
 import type { BlogPost, Comment } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -18,6 +19,7 @@ interface BlogDetailPageProps { post: BlogPost; comments: Comment[]; }
 const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initialComments }) => {
     const router = useRouter();
     const [comments, setComments] = useState<Comment[]>(initialComments);
+    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
 
     useEffect(() => {
         if (router.isReady && post.slug && process.env.NODE_ENV === 'production') {
@@ -35,7 +37,14 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
             };
             trackView();
         }
-    }, [router.isReady, post.slug]);
+        
+        // Fetch suggestions based on blog category
+        const fetchSuggestions = async () => {
+             const deals = await getRelatedFreeDeals(post.category);
+             setRelatedDeals(deals);
+        };
+        fetchSuggestions();
+    }, [router.isReady, post.slug, post.category]);
 
     if (router.isFallback) {
         return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading Article...</div>;
@@ -233,6 +242,26 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                                 <div className="w-full flex flex-col items-center">
                                     <Ad placement="blog_skyscraper_right" />
                                 </div>
+                                
+                                {/* Related Deals Widget */}
+                                {relatedDeals.length > 0 && (
+                                    <div className="w-full bg-gray-900 rounded-xl p-4 border border-white/5">
+                                        <h4 className="text-xs font-bold uppercase text-gray-500 mb-4 tracking-wider">Top Free Games</h4>
+                                        <div className="space-y-4">
+                                            {relatedDeals.map((deal: any) => (
+                                                <a href={deal.deal_url} target="_blank" rel="noopener noreferrer" key={deal.id} className="flex gap-3 group">
+                                                    <div className="relative w-16 h-12 rounded overflow-hidden flex-shrink-0">
+                                                        <Image src={deal.image_url} alt={deal.title} fill className="object-cover" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold text-gray-300 group-hover:text-white truncate">{deal.title}</p>
+                                                        <span className="text-[10px] bg-green-900/50 text-green-400 px-1.5 py-0.5 rounded">FREE</span>
+                                                    </div>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </aside>
 

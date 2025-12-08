@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { getProductBySlug, getAllProducts } from '../../lib/data';
+import { getRelatedFreeDeals } from '../../lib/suggestions';
 import type { Product } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -17,6 +18,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
     const [mainImage, setMainImage] = useState<string>('');
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
 
     const mediaItems = useMemo(() => 
         product.gallery.map(img => ({ type: 'image' as const, src: img }))
@@ -43,7 +45,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
             };
             trackView();
         }
-    }, [router.isReady, product.slug]);
+
+        // Fetch suggestions based on product category
+        const fetchSuggestions = async () => {
+             const deals = await getRelatedFreeDeals(product.category);
+             setRelatedDeals(deals);
+        };
+        fetchSuggestions();
+    }, [router.isReady, product.slug, product.category]);
 
     useEffect(() => {
         if (product) setMainImage(product.gallery[0] || product.imageUrl);
@@ -203,6 +212,24 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
                                         <p>{product.description}</p>
                                     </div>
                                 </div>
+
+                                {/* Related Free Deals Section (Suggestions) */}
+                                {relatedDeals.length > 0 && (
+                                    <div className="mt-8 border-t border-white/5 pt-8">
+                                        <h3 className="text-xl font-bold text-white mb-4">Game Deals for You</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {relatedDeals.slice(0, 2).map((deal: any) => (
+                                                <a href={deal.deal_url} target="_blank" rel="noopener noreferrer" key={deal.id} className="block group">
+                                                    <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
+                                                        <Image src={deal.image_url} alt={deal.title} fill className="object-cover group-hover:scale-105 transition-transform" />
+                                                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">Free</div>
+                                                    </div>
+                                                    <p className="text-xs font-bold text-gray-300 group-hover:text-white truncate">{deal.title}</p>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                             </div>
                         </div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { getGameBySlug, getAllGames } from '../../lib/data';
+import { getRelatedFreeDeals } from '../../lib/suggestions'; // Import suggestion logic
 import type { Game } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -25,6 +26,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
     const [isOgadsReady, setIsOgadsReady] = useState(false);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [relatedDeals, setRelatedDeals] = useState<any[]>([]); // State for related deals
 
     const mediaItems = useMemo(() => {
         const items = [];
@@ -61,7 +63,15 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
             };
             trackView();
         }
-    }, [router.isReady, game.slug]);
+
+        // Fetch Related Free Deals based on category
+        const fetchSuggestions = async () => {
+             const deals = await getRelatedFreeDeals(game.category); // Use category as tag
+             setRelatedDeals(deals);
+        };
+        fetchSuggestions();
+
+    }, [router.isReady, game.slug, game.category]);
 
     useEffect(() => {
         const handleUnlock = () => {
@@ -289,6 +299,28 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                         </p>
                                     </div>
                                 </div>
+
+                                {/* Related Free Deals Section (Suggestions) */}
+                                {relatedDeals.length > 0 && (
+                                    <div className="mt-8 border-t border-white/5 pt-8">
+                                        <h3 className="text-xl font-bold text-white mb-4">Related Free Games</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {relatedDeals.map((deal: any) => (
+                                                <a href={deal.deal_url} target="_blank" rel="noopener noreferrer" key={deal.id} className="block group">
+                                                    <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
+                                                        <Image src={deal.image_url} alt={deal.title} fill className="object-cover group-hover:scale-105 transition-transform" />
+                                                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">Free</div>
+                                                    </div>
+                                                    <p className="text-xs font-bold text-gray-300 group-hover:text-white truncate">{deal.title}</p>
+                                                    <p className="text-[10px] text-gray-500">{deal.store_name}</p>
+                                                </a>
+                                            ))}
+                                        </div>
+                                        <div className="mt-4 text-center">
+                                            <Link href="/free-games" className="text-sm text-purple-400 hover:text-purple-300 font-bold">View All Free Deals &rarr;</Link>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
