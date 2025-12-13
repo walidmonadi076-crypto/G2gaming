@@ -47,7 +47,7 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
   }, [games, selectedCategory, selectedTag, searchQuery, selectedPlatform]);
   
   const handleCategorySelect = (cat: string) => {
-    const newQuery = { ...router.query };
+    const newQuery: Record<string, any> = { ...router.query };
     if (cat === 'All' || cat === selectedCategory) {
         delete newQuery.category;
     } else {
@@ -58,7 +58,7 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
   };
 
   const handlePlatformSelect = (platform: 'pc' | 'mobile') => {
-      const newQuery = { ...router.query, platform };
+      const newQuery: Record<string, any> = { ...router.query, platform };
       delete newQuery.category; // Reset category when switching platform
       delete newQuery.tags;
       router.push({ pathname: '/games', query: newQuery }, undefined, { shallow: true });
