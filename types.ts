@@ -7,15 +7,16 @@ export interface Game {
   title: string;
   imageUrl: string;
   category: string;
-  platform?: 'mobile' | 'pc' | 'web'; // Mapped to DB column
+  platform?: 'mobile' | 'pc' | 'web';
   tags?: string[];
   theme?: 'dark' | 'light' | 'colorful' | 'retro';
   description: string;
   videoUrl?: string;
-  downloadUrl: string;
+  downloadUrl: string; // Used for PC or Android
+  downloadUrlIos?: string; // Specific for iOS
   gallery: string[];
   view_count?: number;
-  requirements?: { // Mapped to DB JSONB column
+  requirements?: {
     os: string;
     ram: string;
     storage: string;

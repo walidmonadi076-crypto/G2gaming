@@ -116,7 +116,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
         "keywords": game.tags?.join(', ') || ''
     };
     
-    const handleVerificationClick = () => {
+    const handleVerificationClick = (e: React.MouseEvent) => {
+        e.preventDefault();
         if (isOgadsReady && typeof window.og_load === 'function') {
             window.og_load();
         } else {
@@ -225,33 +226,35 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                             <h3 className="text-xl font-bold text-white mb-1">Get this Game</h3>
                                             <p className="text-sm text-gray-400">
                                                 {isUnlocked 
-                                                    ? "Verification complete. Download is ready." 
-                                                    : "Verify your device to unlock the high-speed download link."}
+                                                    ? "Verification complete. Select your platform below." 
+                                                    : "Verify your device to unlock high-speed download links."}
                                             </p>
                                         </div>
 
                                         <div className="flex flex-col sm:flex-row gap-4">
-                                            {!isUnlocked ? (
-                                                game.platform === 'mobile' ? (
-                                                    <>
-                                                        <button 
-                                                            onClick={handleVerificationClick}
-                                                            disabled={!isOgadsReady}
-                                                            className="flex-1 group relative px-6 py-4 bg-black border border-gray-700 hover:border-green-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        >
-                                                            <svg className="w-6 h-6 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0225 3.503c-1.6704-.7618-3.52-1.1927-5.4867-1.2227v.0039c-1.9667.03-3.8163.4609-5.4866 1.2227L4.1402 5.4496a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592c-2.3271 1.2647-3.9209 3.5355-4.3297 6.1831h19.1465c-.4089-2.6476-2.0026-4.9184-4.3297-6.1831" /></svg>
-                                                            <span>Download for Android</span>
-                                                        </button>
-                                                        <button 
-                                                            onClick={handleVerificationClick}
-                                                            disabled={!isOgadsReady}
-                                                            className="flex-1 group relative px-6 py-4 bg-black border border-gray-700 hover:border-gray-400 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        >
-                                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.3-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.68-.83 1.14-1.99 1.01-3.15-1.02.05-2.29.69-3 1.53-.63.75-1.18 1.96-1.03 3.07 1.14.09 2.3-.64 3.02-1.45"/></svg>
-                                                            <span>Download for iOS</span>
-                                                        </button>
-                                                    </>
-                                                ) : (
+                                            {game.platform === 'mobile' ? (
+                                                <>
+                                                    <a 
+                                                        href={isUnlocked ? game.downloadUrl : '#'} 
+                                                        onClick={!isUnlocked ? handleVerificationClick : undefined}
+                                                        className={`flex-1 group relative px-6 py-4 bg-black border border-gray-700 hover:border-green-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                    >
+                                                        <svg className="w-6 h-6 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0225 3.503c-1.6704-.7618-3.52-1.1927-5.4867-1.2227v.0039c-1.9667.03-3.8163.4609-5.4866 1.2227L4.1402 5.4496a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592c-2.3271 1.2647-3.9209 3.5355-4.3297 6.1831h19.1465c-.4089-2.6476-2.0026-4.9184-4.3297-6.1831" /></svg>
+                                                        <span>{isUnlocked ? 'Download APK' : 'Android Download'}</span>
+                                                    </a>
+                                                    
+                                                    <a 
+                                                        href={isUnlocked ? (game.downloadUrlIos || '#') : '#'}
+                                                        onClick={!isUnlocked ? handleVerificationClick : undefined}
+                                                        className={`flex-1 group relative px-6 py-4 bg-black border border-gray-700 hover:border-gray-400 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                    >
+                                                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.3-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.68-.83 1.14-1.99 1.01-3.15-1.02.05-2.29.69-3 1.53-.63.75-1.18 1.96-1.03 3.07 1.14.09 2.3-.64 3.02-1.45"/></svg>
+                                                        <span>{isUnlocked ? 'Download iOS' : 'iOS Download'}</span>
+                                                    </a>
+                                                </>
+                                            ) : (
+                                                /* PC / Default Flow */
+                                                !isUnlocked ? (
                                                     <button 
                                                         onClick={handleVerificationClick}
                                                         disabled={!isOgadsReady}
@@ -272,17 +275,17 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                                         </span>
                                                         <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-0" />
                                                     </button>
+                                                ) : (
+                                                    <a 
+                                                        href={game.downloadUrl} 
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="group w-full sm:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2 animate-fade-in"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                        Download Now
+                                                    </a>
                                                 )
-                                            ) : (
-                                                <a 
-                                                    href={game.downloadUrl} 
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="group w-full sm:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2 animate-fade-in"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                                    Download Now
-                                                </a>
                                             )}
                                         </div>
                                     </div>

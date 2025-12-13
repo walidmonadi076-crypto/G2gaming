@@ -49,6 +49,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             tags: [], 
             description: '', 
             downloadUrl: '#', 
+            downloadUrlIos: '#',
             gallery: [], 
             platform: 'pc',
             requirements: { os: '', ram: '', storage: '', processor: '' }
@@ -254,7 +255,16 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
           </div>
       </div>
 
-      {renderField('downloadUrl', 'URL de Téléchargement', 'url')}
+      {/* Dynamic Download Links based on Platform */}
+      {formData.platform === 'mobile' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-gray-750 p-4 rounded border border-gray-600">
+              {renderField('downloadUrl', 'Lien Android (APK / Play Store)', 'url')}
+              {renderField('downloadUrlIos', 'Lien iOS (IPA / App Store)', 'url')}
+          </div>
+      ) : (
+          renderField('downloadUrl', 'URL de Téléchargement', 'url')
+      )}
+
       {renderField('videoUrl', 'URL Vidéo (Optionnel)', 'url', false)}
       {renderGalleryManager()}
       

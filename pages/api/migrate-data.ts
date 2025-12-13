@@ -27,7 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await client.query('BEGIN');
 
     // 1. Ensure Table Structure supports new features (Schema Migration)
-    // We add IF NOT EXISTS to make it idempotent
     await client.query(`
       CREATE TABLE IF NOT EXISTS games (
         id SERIAL PRIMARY KEY,
@@ -43,10 +42,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         gallery TEXT[],
         view_count INTEGER DEFAULT 0,
         platform VARCHAR(20) DEFAULT 'pc',
-        requirements JSONB
+        requirements JSONB,
+        download_url_ios TEXT
       );
     `);
 
+    // Ensure columns exist even if table was already created
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS platform VARCHAR(20) DEFAULT 'pc'`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS requirements JSONB`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS download_url_ios TEXT`);
+
+    // ... (Keep existing blog/product/comment table creation logic) ...
     await client.query(`
       CREATE TABLE IF NOT EXISTS blog_posts (
         id SERIAL PRIMARY KEY,
@@ -94,10 +100,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
     `);
 
-    // Add columns if they don't exist (for existing databases)
-    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS platform VARCHAR(20) DEFAULT 'pc'`);
-    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS requirements JSONB`);
-
     // 2. Clear existing data
     await client.query("DELETE FROM comments");
     await client.query("DELETE FROM blog_posts");
@@ -113,8 +115,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 4. Insert Games with new fields
     for (const game of GAMES_DATA) {
       await client.query(
-        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, gallery, platform, requirements) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
         [
             game.id, 
             game.slug, 
@@ -126,9 +128,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             game.description, 
             game.videoUrl || null, 
             game.downloadUrl, 
+            game.downloadUrlIos || null,
             game.gallery,
             game.platform || 'pc',
-            game.requirements || null // Insert JSON object directly
+            game.requirements || null 
         ]
       );
     }
