@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import { getEmbedUrl } from '../lib/utils';
 
 type MediaItem = {
   type: 'image' | 'video';
@@ -76,62 +77,85 @@ const Lightbox: React.FC<LightboxProps> = ({ items, startIndex = 0, onClose }) =
 
   if (!currentItem) return null;
 
+  const embedUrl = currentItem.type === 'video' ? getEmbedUrl(currentItem.src) : null;
+
   return (
     <div 
       ref={lightboxRef}
-      className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center animate-fade-in"
+      className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center animate-fade-in backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       tabIndex={-1}
       aria-labelledby="lightbox-heading"
     >
-      <div className="relative w-full h-full max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+      <div className="relative w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
         <h2 id="lightbox-heading" className="sr-only">Image and Video Viewer</h2>
+        
         {currentItem.type === 'image' ? (
-          <Image
-            src={currentItem.src}
-            alt={`Lightbox image ${currentIndex + 1}`}
-            fill
-            sizes="100vw"
-            className="object-contain"
-          />
+          <div className="relative w-full h-full">
+            <Image
+                src={currentItem.src}
+                alt={`Lightbox image ${currentIndex + 1}`}
+                fill
+                sizes="100vw"
+                className="object-contain"
+                priority
+            />
+          </div>
         ) : (
-          <video
-            src={currentItem.src}
-            controls
-            autoPlay
-            className="w-full h-full"
-          />
+          embedUrl ? (
+             <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                <iframe 
+                    src={embedUrl}
+                    className="w-full h-full"
+                    title="Video Player"
+                    allow="autoplay; encrypted-media; fullscreen"
+                    allowFullScreen
+                />
+             </div>
+          ) : (
+            <video
+                src={currentItem.src}
+                controls
+                autoPlay
+                className="max-w-full max-h-full rounded-lg shadow-2xl"
+            />
+          )
         )}
       </div>
 
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white text-4xl hover:opacity-75 transition-opacity"
+        className="absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all z-50"
         aria-label="Close"
       >
-        &times;
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
 
       {items.length > 1 && (
         <>
           <button
             onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 text-white/80 hover:bg-black/80 hover:text-white transition-all hover:scale-110 border border-white/10 backdrop-blur-md"
             aria-label="Previous"
           >
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); goToNext(); }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 text-white/80 hover:bg-black/80 hover:text-white transition-all hover:scale-110 border border-white/10 backdrop-blur-md"
             aria-label="Next"
           >
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
           </button>
         </>
       )}
+      
+      {/* Counter */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 px-3 py-1 rounded-full text-xs font-bold text-white/80 border border-white/10 backdrop-blur-md">
+        {currentIndex + 1} / {items.length}
+      </div>
     </div>
   );
 };

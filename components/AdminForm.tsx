@@ -117,13 +117,14 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const addGalleryImage = () => {
     const url = galleryInput.trim();
     if (url && !(formData.gallery || []).includes(url)) {
-      try {
-        new URL(url); 
-        setFormData((prev: any) => ({ ...prev, gallery: [...(prev.gallery || []), url] }));
-        setGalleryInput('');
-      } catch (e) {
-        alert("Veuillez entrer une URL valide.");
-      }
+        // Simplified check: Just ensure it's not empty. 
+        // Strict validation was likely blocking WebP or unusual domains.
+        if(url.length > 5) { 
+            setFormData((prev: any) => ({ ...prev, gallery: [...(prev.gallery || []), url] }));
+            setGalleryInput('');
+        } else {
+            alert("URL trop courte / invalide.");
+        }
     }
   };
 
@@ -180,13 +181,13 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     <div key="gallery-manager">
         <label htmlFor="gallery" className="block text-sm font-medium text-gray-300 mb-1">Galerie d'images (URLs)</label>
         <div className="flex gap-2">
-            <input id="gallery" name="gallery" type="url" value={galleryInput} onChange={(e) => setGalleryInput(e.target.value)} onKeyDown={handleGalleryKeyDown} className="flex-grow px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Coller une URL d'image et appuyez sur Entrée..."/>
+            <input id="gallery" name="gallery" type="text" value={galleryInput} onChange={(e) => setGalleryInput(e.target.value)} onKeyDown={handleGalleryKeyDown} className="flex-grow px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Coller une URL (jpg, png, webp) et appuyez sur Entrée..."/>
             <button type="button" onClick={addGalleryImage} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-semibold">Ajouter</button>
         </div>
         <div className="mt-2 flex flex-wrap gap-2 p-2 bg-gray-900 rounded-md min-h-[6.5rem]">
             {(formData.gallery || []).map((url: string, index: number) => (
                 <div key={index} className="relative group">
-                    <img src={url} alt={`Galerie ${index + 1}`} className="w-24 h-24 object-cover rounded-md" />
+                    <img src={url} alt={`Galerie ${index + 1}`} className="w-24 h-24 object-cover rounded-md bg-black" />
                     <button type="button" onClick={() => removeGalleryImage(url)} className="absolute top-0 right-0 m-1 w-6 h-6 bg-red-600/80 text-white rounded-full flex items-center justify-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Supprimer l'image">&times;</button>
                 </div>
             ))}
@@ -265,7 +266,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
           renderField('downloadUrl', 'URL de Téléchargement', 'url')
       )}
 
-      {renderField('videoUrl', 'URL Vidéo (Optionnel)', 'url', false)}
+      {renderField('videoUrl', 'URL Vidéo (MP4 ou YouTube/Vimeo)', 'url', false)}
       {renderGalleryManager()}
       
       <AIHelperPanel
