@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, Fragment } from 'react';
 import type { Game, BlogPost, Product, SocialLink } from '../types';
-import AdminPreview from './AdminPreview'; // Import the new preview component
-import AIHelperPanel from './admin/AIHelperPanel'; // Import the new AI component
+import AdminPreview from './AdminPreview'; 
+import AIHelperPanel from './admin/AIHelperPanel';
 
 type Item = Game | BlogPost | Product | SocialLink;
 type ItemType = 'games' | 'blogs' | 'products' | 'social-links';
@@ -14,7 +14,6 @@ interface AdminFormProps {
   onSubmit: (data: any) => Promise<void>;
 }
 
-// Define which types can be previewed
 const PREVIEWABLE_TYPES: ItemType[] = ['games', 'blogs', 'products', 'social-links'];
 
 export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormProps) {
@@ -43,7 +42,17 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       }
     } else {
       const defaults = {
-        games: { title: '', imageUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [] },
+        games: { 
+            title: '', 
+            imageUrl: '', 
+            category: '', 
+            tags: [], 
+            description: '', 
+            downloadUrl: '#', 
+            gallery: [], 
+            platform: 'pc',
+            requirements: { os: '', ram: '', storage: '', processor: '' }
+        },
         blogs: { title: '', summary: '', imageUrl: '', author: '', rating: 4.5, content: '', category: '' },
         products: { name: '', imageUrl: '', price: '0.00', url: '#', description: '', category: '', gallery: [] },
         'social-links': { name: '', url: '', icon_svg: '' },
@@ -63,7 +72,17 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     }));
   };
 
-  // Helper to programmatically update a field (used by AI Panel)
+  const handleRequirementChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev: any) => ({
+          ...prev,
+          requirements: {
+              ...(prev.requirements || {}),
+              [name]: value
+          }
+      }));
+  };
+
   const setFieldValue = (field: string, value: string) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
@@ -98,7 +117,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     const url = galleryInput.trim();
     if (url && !(formData.gallery || []).includes(url)) {
       try {
-        new URL(url); // Validate URL format
+        new URL(url); 
         setFormData((prev: any) => ({ ...prev, gallery: [...(prev.gallery || []), url] }));
         setGalleryInput('');
       } catch (e) {
@@ -126,7 +145,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     let finalData = { ...formData };
     if (type === 'games') {
         let finalTags = finalData.tags || [];
-        // Ensure 'Featured' tag is handled correctly
         finalTags = finalTags.filter((t: string) => t !== 'Featured');
         if (isFeatured) {
             finalTags.push('Featured');
@@ -178,6 +196,22 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const renderGameFields = () => (
     <>
       {renderField('title', 'Titre')}
+      
+      {/* Platform Selection */}
+      <div key="platform-game">
+        <label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">Plateforme</label>
+        <select
+            id="platform"
+            name="platform"
+            value={formData.platform || 'pc'}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+            <option value="pc">PC / Web</option>
+            <option value="mobile">Mobile (Android/iOS)</option>
+        </select>
+      </div>
+
       {renderField('imageUrl', 'URL de l\'image principale (Vignette)')}
       <div key="category-game">
         <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-1">Catégorie</label>
@@ -196,11 +230,34 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
           <label className="flex items-center gap-2 text-sm font-medium text-gray-300 cursor-pointer"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-4 h-4 bg-gray-700 rounded border-gray-600 text-purple-600 focus:ring-purple-500"/>Featured</label>
       </div>
       {renderField('description', 'Description', 'textarea')}
+      
+      {/* System Requirements Section */}
+      <div className="bg-gray-750 p-4 rounded-md border border-gray-600 mt-4">
+          <h3 className="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider">Configuration Requise</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                  <label className="block text-xs text-gray-400 mb-1">Système d'exploitation (OS)</label>
+                  <input name="os" value={formData.requirements?.os || ''} onChange={handleRequirementChange} className="w-full px-3 py-1.5 bg-gray-700 rounded border border-gray-600 text-sm" placeholder="ex: Windows 10 / Android 12" />
+              </div>
+              <div>
+                  <label className="block text-xs text-gray-400 mb-1">Mémoire (RAM)</label>
+                  <input name="ram" value={formData.requirements?.ram || ''} onChange={handleRequirementChange} className="w-full px-3 py-1.5 bg-gray-700 rounded border border-gray-600 text-sm" placeholder="ex: 8GB / 4GB" />
+              </div>
+              <div>
+                  <label className="block text-xs text-gray-400 mb-1">Stockage</label>
+                  <input name="storage" value={formData.requirements?.storage || ''} onChange={handleRequirementChange} className="w-full px-3 py-1.5 bg-gray-700 rounded border border-gray-600 text-sm" placeholder="ex: 50GB Free Space" />
+              </div>
+              <div>
+                  <label className="block text-xs text-gray-400 mb-1">Processeur (CPU)</label>
+                  <input name="processor" value={formData.requirements?.processor || ''} onChange={handleRequirementChange} className="w-full px-3 py-1.5 bg-gray-700 rounded border border-gray-600 text-sm" placeholder="Optionnel" />
+              </div>
+          </div>
+      </div>
+
       {renderField('downloadUrl', 'URL de Téléchargement', 'url')}
       {renderField('videoUrl', 'URL Vidéo (Optionnel)', 'url', false)}
       {renderGalleryManager()}
       
-      {/* AI Helper for Games */}
       <AIHelperPanel
         contextType="game"
         onApplyTitle={(text) => setFieldValue('title', text)}
@@ -225,7 +282,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('affiliateUrl', 'URL d\'affiliation', 'url', false)}
       {renderField('publishDate', 'Date de publication', 'date', false)}
 
-      {/* AI Helper for Blogs */}
       <AIHelperPanel
         contextType="blog"
         onApplyTitle={(text) => setFieldValue('title', text)}
@@ -245,7 +301,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('description', 'Description', 'textarea')}
       {renderGalleryManager()}
 
-      {/* AI Helper for Products */}
       <AIHelperPanel
         contextType="product"
         onApplyTitle={(text) => setFieldValue('name', text)}
@@ -261,7 +316,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       <div key="icon-svg-social">
         <label htmlFor="icon_svg" className="block text-sm font-medium text-gray-300 mb-1">Icône (code SVG)</label>
         <textarea id="icon_svg" name="icon_svg" value={formData.icon_svg || ''} onChange={handleChange} required rows={5} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm" placeholder='<svg width="24" height="24" ...>...</svg>'/>
-        <p className="text-xs text-gray-400 mt-1">Collez le code SVG complet de l'icône ici. Pour un affichage optimal, utilisez une icône de 24x24 pixels.</p>
+        <p className="text-xs text-gray-400 mt-1">Collez le code SVG complet de l'icône ici.</p>
       </div>
     </>
   );

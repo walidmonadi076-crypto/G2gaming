@@ -26,24 +26,114 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await client.connect();
     await client.query('BEGIN');
 
+    // 1. Ensure Table Structure supports new features (Schema Migration)
+    // We add IF NOT EXISTS to make it idempotent
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS games (
+        id SERIAL PRIMARY KEY,
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        image_url TEXT,
+        category VARCHAR(100),
+        tags TEXT[],
+        theme VARCHAR(50),
+        description TEXT,
+        video_url TEXT,
+        download_url TEXT,
+        gallery TEXT[],
+        view_count INTEGER DEFAULT 0,
+        platform VARCHAR(20) DEFAULT 'pc',
+        requirements JSONB
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS blog_posts (
+        id SERIAL PRIMARY KEY,
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        summary TEXT,
+        image_url TEXT,
+        video_url TEXT,
+        author VARCHAR(100),
+        publish_date DATE,
+        rating DECIMAL(3, 1),
+        affiliate_url TEXT,
+        content TEXT,
+        category VARCHAR(100),
+        view_count INTEGER DEFAULT 0
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        image_url TEXT,
+        price DECIMAL(10, 2),
+        url TEXT,
+        description TEXT,
+        gallery TEXT[],
+        category VARCHAR(100),
+        view_count INTEGER DEFAULT 0
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id SERIAL PRIMARY KEY,
+        blog_post_id INTEGER REFERENCES blog_posts(id) ON DELETE CASCADE,
+        author VARCHAR(100),
+        avatar_url TEXT,
+        date VARCHAR(50),
+        text TEXT,
+        status VARCHAR(20) DEFAULT 'pending',
+        email VARCHAR(255),
+        phone VARCHAR(50)
+      );
+    `);
+
+    // Add columns if they don't exist (for existing databases)
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS platform VARCHAR(20) DEFAULT 'pc'`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS requirements JSONB`);
+
+    // 2. Clear existing data
     await client.query("DELETE FROM comments");
     await client.query("DELETE FROM blog_posts");
     await client.query("DELETE FROM games");
     await client.query("DELETE FROM products");
     
+    // 3. Reset Sequences
     await client.query("ALTER SEQUENCE comments_id_seq RESTART WITH 1");
     await client.query("ALTER SEQUENCE blog_posts_id_seq RESTART WITH 1");
     await client.query("ALTER SEQUENCE games_id_seq RESTART WITH 1");
     await client.query("ALTER SEQUENCE products_id_seq RESTART WITH 1");
 
+    // 4. Insert Games with new fields
     for (const game of GAMES_DATA) {
       await client.query(
-        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, gallery) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [game.id, game.slug, game.title, game.imageUrl, game.category, game.tags || [], game.theme || null, game.description, game.videoUrl || null, game.downloadUrl, game.gallery]
+        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, gallery, platform, requirements) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        [
+            game.id, 
+            game.slug, 
+            game.title, 
+            game.imageUrl, 
+            game.category, 
+            game.tags || [], 
+            game.theme || null, 
+            game.description, 
+            game.videoUrl || null, 
+            game.downloadUrl, 
+            game.gallery,
+            game.platform || 'pc',
+            game.requirements || null // Insert JSON object directly
+        ]
       );
     }
 
+    // 5. Insert Blogs
     for (const blog of BLOGS_DATA) {
       await client.query(
         `INSERT INTO blog_posts (id, slug, title, summary, image_url, video_url, author, publish_date, rating, affiliate_url, content, category) 
@@ -52,6 +142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
     }
 
+    // 6. Insert Products
     for (const product of PRODUCTS_DATA) {
       const numericPrice = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
       await client.query(
@@ -61,6 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
     }
 
+    // 7. Insert Comments
     for (const [blogId, comments] of Object.entries(COMMENTS_DATA)) {
       for (const comment of comments) {
         await client.query(
@@ -71,6 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    // 8. Fix Sequences
     await client.query(`SELECT setval('games_id_seq', (SELECT MAX(id) FROM games), true)`);
     await client.query(`SELECT setval('blog_posts_id_seq', (SELECT MAX(id) FROM blog_posts), true)`);
     await client.query(`SELECT setval('products_id_seq', (SELECT MAX(id) FROM products), true)`);
@@ -80,7 +173,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.status(200).json({ 
       success: true, 
-      message: "Data migrated successfully",
+      message: "Data migrated and schema updated successfully",
       counts: {
         games: GAMES_DATA.length,
         blogs: BLOGS_DATA.length,

@@ -19,9 +19,17 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
   const router = useRouter();
   const selectedCategory = (router.query.category as string) || 'All';
   const selectedTag = (router.query.tags as string) || null;
+  
+  // Platform selection (Default to PC if not set)
+  const selectedPlatform = (router.query.platform as string) || 'pc';
 
-  // Extract unique categories
-  const categories = useMemo(() => ['All', ...Array.from(new Set(games.map(g => g.category))).sort()], [games]);
+  // Extract unique categories based on current platform games
+  const categories = useMemo(() => {
+      const platformGames = games.filter(g => 
+          selectedPlatform === 'mobile' ? g.platform === 'mobile' : (g.platform === 'pc' || !g.platform)
+      );
+      return ['All', ...Array.from(new Set(platformGames.map(g => g.category))).sort()];
+  }, [games, selectedPlatform]);
   
   // Filter Logic
   const filteredGames = useMemo(() => {
@@ -29,9 +37,14 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
         const matchesQuery = game.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategory === 'All' || game.category === selectedCategory;
         const matchesTag = !selectedTag || (game.tags && game.tags.includes(selectedTag));
-        return matchesQuery && matchesCategory && matchesTag;
+        
+        // STRICT Platform Matching
+        const isMobile = game.platform === 'mobile';
+        const matchesPlatform = selectedPlatform === 'mobile' ? isMobile : !isMobile;
+
+        return matchesQuery && matchesCategory && matchesTag && matchesPlatform;
     });
-  }, [games, selectedCategory, selectedTag, searchQuery]);
+  }, [games, selectedCategory, selectedTag, searchQuery, selectedPlatform]);
   
   const handleCategorySelect = (cat: string) => {
     const newQuery = { ...router.query };
@@ -42,6 +55,13 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
     }
     delete newQuery.tags; // Clear tags when switching categories
     router.push({ pathname: '/games', query: newQuery }, undefined, { shallow: true });
+  };
+
+  const handlePlatformSelect = (platform: 'pc' | 'mobile') => {
+      const newQuery = { ...router.query, platform };
+      delete newQuery.category; // Reset category when switching platform
+      delete newQuery.tags;
+      router.push({ pathname: '/games', query: newQuery }, undefined, { shallow: true });
   };
   
   const areFiltersActive = searchQuery || (selectedCategory && selectedCategory !== 'All') || selectedTag;
@@ -58,8 +78,21 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
                 <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
                     Game<span className="text-purple-500">Lib</span>
                 </h1>
-                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border border-gray-800 px-2 py-1 rounded bg-gray-900">
-                    {filteredGames.length} Titles
+                
+                {/* Platform Toggles Mobile */}
+                <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
+                    <button 
+                        onClick={() => handlePlatformSelect('pc')}
+                        className={`px-3 py-1 text-[10px] font-bold uppercase rounded ${selectedPlatform === 'pc' ? 'bg-purple-600 text-white' : 'text-gray-500'}`}
+                    >
+                        PC / Web
+                    </button>
+                    <button 
+                        onClick={() => handlePlatformSelect('mobile')}
+                        className={`px-3 py-1 text-[10px] font-bold uppercase rounded ${selectedPlatform === 'mobile' ? 'bg-purple-600 text-white' : 'text-gray-500'}`}
+                    >
+                        Mobile
+                    </button>
                 </div>
             </div>
             
@@ -84,16 +117,32 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
 
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 pb-20 lg:pt-20">
             {/* --- Desktop Header (Hidden on Mobile) --- */}
-            <div className="hidden lg:block relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/5 pb-8">
+            <div className="hidden lg:flex relative z-10 flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/5 pb-8">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-purple-900/20 blur-[120px] rounded-full pointer-events-none" />
                 <div>
                     <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white mb-2 uppercase leading-[0.8]">
-                        All <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 animate-gradient-x">Games</span>
+                        {selectedPlatform === 'mobile' ? 'Mobile' : 'All'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 animate-gradient-x">Games</span>
                     </h1>
                     <p className="text-gray-400 text-lg md:text-xl font-bold uppercase tracking-widest mt-6 max-w-xl flex items-center gap-3">
                         <span className="w-8 h-[2px] bg-purple-500 inline-block"></span>
-                        Discover . Play . Dominate
+                        {selectedPlatform === 'mobile' ? 'iOS & Android Exclusives' : 'Discover . Play . Dominate'}
                     </p>
+                </div>
+
+                {/* Desktop Platform Switcher */}
+                <div className="flex bg-gray-900 p-1.5 rounded-xl border border-white/10">
+                    <button 
+                        onClick={() => handlePlatformSelect('pc')}
+                        className={`px-8 py-3 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${selectedPlatform === 'pc' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        PC Games
+                    </button>
+                    <button 
+                        onClick={() => handlePlatformSelect('mobile')}
+                        className={`px-8 py-3 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${selectedPlatform === 'mobile' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        Mobile Games
+                    </button>
                 </div>
             </div>
 

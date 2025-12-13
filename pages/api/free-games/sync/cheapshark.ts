@@ -37,7 +37,8 @@ interface CheapSharkDeal {
   gameID: string;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// FIX: Add method to NextApiRequest type to resolve TypeScript error.
+export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   // Allow POST (for cron/manual trigger) or GET (for testing)
   if (req.method !== 'POST' && req.method !== 'GET') {
     res.setHeader('Allow', ['POST', 'GET']);

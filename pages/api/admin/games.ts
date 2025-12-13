@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 import { isAuthorized } from '../auth/check';
@@ -63,7 +64,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
         const itemsResult = await client.query(`
             SELECT
                 id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
-                video_url AS "videoUrl", download_url AS "downloadUrl", gallery, view_count
+                video_url AS "videoUrl", download_url AS "downloadUrl", gallery, view_count, platform, requirements
             FROM games
             ${whereClause}
             ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}
@@ -81,14 +82,27 @@ export default async function handler(req: NextApiRequest & { method?: string },
     }
     
     if (req.method === 'POST') {
-      const { title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, gallery } = req.body;
+      const { title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, gallery, platform, requirements } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
 
       const slug = await generateUniqueSlug(client, title);
       const result = await client.query(
-        `INSERT INTO games (title, slug, image_url, category, tags, theme, description, video_url, download_url, gallery) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-        [title, slug, imageUrl, category, tags || [], theme || null, description, videoUrl || null, downloadUrl || '#', gallery || []]
+        `INSERT INTO games (title, slug, image_url, category, tags, theme, description, video_url, download_url, gallery, platform, requirements) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+        [
+            title, 
+            slug, 
+            imageUrl, 
+            category, 
+            tags || [], 
+            theme || null, 
+            description, 
+            videoUrl || null, 
+            downloadUrl || '#', 
+            gallery || [], 
+            platform || 'pc', 
+            requirements || null
+        ]
       );
       
       try {
@@ -101,15 +115,29 @@ export default async function handler(req: NextApiRequest & { method?: string },
       res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
-      const { id, title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, gallery } = req.body;
+      const { id, title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, gallery, platform, requirements } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
       
       const slug = await generateUniqueSlug(client, title, id);
       const result = await client.query(
         `UPDATE games 
-         SET title = $1, slug = $2, image_url = $3, category = $4, tags = $5, theme = $6, description = $7, video_url = $8, download_url = $9, gallery = $10 
-         WHERE id = $11 RETURNING *`,
-        [title, slug, imageUrl, category, tags || [], theme || null, description, videoUrl || null, downloadUrl || '#', gallery || [], id]
+         SET title = $1, slug = $2, image_url = $3, category = $4, tags = $5, theme = $6, description = $7, video_url = $8, download_url = $9, gallery = $10, platform = $11, requirements = $12
+         WHERE id = $13 RETURNING *`,
+        [
+            title, 
+            slug, 
+            imageUrl, 
+            category, 
+            tags || [], 
+            theme || null, 
+            description, 
+            videoUrl || null, 
+            downloadUrl || '#', 
+            gallery || [], 
+            platform || 'pc', 
+            requirements || null, 
+            id
+        ]
       );
       
       if (result.rows.length === 0) {

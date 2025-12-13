@@ -7,6 +7,7 @@ export interface Game {
   title: string;
   imageUrl: string;
   category: string;
+  platform?: 'mobile' | 'pc' | 'web'; // Mapped to DB column
   tags?: string[];
   theme?: 'dark' | 'light' | 'colorful' | 'retro';
   description: string;
@@ -14,6 +15,12 @@ export interface Game {
   downloadUrl: string;
   gallery: string[];
   view_count?: number;
+  requirements?: { // Mapped to DB JSONB column
+    os: string;
+    ram: string;
+    storage: string;
+    processor?: string;
+  };
 }
 
 export interface Product {
@@ -35,7 +42,6 @@ export interface Comment {
   avatarUrl: string;
   date: string;
   text: string;
-  // Champs ajoutés pour la modération et l'administration
   status: 'pending' | 'approved';
   email: string;
   phone?: string;
@@ -52,9 +58,9 @@ export interface BlogPost {
   videoUrl?: string;
   author: string;
   publishDate: string;
-  rating: number; // out of 5
+  rating: number;
   affiliateUrl: string;
-  content: string; // This will be markdown/html string
+  content: string;
   category: string;
   view_count?: number;
 }
@@ -63,7 +69,7 @@ export interface SocialLink {
   id: number;
   name: string;
   url: string;
-  icon_svg: string; // Storing the full SVG code as text
+  icon_svg: string;
 }
 
 export interface Ad {
@@ -98,5 +104,5 @@ export interface CategorySetting {
   icon_name: string;
   show_in_sidebar: boolean;
   sort_order: number;
-  count?: number; // Virtual field for admin display
+  count?: number;
 }
