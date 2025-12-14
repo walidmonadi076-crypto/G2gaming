@@ -172,8 +172,8 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
 
             {/* --- Game Grid with Native Ad Injection --- */}
             {filteredGames.length > 0 ? (
-                // CHANGED: 3 Columns Grid as requested (3 b 3)
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-6 md:gap-8 mt-4 lg:mt-0 auto-rows-fr">
+                // CHANGED: Grid layout adjusted to 3 columns max on large screens (3 b 3)
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 md:gap-8 mt-4 lg:mt-0 auto-rows-fr">
                     {filteredGames.map((game, index) => (
                         <React.Fragment key={game.id}>
                             <GameCard game={game} />
