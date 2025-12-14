@@ -61,8 +61,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
       const totalPages = Math.ceil(totalItems / limit);
 
       queryParams.push(limit, offset);
+      // We format price as string with $ for the frontend display
       const itemsResult = await client.query(`
-        SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category, view_count, is_pinned AS "isPinned"
+        SELECT id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, description, gallery, category, view_count, is_pinned AS "isPinned"
         FROM products
         ${whereClause}
         ORDER BY is_pinned DESC, ${sanitizedSortBy} ${sanitizedSortOrder}
@@ -83,11 +84,14 @@ export default async function handler(req: NextApiRequest & { method?: string },
         const { name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
+        // Clean price: Remove '$' and ensure it is a number
+        const numericPrice = parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
+
         const slug = await generateUniqueSlug(client, name);
         const result = await client.query(
             `INSERT INTO products (name, slug, image_url, price, url, description, gallery, category, is_pinned) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [name, slug, imageUrl, price, url || '#', description, gallery || [], category, isPinned || false]
+            [name, slug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false]
         );
         res.status(201).json(result.rows[0]);
 
@@ -95,12 +99,15 @@ export default async function handler(req: NextApiRequest & { method?: string },
         const { id, name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
+        // Clean price: Remove '$' and ensure it is a number
+        const numericPrice = parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
+
         const slug = await generateUniqueSlug(client, name, id);
         const result = await client.query(
             `UPDATE products 
             SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8, is_pinned = $9
             WHERE id = $10 RETURNING *`,
-            [name, slug, imageUrl, price, url || '#', description, gallery || [], category, isPinned || false, id]
+            [name, slug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false, id]
         );
       
         if (result.rows.length === 0) {

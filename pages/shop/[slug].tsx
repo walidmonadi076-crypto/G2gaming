@@ -5,24 +5,38 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { getProductBySlug, getAllProducts } from '../../lib/data';
-import { getRelatedFreeDeals } from '../../lib/suggestions';
 import type { Product } from '../../types';
-import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
+import StarRating from '../../components/StarRating';
+import StoreItemCard from '../../components/StoreItemCard';
 
-interface ProductDetailPageProps { product: Product; }
+interface ProductDetailPageProps { 
+    product: Product;
+    relatedProducts: Product[];
+    boughtTogether: Product[];
+    othersViewed: Product[];
+}
 
-const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
+const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedProducts, boughtTogether, othersViewed }) => {
     const router = useRouter();
     const [mainImage, setMainImage] = useState<string>('');
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
-    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
+    const [selectedColor, setSelectedColor] = useState<string>('black');
+
+    // UI Mock Data to match screenshot vibe
+    const oldPrice = (parseFloat(product.price.replace(/[^0-9.]/g, '')) * 1.22).toFixed(2);
+    const savePercent = Math.round(((parseFloat(oldPrice) - parseFloat(product.price.replace(/[^0-9.]/g, ''))) / parseFloat(oldPrice)) * 100);
+    const stockCount = 20 + (product.id % 15);
+    
+    // Mock Ratings if not in DB
+    const rating = product.rating || 4.5 + (product.id % 5) / 10;
+    const reviewCount = product.reviewsCount || 10 + (product.id * 3);
 
     const mediaItems = useMemo(() => 
-        product.gallery.map(img => ({ type: 'image' as const, src: img }))
-    , [product.gallery]);
+        (product.gallery && product.gallery.length > 0 ? product.gallery : [product.imageUrl]).map(img => ({ type: 'image' as const, src: img }))
+    , [product.gallery, product.imageUrl]);
 
     const openLightbox = (index: number) => {
         setLightboxIndex(index);
@@ -30,37 +44,20 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
     };
 
     useEffect(() => {
-        // Track view on page load
         if (router.isReady && product.slug && process.env.NODE_ENV === 'production') {
-            const trackView = async () => {
-                try {
-                    await fetch('/api/views/track', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: 'products', slug: product.slug }),
-                    });
-                } catch (error) {
-                    console.error('Failed to track view:', error);
-                }
-            };
-            trackView();
+            fetch('/api/views/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'products', slug: product.slug }),
+            }).catch(console.error);
         }
-
-        // Fetch suggestions based on product category
-        const fetchSuggestions = async () => {
-             const deals = await getRelatedFreeDeals(product.category);
-             setRelatedDeals(deals);
-        };
-        fetchSuggestions();
-    }, [router.isReady, product.slug, product.category]);
+    }, [router.isReady, product.slug]);
 
     useEffect(() => {
-        if (product) setMainImage(product.gallery[0] || product.imageUrl);
+        setMainImage(product.gallery?.[0] || product.imageUrl);
     }, [product]);
 
-    if (router.isFallback) {
-        return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading Gear...</div>;
-    }
+    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading Gear...</div>;
 
     const productSchema = {
         "@context": "https://schema.org",
@@ -78,163 +75,241 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
     };
     
     const displayMainImage = mainImage || 'https://picsum.photos/seed/product-placeholder/400/400';
-    const mainImageIndex = (product.gallery || []).findIndex(img => img === displayMainImage);
+    const mainImageIndex = mediaItems.findIndex(item => item.src === displayMainImage);
+
+    // Reusable Section Component
+    const ProductCarouselSection = ({ title, items }: { title: string, items: Product[] }) => {
+        if (!items || items.length === 0) return null;
+        return (
+            <div className="mt-16">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <span className="w-1.5 h-8 bg-blue-500 rounded-full"></span>
+                    {title}
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {items.slice(0, 4).map(item => (
+                        <StoreItemCard key={item.id} product={item} />
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <>
-            <SEO
-                title={product.name}
-                description={product.description}
-                image={product.imageUrl}
-                url={`/shop/${product.slug}`}
-                schema={productSchema}
-            />
+            <SEO title={product.name} description={product.description} image={product.imageUrl} url={`/shop/${product.slug}`} schema={productSchema} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-gray-200 font-sans selection:bg-green-500 selection:text-white pb-20">
-                {/* Background Glow */}
-                <div className="fixed top-0 right-0 w-1/2 h-[600px] bg-gradient-to-b from-green-900/10 to-transparent pointer-events-none z-0" />
-
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-                    
-                    {/* Breadcrumb */}
-                    <div className="mb-8">
-                        <Link 
-                            href="/shop" 
-                            className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
-                        >
-                            <span className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center group-hover:border-green-500 group-hover:bg-green-500/20 transition-all">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
-                            </span>
+            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-green-500 selection:text-white pb-20">
+                {/* Header Breadcrumb */}
+                <div className="border-b border-white/5 bg-[#0d0d0d]">
+                    <div className="max-w-[1400px] mx-auto px-4 py-4">
+                        <Link href="/shop" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                             Back to Store
                         </Link>
                     </div>
+                </div>
 
+                <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
                         
-                        {/* --- LEFT COLUMN: Images --- */}
-                        <div className="lg:col-span-7 flex flex-col gap-6">
-                            
+                        {/* --- LEFT COLUMN: Images (Style Screenshot) --- */}
+                        <div className="lg:col-span-7 flex flex-col gap-4">
                             {/* Main Image Stage */}
-                            <button 
-                                className="relative w-full aspect-square md:aspect-[4/3] bg-gray-900 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5 group cursor-zoom-in ring-1 ring-white/5 hover:ring-green-500/50 transition-all duration-500" 
-                                onClick={() => openLightbox(mainImageIndex > -1 ? mainImageIndex : 0)}
-                            >
-                                {displayMainImage && (
+                            <div className="relative w-full aspect-[4/3] bg-white rounded-xl overflow-hidden border border-gray-200 group cursor-zoom-in p-8 flex items-center justify-center">
+                                <span className="absolute top-4 right-4 bg-yellow-400 text-black text-xs font-black px-3 py-1 rounded shadow-sm z-10 uppercase tracking-wide">
+                                    Save {savePercent}%
+                                </span>
+                                <div className="relative w-full h-full" onClick={() => openLightbox(mainImageIndex > -1 ? mainImageIndex : 0)}>
                                     <Image 
                                         src={displayMainImage} 
                                         alt={product.name} 
                                         fill 
                                         sizes="(max-width: 768px) 100vw, 800px" 
-                                        className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                                        className="object-contain hover:scale-105 transition-transform duration-500" 
                                         priority
                                     />
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d]/60 via-transparent to-transparent opacity-60" />
-                                <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <div className="bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/20">
-                                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
-                                    </div>
                                 </div>
-                            </button>
+                            </div>
 
-                            {/* Thumbnails */}
-                            {(product.gallery && product.gallery.length > 1) && (
-                                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
+                            {/* Thumbnails Row */}
+                            {(product.gallery && product.gallery.length > 0) && (
+                                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                                     {product.gallery.map((img, index) => (
                                         <button 
                                             key={index} 
                                             onClick={() => setMainImage(img)} 
-                                            className={`relative flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 snap-start ${
+                                            className={`relative flex-shrink-0 w-20 h-20 bg-white rounded-lg overflow-hidden border-2 transition-all p-1 ${
                                                 mainImage === img 
-                                                ? 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105' 
-                                                : 'border-transparent hover:border-gray-600 opacity-70 hover:opacity-100'
+                                                ? 'border-blue-500 ring-2 ring-blue-500/30' 
+                                                : 'border-gray-700 hover:border-gray-500 opacity-70 hover:opacity-100'
                                             }`}
                                         >
-                                            <Image src={img} alt={`${product.name} thumbnail ${index + 1}`} fill sizes="100px" className="object-cover" />
+                                            <div className="relative w-full h-full">
+                                                <Image src={img} alt={`Thumb ${index}`} fill className="object-contain" />
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        {/* --- RIGHT COLUMN: Info & CTA --- */}
+                        {/* --- RIGHT COLUMN: Product Info (Style Screenshot) --- */}
                         <div className="lg:col-span-5 flex flex-col h-full">
-                            <div className="sticky top-24 space-y-8">
-                                
-                                {/* Header Info */}
+                            <div className="space-y-6">
+                                {/* Title & Brand */}
                                 <div>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <span className="inline-block px-3 py-1 bg-gray-800 border border-gray-700 rounded-md text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                            {product.category}
-                                        </span>
-                                    </div>
-                                    <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4">
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">G2Gaming Gear</p>
+                                    <h1 className="text-3xl md:text-4xl font-black text-white leading-tight mb-2">
                                         {product.name}
                                     </h1>
-                                    <div className="inline-block bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text">
-                                        <p className="text-4xl md:text-5xl font-bold tracking-tight">{product.price}</p>
+                                    <div className="flex items-center gap-2">
+                                        <StarRating rating={rating} />
+                                        <span className="text-xs text-gray-500 font-bold">({reviewCount})</span>
                                     </div>
                                 </div>
 
-                                {/* Buy Action Box */}
-                                <div className="p-1 rounded-2xl bg-gradient-to-r from-green-500/20 to-emerald-500/20">
-                                    <div className="bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
-                                        <a 
-                                            href={product.url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="group relative flex items-center justify-center w-full py-4 bg-green-500 hover:bg-green-400 text-black font-black uppercase tracking-widest text-lg rounded-xl overflow-hidden transition-all hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(34,197,94,0.4)]"
-                                        >
-                                            <span className="relative z-10 flex items-center gap-3">
-                                                Buy Now
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                                            </span>
-                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                                        </a>
-                                        <p className="text-center text-xs text-gray-500 mt-3 font-medium uppercase tracking-wider mb-4">
-                                            Secure Transaction via Partner
-                                        </p>
-
-                                        {/* Sponsored Ad Area - Inside Buy Box */}
-                                        <div className="w-full flex justify-center border-t border-white/5 pt-4">
-                                            <Ad placement="shop_square" className="shadow-none border-none bg-black/20" />
-                                        </div>
+                                {/* Color Selection (Mock) */}
+                                <div>
+                                    <p className="text-sm font-bold text-gray-300 mb-2">Color:</p>
+                                    <div className="flex gap-3">
+                                        {['black', 'white', 'purple'].map(color => (
+                                            <button 
+                                                key={color}
+                                                onClick={() => setSelectedColor(color)}
+                                                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${selectedColor === color ? 'border-white scale-110' : 'border-transparent'}`}
+                                                style={{ backgroundColor: color === 'black' ? '#111' : color === 'white' ? '#eee' : '#7c3aed' }}
+                                            >
+                                                {selectedColor === color && (
+                                                    <svg className={`w-4 h-4 ${color === 'white' ? 'text-black' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                )}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
-                                {/* Description */}
-                                <div className="border-t border-white/10 pt-6">
-                                    <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <span className="w-1 h-4 bg-green-500 rounded-full"></span>
-                                        Overview
-                                    </h3>
-                                    <div className="prose prose-invert prose-p:text-gray-400 prose-p:leading-relaxed max-w-none">
-                                        <p>{product.description}</p>
+                                {/* Variant Selection (Mock) */}
+                                <div>
+                                    <p className="text-sm font-bold text-gray-300 mb-2">Also available as:</p>
+                                    <div className="flex gap-2">
+                                        <button className="px-3 py-1.5 border border-red-500/50 bg-red-500/10 text-red-400 text-xs font-bold rounded-md uppercase tracking-wide">
+                                            Demo ${ (parseFloat(product.price.replace('$', '')) * 0.7).toFixed(2) }
+                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Related Free Deals Section (Suggestions) */}
-                                {relatedDeals.length > 0 && (
-                                    <div className="mt-8 border-t border-white/5 pt-8">
-                                        <h3 className="text-xl font-bold text-white mb-4">Game Deals for You</h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {relatedDeals.slice(0, 2).map((deal: any) => (
-                                                <a href={deal.deal_url} target="_blank" rel="noopener noreferrer" key={deal.id} className="block group">
-                                                    <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
-                                                        <Image src={deal.image_url} alt={deal.title} fill className="object-cover group-hover:scale-105 transition-transform" />
-                                                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">Free</div>
-                                                    </div>
-                                                    <p className="text-xs font-bold text-gray-300 group-hover:text-white truncate">{deal.title}</p>
-                                                </a>
-                                            ))}
-                                        </div>
+                                {/* Price Area */}
+                                <div className="border-t border-b border-white/5 py-6">
+                                    <div className="flex items-baseline gap-3 mb-1">
+                                        <span className="text-4xl font-black text-red-500">{product.price}</span>
+                                        <span className="text-lg text-gray-500 line-through decoration-gray-600">${oldPrice}</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
                                     </div>
-                                )}
+                                </div>
 
+                                {/* CTA Button (Green like screenshot) */}
+                                <div className="space-y-3">
+                                    <a 
+                                        href={product.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="w-full py-4 bg-[#22c55e] hover:bg-[#16a34a] text-white font-black uppercase tracking-widest text-lg rounded-sm shadow-lg shadow-green-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    >
+                                        Add to Cart
+                                    </a>
+                                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                        Availability: {stockCount}+ left in stock
+                                    </div>
+                                    <div className="flex gap-4 text-[10px] uppercase font-bold text-gray-500 mt-2">
+                                        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> In Stock</span>
+                                        <span className="flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg> Safe payments</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
                     </div>
+
+                    {/* --- Selected Accessories (Middle Section) --- */}
+                    {boughtTogether.length > 0 && (
+                        <div className="mt-16 bg-gray-900/50 border border-white/5 rounded-2xl p-6">
+                            <h3 className="text-center text-xl font-bold text-white mb-6">Selected Accessories</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                                {boughtTogether.slice(0, 2).map(item => (
+                                    <div key={item.id} className="flex bg-white rounded-lg overflow-hidden h-24 shadow-sm border border-gray-200">
+                                        <div className="w-24 relative bg-gray-100 flex-shrink-0">
+                                            <Image src={item.imageUrl} alt={item.name} fill className="object-contain p-2" />
+                                        </div>
+                                        <div className="p-3 flex flex-col justify-between flex-grow">
+                                            <p className="text-xs font-bold text-black leading-tight line-clamp-2">{item.name}</p>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-sm font-black text-black">{item.price}</span>
+                                                <Link href={`/shop/${item.slug}`} className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded uppercase hover:bg-blue-700">Add</Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- Product Specs & Description (Grid Layout) --- */}
+                    <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div>
+                            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Product Description</h4>
+                            <h3 className="text-xl font-black text-white mb-4 border-b border-white/10 pb-2 inline-block">Overview</h3>
+                            <p className="text-gray-400 leading-relaxed mb-4">
+                                {product.description}
+                            </p>
+                            <p className="text-gray-400 leading-relaxed text-sm">
+                                Brand new premium {product.category} designed for gamers. With a variety of hardware and software-based customization options, you can tailor the hardware to your specific gaming needs.
+                            </p>
+                        </div>
+                        
+                        <div className="space-y-8">
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Specifications</h4>
+                                <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                                    <div className="border-b border-white/5 pb-2">
+                                        <span className="block text-xs text-gray-500 uppercase">Article Number</span>
+                                        <span className="text-white font-mono text-sm">33668-{product.id}</span>
+                                    </div>
+                                    <div className="border-b border-white/5 pb-2">
+                                        <span className="block text-xs text-gray-500 uppercase">Manuf. Number</span>
+                                        <span className="text-white font-mono text-sm">0711719593</span>
+                                    </div>
+                                    <div className="border-b border-white/5 pb-2">
+                                        <span className="block text-xs text-gray-500 uppercase">Brand</span>
+                                        <span className="text-white font-bold text-sm">G2Gaming Official</span>
+                                    </div>
+                                    <div className="border-b border-white/5 pb-2">
+                                        <span className="block text-xs text-gray-500 uppercase">Colour</span>
+                                        <span className="text-white font-bold text-sm capitalize">{selectedColor}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Warranty</h4>
+                                <div className="flex justify-between border-b border-white/5 pb-2">
+                                    <span className="text-gray-400 text-sm">Manufacturer's Warranty</span>
+                                    <span className="text-white text-sm">2 Year Warranty</span>
+                                </div>
+                            </div>
+                            
+                            <div className="flex justify-center pt-4">
+                                <button className="px-8 py-2 border border-white/20 hover:border-white/50 text-white text-xs font-bold uppercase tracking-widest transition-colors rounded-sm">
+                                    Show More Specs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* --- Bottom Carousels --- */}
+                    <ProductCarouselSection title="Related Products" items={relatedProducts} />
+                    <ProductCarouselSection title="Customers Also Bought" items={boughtTogether} />
+                    <ProductCarouselSection title="Others Also Viewed" items={othersViewed} />
+
                 </div>
             </div>
 
@@ -266,8 +341,28 @@ export const getStaticProps: GetStaticProps = async (context) => {
     const product = await getProductBySlug(slug);
     if (!product) return { notFound: true };
 
+    // Fetch all products to simulate "Related", "Bought Together", "Others Viewed"
+    const allProducts = await getAllProducts();
+    
+    // Filter and Shuffle helpers
+    const otherProducts = allProducts.filter(p => p.id !== product.id);
+    
+    const shuffle = (array: Product[]) => array.sort(() => 0.5 - Math.random());
+    
+    // Logic for related: Same category
+    const related = shuffle(otherProducts.filter(p => p.category === product.category));
+    
+    // Logic for others: Random subset
+    const bought = shuffle([...otherProducts]);
+    const viewed = shuffle([...otherProducts]).slice(0, 4);
+
     return {
-        props: { product },
+        props: { 
+            product,
+            relatedProducts: related.slice(0, 4),
+            boughtTogether: bought.slice(0, 4),
+            othersViewed: viewed
+        },
         revalidate: 60,
     };
 };

@@ -41,6 +41,9 @@ export interface Product {
   category: string;
   view_count?: number;
   isPinned?: boolean;
+  // UI Helpers
+  rating?: number;
+  reviewsCount?: number;
 }
 
 export interface Comment {
