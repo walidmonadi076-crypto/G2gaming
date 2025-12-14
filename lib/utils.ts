@@ -3,12 +3,10 @@ export function getEmbedUrl(url: string | undefined): string | null {
   if (!url) return null;
 
   // YouTube Short/Watch/Embed detection
-  // Added parameters for cleanest possible look: 
-  // controls=0 (hide bottom bar), modestbranding=1, rel=0 (no related at end), 
-  // iv_load_policy=3 (no annotations), disablekb=1 (no keyboard), fs=0 (no fullscreen button)
+  // params: autoplay=1, mute=1 (critical for chrome), controls=0, loop=1
   const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|embed\/|shorts\/))([^&?]*)/);
   if (ytMatch && ytMatch[1]) {
-    // Playlist parameter is required for loop to work on single videos
+    // playlist param is needed to loop a single video in embed mode
     return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=1&playlist=${ytMatch[1]}&playsinline=1`;
   }
 
