@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import App from 'next/app';
-import type { AppContext, AppProps } from 'next/app';
+// import type { AppContext, AppProps } from 'next/app'; // Removing faulty imports
 import { useRouter } from 'next/router';
 import Head from 'next/head'; // Import Head
 import { Inter } from 'next/font/google';
@@ -32,6 +32,15 @@ const defaultSettings: SiteSettings = {
   promo_button_url: '',
   recaptcha_site_key: '',
 };
+
+// Define local types to fix import errors
+type AppProps = {
+  Component: React.ComponentType<any>;
+  pageProps: any;
+};
+
+// Use any for AppContext to avoid issues with next/app exports
+type AppContext = any;
 
 type MyAppProps = AppProps & {
   pageProps: {

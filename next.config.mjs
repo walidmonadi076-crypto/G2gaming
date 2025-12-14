@@ -7,7 +7,7 @@ const ContentSecurityPolicy = `
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com *;
   frame-src 'self' https://www.google.com *;
   connect-src 'self' *;
-  img-src 'self' data: https: http: *;
+  img-src 'self' data: blob: https: http: *;
   style-src 'self' 'unsafe-inline' *;
 `.replace(/\s{2,}/g, ' ').trim();
 
@@ -41,6 +41,8 @@ const nextConfig = {
   poweredByHeader: false,
   
   images: {
+    // CRITICAL FIX: Allow all external images by disabling strict server-side optimization
+    unoptimized: true, 
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [

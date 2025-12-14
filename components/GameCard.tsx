@@ -16,6 +16,9 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // Fallback image in case the user's URL is dead (404)
+  const PLACEHOLDER_IMAGE = "https://picsum.photos/seed/gaming/800/600";
+
   const embedUrl = getEmbedUrl(game.videoUrl);
 
   const handleMouseEnter = () => {
@@ -104,13 +107,22 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
                 className="object-cover"
                 priority={variant === 'featured'}
                 onError={() => setImageError(true)}
+                unoptimized // Ensure we bypass optimization for direct loading
             />
             ) : (
+            // Fallback IMG tag: If NextImage fails, this tries to load the raw URL.
+            // If the raw URL also fails (onError), it replaces itself with a placeholder.
             <img 
-                src={game.imageUrl} 
+                src={game.imageUrl || PLACEHOLDER_IMAGE} 
                 alt={game.title}
                 className="absolute inset-0 w-full h-full object-cover"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== PLACEHOLDER_IMAGE) {
+                        target.src = PLACEHOLDER_IMAGE;
+                    }
+                }}
             />
             )}
             
