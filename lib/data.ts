@@ -10,8 +10,8 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
     SELECT 
       id, slug, title, summary, image_url AS "imageUrl", video_url AS "videoUrl",
       author, publish_date AS "publishDate", rating::float, affiliate_url AS "affiliateUrl",
-      content, category
-    FROM blog_posts ORDER BY id ASC
+      content, category, is_pinned AS "isPinned"
+    FROM blog_posts ORDER BY is_pinned DESC, id DESC
   `);
   return result.rows;
 }
@@ -21,7 +21,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     SELECT 
       id, slug, title, summary, image_url AS "imageUrl", video_url AS "videoUrl",
       author, publish_date AS "publishDate", rating::float, affiliate_url AS "affiliateUrl",
-      content, category
+      content, category, is_pinned AS "isPinned"
     FROM blog_posts WHERE slug = $1
   `, [slug]);
   return result.rows.length > 0 ? result.rows[0] : null;
@@ -41,15 +41,15 @@ export async function getCommentsByBlogId(blogId: number): Promise<Comment[]> {
 
 export async function getAllProducts(): Promise<Product[]> {
   const result = await query(`
-    SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category
-    FROM products ORDER BY id ASC
+    SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category, is_pinned AS "isPinned"
+    FROM products ORDER BY is_pinned DESC, id DESC
   `);
   return result.rows;
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const result = await query(`
-    SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category
+    SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category, is_pinned AS "isPinned"
     FROM products WHERE slug = $1
   `, [slug]);
   return result.rows.length > 0 ? result.rows[0] : null;
@@ -58,26 +58,26 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 /* ========== 🎮 GAMES ========== */
 
 export async function getAllGames(): Promise<Game[]> {
-  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count
+  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count, is_pinned
   const result = await query(`
     SELECT
       id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
       video_url AS "videoUrl", download_url AS "downloadUrl", download_url_ios AS "downloadUrlIos", gallery, platform, requirements,
       icon_url AS "iconUrl", background_url AS "backgroundUrl",
-      rating, downloads_count AS "downloadsCount"
-    FROM games ORDER BY id ASC
+      rating, downloads_count AS "downloadsCount", is_pinned AS "isPinned"
+    FROM games ORDER BY is_pinned DESC, id DESC
   `);
   return result.rows;
 }
 
 export async function getGameBySlug(slug: string): Promise<Game | null> {
-  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count
+  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count, is_pinned
   const result = await query(`
     SELECT
       id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
       video_url AS "videoUrl", download_url AS "downloadUrl", download_url_ios AS "downloadUrlIos", gallery, platform, requirements,
       icon_url AS "iconUrl", background_url AS "backgroundUrl",
-      rating, downloads_count AS "downloadsCount"
+      rating, downloads_count AS "downloadsCount", is_pinned AS "isPinned"
     FROM games WHERE slug = $1
   `, [slug]);
   return result.rows.length > 0 ? result.rows[0] : null;

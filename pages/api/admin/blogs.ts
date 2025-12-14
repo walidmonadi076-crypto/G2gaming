@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 import { isAuthorized } from '../auth/check';
@@ -64,10 +65,10 @@ export default async function handler(req: NextApiRequest & { method?: string },
         SELECT 
           id, slug, title, summary, image_url AS "imageUrl", video_url AS "videoUrl",
           author, publish_date AS "publishDate", rating::float, affiliate_url AS "affiliateUrl",
-          content, category, view_count
+          content, category, view_count, is_pinned AS "isPinned"
         FROM blog_posts
         ${whereClause}
-        ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}
+        ORDER BY is_pinned DESC, ${sanitizedSortBy} ${sanitizedSortOrder}
         LIMIT $${queryParams.length-1} OFFSET $${queryParams.length}
       `, queryParams);
 
@@ -82,27 +83,27 @@ export default async function handler(req: NextApiRequest & { method?: string },
     }
 
     if (req.method === 'POST') {
-      const { title, summary, imageUrl, videoUrl, author, publishDate, rating, affiliateUrl, content, category } = req.body;
+      const { title, summary, imageUrl, videoUrl, author, publishDate, rating, affiliateUrl, content, category, isPinned } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
       
       const slug = await generateUniqueSlug(client, title);
       const result = await client.query(
-        `INSERT INTO blog_posts (title, slug, summary, image_url, video_url, author, publish_date, rating, affiliate_url, content, category) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-        [title, slug, summary, imageUrl, videoUrl || null, author, publishDate || new Date().toISOString().split('T')[0], parseFloat(rating) || 0, affiliateUrl || null, content, category]
+        `INSERT INTO blog_posts (title, slug, summary, image_url, video_url, author, publish_date, rating, affiliate_url, content, category, is_pinned) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+        [title, slug, summary, imageUrl, videoUrl || null, author, publishDate || new Date().toISOString().split('T')[0], parseFloat(rating) || 0, affiliateUrl || null, content, category, isPinned || false]
       );
       res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
-      const { id, title, summary, imageUrl, videoUrl, author, publishDate, rating, affiliateUrl, content, category } = req.body;
+      const { id, title, summary, imageUrl, videoUrl, author, publishDate, rating, affiliateUrl, content, category, isPinned } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
 
       const slug = await generateUniqueSlug(client, title, id);
       const result = await client.query(
         `UPDATE blog_posts 
-         SET title = $1, slug = $2, summary = $3, image_url = $4, video_url = $5, author = $6, publish_date = $7, rating = $8, affiliate_url = $9, content = $10, category = $11 
-         WHERE id = $12 RETURNING *`,
-        [title, slug, summary, imageUrl, videoUrl || null, author, publishDate || new Date().toISOString().split('T')[0], parseFloat(rating) || 0, affiliateUrl || null, content, category, id]
+         SET title = $1, slug = $2, summary = $3, image_url = $4, video_url = $5, author = $6, publish_date = $7, rating = $8, affiliate_url = $9, content = $10, category = $11, is_pinned = $12
+         WHERE id = $13 RETURNING *`,
+        [title, slug, summary, imageUrl, videoUrl || null, author, publishDate || new Date().toISOString().split('T')[0], parseFloat(rating) || 0, affiliateUrl || null, content, category, isPinned || false, id]
       );
       
       if (result.rows.length === 0) {

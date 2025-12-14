@@ -47,7 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         icon_url TEXT,
         background_url TEXT,
         rating DECIMAL(5,2) DEFAULT 95,
-        downloads_count INTEGER DEFAULT 1000
+        downloads_count INTEGER DEFAULT 1000,
+        is_pinned BOOLEAN DEFAULT FALSE
       );
     `);
 
@@ -59,6 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS background_url TEXT`);
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS rating DECIMAL(5,2) DEFAULT 95`);
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS downloads_count INTEGER DEFAULT 1000`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE`);
 
     // ... (Keep existing blog/product/comment table creation logic) ...
     await client.query(`
@@ -75,9 +77,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         affiliate_url TEXT,
         content TEXT,
         category VARCHAR(100),
-        view_count INTEGER DEFAULT 0
+        view_count INTEGER DEFAULT 0,
+        is_pinned BOOLEAN DEFAULT FALSE
       );
     `);
+    
+    await client.query(`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS products (
@@ -90,9 +95,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description TEXT,
         gallery TEXT[],
         category VARCHAR(100),
-        view_count INTEGER DEFAULT 0
+        view_count INTEGER DEFAULT 0,
+        is_pinned BOOLEAN DEFAULT FALSE
       );
     `);
+    
+    await client.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS comments (
@@ -123,8 +131,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 4. Insert Games with new fields
     for (const game of GAMES_DATA) {
       await client.query(
-        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url, rating, downloads_count) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url, rating, downloads_count, is_pinned) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
         [
             game.id, 
             game.slug, 
@@ -143,7 +151,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             null, // icon_url 
             null,  // background_url
             95, // default rating
-            1500 // default downloads
+            1500, // default downloads
+            false // default is_pinned
         ]
       );
     }
@@ -151,9 +160,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 5. Insert Blogs
     for (const blog of BLOGS_DATA) {
       await client.query(
-        `INSERT INTO blog_posts (id, slug, title, summary, image_url, video_url, author, publish_date, rating, affiliate_url, content, category) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [blog.id, blog.slug, blog.title, blog.summary, blog.imageUrl, blog.videoUrl || null, blog.author, blog.publishDate, blog.rating, blog.affiliateUrl, blog.content, blog.category]
+        `INSERT INTO blog_posts (id, slug, title, summary, image_url, video_url, author, publish_date, rating, affiliate_url, content, category, is_pinned) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        [blog.id, blog.slug, blog.title, blog.summary, blog.imageUrl, blog.videoUrl || null, blog.author, blog.publishDate, blog.rating, blog.affiliateUrl, blog.content, blog.category, false]
       );
     }
 
@@ -161,9 +170,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const product of PRODUCTS_DATA) {
       const numericPrice = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
       await client.query(
-        `INSERT INTO products (id, slug, name, image_url, price, url, description, gallery, category) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [product.id, product.slug, product.name, product.imageUrl, numericPrice, product.url, product.description, product.gallery, product.category]
+        `INSERT INTO products (id, slug, name, image_url, price, url, description, gallery, category, is_pinned) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [product.id, product.slug, product.name, product.imageUrl, numericPrice, product.url, product.description, product.gallery, product.category, false]
       );
     }
 

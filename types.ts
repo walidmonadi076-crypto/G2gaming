@@ -20,6 +20,7 @@ export interface Game {
   view_count?: number;
   rating?: number; // New: Manual Rating (0-100)
   downloadsCount?: number; // New: Manual Download Count
+  isPinned?: boolean; // New: Pin to top
   requirements?: {
     os: string;
     ram: string;
@@ -39,6 +40,7 @@ export interface Product {
   gallery: string[];
   category: string;
   view_count?: number;
+  isPinned?: boolean;
 }
 
 export interface Comment {
@@ -68,6 +70,7 @@ export interface BlogPost {
   content: string;
   category: string;
   view_count?: number;
+  isPinned?: boolean;
 }
 
 export interface SocialLink {

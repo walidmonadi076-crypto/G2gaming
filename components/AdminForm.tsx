@@ -19,6 +19,7 @@ const PREVIEWABLE_TYPES: ItemType[] = ['games', 'blogs', 'products', 'social-lin
 export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormProps) {
   const [formData, setFormData] = useState<any>({});
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isPinned, setIsPinned] = useState(false); // State for Pinned
   
   const [categories, setCategories] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -37,6 +38,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   useEffect(() => {
     if (item) {
       setFormData({ gallery: [], tags: [], ...item });
+      // @ts-ignore
+      setIsPinned(!!item.isPinned);
       if (type === 'games' && 'tags' in item && Array.isArray(item.tags)) {
         setIsFeatured(item.tags.includes('Featured'));
       }
@@ -55,8 +58,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             gallery: [], 
             platform: 'pc',
             requirements: { os: '', ram: '', storage: '', processor: '' },
-            rating: 95, // Default rating
-            downloadsCount: 1000 // Default downloads
+            rating: 95, 
+            downloadsCount: 1000
         },
         blogs: { title: '', summary: '', imageUrl: '', author: '', rating: 4.5, content: '', category: '' },
         products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
@@ -64,6 +67,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       };
       setFormData(defaults[type]);
       setIsFeatured(false);
+      setIsPinned(false);
     }
   }, [item, type]);
 
@@ -146,7 +150,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
 
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    let finalData = { ...formData };
+    let finalData = { ...formData, isPinned }; // Include isPinned
+    
     if (type === 'games') {
         let finalTags = finalData.tags || [];
         finalTags = finalTags.filter((t: string) => t !== 'Featured');
@@ -156,7 +161,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         finalData.tags = finalTags;
     }
     
-    // Ensure product price has symbol if missing (optional cleaning)
     if (type === 'products' && finalData.price && !finalData.price.includes('$') && !isNaN(parseFloat(finalData.price))) {
         finalData.price = `$${finalData.price}`;
     }
@@ -185,6 +189,20 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       );
   }
 
+  const renderPinOption = () => (
+      <div key="is-pinned" className="bg-blue-900/30 p-3 rounded-md border border-blue-800/50 mb-4">
+          <label className="flex items-center gap-2 text-sm font-bold text-blue-200 cursor-pointer">
+              <input 
+                  type="checkbox" 
+                  checked={isPinned} 
+                  onChange={(e) => setIsPinned(e.target.checked)} 
+                  className="w-4 h-4 bg-gray-700 rounded border-gray-600 text-blue-600 focus:ring-blue-500"
+              />
+              📌 Épingler en haut (Afficher en premier)
+          </label>
+      </div>
+  );
+
   const renderGalleryManager = () => (
     <div key="gallery-manager">
         <label htmlFor="gallery" className="block text-sm font-medium text-gray-300 mb-1">Galerie d'images (URLs)</label>
@@ -205,6 +223,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   
   const renderGameFields = () => (
     <>
+      {renderPinOption()}
       {renderField('title', 'Titre')}
       
       <div className="grid grid-cols-2 gap-4">
@@ -218,7 +237,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
           </div>
       </div>
 
-      {/* Platform Selection */}
       <div key="platform-game">
         <label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">Plateforme</label>
         <select
@@ -234,8 +252,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       </div>
 
       {renderField('imageUrl', 'URL de l\'image principale (Cover)')}
-      
-      {/* New Fields */}
       {renderField('iconUrl', 'URL de l\'icône du profil (Sera affiché sur la Game Card)', 'url', false)}
       {renderField('backgroundUrl', 'URL de l\'image de fond (Page Détails)', 'url', false)}
 
@@ -257,7 +273,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       </div>
       {renderField('description', 'Description', 'textarea')}
       
-      {/* System Requirements Section */}
       <div className="bg-gray-750 p-4 rounded-md border border-gray-600 mt-4">
           <h3 className="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider">Configuration Requise</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -280,7 +295,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
           </div>
       </div>
 
-      {/* Dynamic Download Links based on Platform */}
       {formData.platform === 'mobile' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-gray-750 p-4 rounded border border-gray-600">
               {renderField('downloadUrl', 'Lien Android (APK / Play Store)', 'url')}
@@ -304,6 +318,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
 
   const renderBlogFields = () => (
     <>
+      {renderPinOption()}
       {renderField('title', 'Titre')}
       {renderField('summary', 'Résumé', 'textarea')}
       {renderField('imageUrl', 'URL de l\'image')}
@@ -328,9 +343,9 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
 
   const renderProductFields = () => (
     <>
+      {renderPinOption()}
       {renderField('name', 'Nom')}
       
-      {/* Price Field with Icon */}
       <div key="price-product" className="relative">
         <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-1">Prix</label>
         <div className="relative rounded-md shadow-sm">
@@ -343,7 +358,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                 type="text"
                 value={formData.price || ''}
                 onChange={(e) => {
-                    // Strip non-numeric chars except dot to allow cleaner typing
                     const val = e.target.value.replace(/[^0-9.]/g, ''); 
                     setFormData({...formData, price: val});
                 }}
@@ -370,12 +384,21 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
 
   const renderSocialLinkFields = () => (
     <>
-      {renderField('name', 'Nom du réseau')}
-      {renderField('url', 'URL (lien complet)')}
-      <div key="icon-svg-social">
-        <label htmlFor="icon_svg" className="block text-sm font-medium text-gray-300 mb-1">Icône (code SVG)</label>
-        <textarea id="icon_svg" name="icon_svg" value={formData.icon_svg || ''} onChange={handleChange} required rows={5} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm" placeholder='<svg width="24" height="24" ...>...</svg>'/>
-        <p className="text-xs text-gray-400 mt-1">Collez le code SVG complet de l'icône ici.</p>
+      {renderField('name', 'Nom')}
+      {renderField('url', 'URL')}
+      <div key="icon_svg-social">
+        <label htmlFor="icon_svg" className="block text-sm font-medium text-gray-300 mb-1">Code SVG de l'icône</label>
+        <textarea
+            id="icon_svg"
+            name="icon_svg"
+            value={formData.icon_svg || ''}
+            onChange={handleChange}
+            required
+            rows={5}
+            className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-xs"
+            placeholder={'<svg ...>...</svg>'}
+        />
+        <p className="text-xs text-gray-400 mt-1">Collez le code SVG ici (ex: depuis Heroicons ou Lucide).</p>
       </div>
     </>
   );

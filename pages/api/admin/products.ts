@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 import { isAuthorized } from '../auth/check';
@@ -61,10 +62,10 @@ export default async function handler(req: NextApiRequest & { method?: string },
 
       queryParams.push(limit, offset);
       const itemsResult = await client.query(`
-        SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category, view_count
+        SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category, view_count, is_pinned AS "isPinned"
         FROM products
         ${whereClause}
-        ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}
+        ORDER BY is_pinned DESC, ${sanitizedSortBy} ${sanitizedSortOrder}
         LIMIT $${queryParams.length-1} OFFSET $${queryParams.length}
       `, queryParams);
 
@@ -79,27 +80,27 @@ export default async function handler(req: NextApiRequest & { method?: string },
     }
 
     if (req.method === 'POST') {
-        const { name, imageUrl, price, url, description, gallery, category } = req.body;
+        const { name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
         const slug = await generateUniqueSlug(client, name);
         const result = await client.query(
-            `INSERT INTO products (name, slug, image_url, price, url, description, gallery, category) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-            [name, slug, imageUrl, price, url || '#', description, gallery || [], category]
+            `INSERT INTO products (name, slug, image_url, price, url, description, gallery, category, is_pinned) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [name, slug, imageUrl, price, url || '#', description, gallery || [], category, isPinned || false]
         );
         res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
-        const { id, name, imageUrl, price, url, description, gallery, category } = req.body;
+        const { id, name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
         const slug = await generateUniqueSlug(client, name, id);
         const result = await client.query(
             `UPDATE products 
-            SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8 
-            WHERE id = $9 RETURNING *`,
-            [name, slug, imageUrl, price, url || '#', description, gallery || [], category, id]
+            SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8, is_pinned = $9
+            WHERE id = $10 RETURNING *`,
+            [name, slug, imageUrl, price, url || '#', description, gallery || [], category, isPinned || false, id]
         );
       
         if (result.rows.length === 0) {
