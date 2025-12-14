@@ -1,11 +1,12 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
 import type { Product } from '../../types';
 import { getAllProducts } from '../../lib/data';
 import StoreItemCard from '../../components/StoreItemCard';
 import FilterButton from '../../components/FilterButton';
+import SponsoredShopCard from '../../components/SponsoredShopCard';
 
 interface ShopProps {
   searchQuery: string;
@@ -15,6 +16,10 @@ interface ShopProps {
 const Shop: React.FC<ShopProps> = ({ searchQuery, products }) => {
   const router = useRouter();
   const selectedCategory = (router.query.category as string) || 'All';
+
+  // --- Pagination State ---
+  const ITEMS_PER_BATCH = 30;
+  const [displayLimit, setDisplayLimit] = useState(ITEMS_PER_BATCH);
 
   // Extract unique categories
   const categories = useMemo(() => ['All', ...Array.from(new Set(products.map(p => p.category)))], [products]);
@@ -27,6 +32,19 @@ const Shop: React.FC<ShopProps> = ({ searchQuery, products }) => {
         return matchesQuery && matchesCategory;
     });
   }, [products, selectedCategory, searchQuery]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setDisplayLimit(ITEMS_PER_BATCH);
+  }, [searchQuery, selectedCategory]);
+
+  // Slice for display
+  const visibleProducts = filteredProducts.slice(0, displayLimit);
+  const hasMoreProducts = filteredProducts.length > displayLimit;
+
+  const handleLoadMore = () => {
+    setDisplayLimit(prev => prev + ITEMS_PER_BATCH);
+  };
   
   const handleCategorySelect = (cat: string) => {
     const newQuery = { ...router.query };
@@ -89,11 +107,32 @@ const Shop: React.FC<ShopProps> = ({ searchQuery, products }) => {
 
             {/* --- Product Grid --- */}
             {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 gap-y-6 md:gap-y-10">
-                    {filteredProducts.map(product => (
-                        <StoreItemCard key={product.id} product={product} />
-                    ))}
-                </div>
+                <>
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 gap-y-6 md:gap-y-10">
+                        {visibleProducts.map((product, index) => (
+                            <React.Fragment key={product.id}>
+                                <StoreItemCard product={product} />
+                                {/* Insert Sponsored Card after every 4th item */}
+                                {(index + 1) % 4 === 0 && <SponsoredShopCard />}
+                            </React.Fragment>
+                        ))}
+                    </div>
+
+                    {/* Load More Button */}
+                    {hasMoreProducts && (
+                        <div className="mt-12 flex justify-center pb-8">
+                            <button 
+                                onClick={handleLoadMore}
+                                className="group relative px-8 py-3 bg-gray-900 border border-green-500/30 rounded-xl hover:border-green-500 transition-all duration-300 shadow-lg hover:shadow-green-500/20 active:scale-95"
+                            >
+                                <span className="text-sm font-black text-white uppercase tracking-widest group-hover:text-green-400 transition-colors">
+                                    Load More Gear
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+                            </button>
+                        </div>
+                    )}
+                </>
             ) : (
                 // Empty State
                 <div className="flex flex-col items-center justify-center py-20 md:py-32 text-center border-2 border-dashed border-gray-800 rounded-3xl bg-gray-900/50">

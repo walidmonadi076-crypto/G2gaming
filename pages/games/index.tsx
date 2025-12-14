@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
 import type { Game } from '../../types';
@@ -23,6 +23,10 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
   // Platform selection (Default to PC if not set)
   const selectedPlatform = (router.query.platform as string) || 'pc';
 
+  // --- Pagination State ---
+  const [displayLimit, setDisplayLimit] = useState(20);
+  const ITEMS_PER_BATCH = 20;
+
   // Extract unique categories based on current platform games
   const categories = useMemo(() => {
       const platformGames = games.filter(g => 
@@ -45,6 +49,19 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
         return matchesQuery && matchesCategory && matchesTag && matchesPlatform;
     });
   }, [games, selectedCategory, selectedTag, searchQuery, selectedPlatform]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setDisplayLimit(ITEMS_PER_BATCH);
+  }, [searchQuery, selectedCategory, selectedTag, selectedPlatform]);
+
+  // Slice the games for display
+  const visibleGames = filteredGames.slice(0, displayLimit);
+  const hasMoreGames = filteredGames.length > displayLimit;
+
+  const handleLoadMore = () => {
+    setDisplayLimit(prev => prev + ITEMS_PER_BATCH);
+  };
   
   const handleCategorySelect = (cat: string) => {
     const newQuery: Record<string, any> = { ...router.query };
@@ -172,20 +189,36 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
 
             {/* --- Game Grid (Updated to 4 columns on LG) --- */}
             {filteredGames.length > 0 ? (
-                // CHANGED: lg:grid-cols-4 for 4 columns on desktop
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6 md:gap-6 mt-4 lg:mt-0 auto-rows-fr">
-                    {filteredGames.map((game, index) => (
-                        <React.Fragment key={game.id}>
-                            <GameCard game={game} />
-                            {/* Inject Sponsored Native Ad after the 4th game */}
-                            {index === 3 && (
-                                <div className="col-span-1 sm:col-span-1 h-full"> 
-                                    <SponsoredGameCard />
-                                </div>
-                            )}
-                        </React.Fragment>
-                    ))}
-                </div>
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6 md:gap-6 mt-4 lg:mt-0 auto-rows-fr">
+                        {visibleGames.map((game, index) => (
+                            <React.Fragment key={game.id}>
+                                <GameCard game={game} />
+                                {/* Inject Sponsored Native Ad after every 4th game */}
+                                {(index + 1) % 4 === 0 && (
+                                    <div className="col-span-1 sm:col-span-1 h-full"> 
+                                        <SponsoredGameCard />
+                                    </div>
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </div>
+
+                    {/* Load More Button */}
+                    {hasMoreGames && (
+                        <div className="mt-12 flex justify-center pb-8">
+                            <button 
+                                onClick={handleLoadMore}
+                                className="group relative px-8 py-3 bg-gray-900 border border-purple-500/30 rounded-xl hover:border-purple-500 transition-all duration-300 shadow-lg hover:shadow-purple-500/20 active:scale-95"
+                            >
+                                <span className="text-sm font-black text-white uppercase tracking-widest group-hover:text-purple-400 transition-colors">
+                                    Load More Games
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+                            </button>
+                        </div>
+                    )}
+                </>
             ) : (
                 <div className="flex flex-col items-center justify-center py-32 text-center border-2 border-dashed border-gray-800 rounded-3xl bg-gray-900/50">
                     <div className="bg-gray-800 p-6 rounded-full mb-6 ring-4 ring-gray-800/50">

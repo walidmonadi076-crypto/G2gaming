@@ -1,11 +1,12 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
 import type { BlogPost } from '../../types';
 import { getAllBlogPosts } from '../../lib/data';
 import BlogCard from '../../components/BlogCard';
 import FilterButton from '../../components/FilterButton';
+import SponsoredBlogCard from '../../components/SponsoredBlogCard';
 
 interface BlogsPageProps {
     searchQuery: string;
@@ -15,6 +16,10 @@ interface BlogsPageProps {
 const BlogsPage: React.FC<BlogsPageProps> = ({ searchQuery, posts }) => {
     const router = useRouter();
     const selectedCategory = (router.query.category as string) || 'All';
+
+    // --- Pagination State ---
+    const ITEMS_PER_BATCH = 20;
+    const [displayLimit, setDisplayLimit] = useState(ITEMS_PER_BATCH);
 
     // Extract unique categories
     const categories = useMemo(() => ['All', ...Array.from(new Set(posts.map(p => p.category)))], [posts]);
@@ -27,6 +32,19 @@ const BlogsPage: React.FC<BlogsPageProps> = ({ searchQuery, posts }) => {
             return matchesQuery && matchesCategory;
         });
     }, [posts, selectedCategory, searchQuery]);
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setDisplayLimit(ITEMS_PER_BATCH);
+    }, [searchQuery, selectedCategory]);
+
+    // Slice for display
+    const visiblePosts = filteredPosts.slice(0, displayLimit);
+    const hasMorePosts = filteredPosts.length > displayLimit;
+
+    const handleLoadMore = () => {
+        setDisplayLimit(prev => prev + ITEMS_PER_BATCH);
+    };
 
     const handleCategorySelect = (cat: string) => {
         const newQuery = { ...router.query };
@@ -89,9 +107,32 @@ const BlogsPage: React.FC<BlogsPageProps> = ({ searchQuery, posts }) => {
 
                 {/* --- Content Grid --- */}
                 {filteredPosts.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                        {filteredPosts.map(post => <BlogCard key={post.id} post={post} />)}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                            {visiblePosts.map((post, index) => (
+                                <React.Fragment key={post.id}>
+                                    <BlogCard post={post} />
+                                    {/* Insert Sponsored Card after every 4th item */}
+                                    {(index + 1) % 4 === 0 && <SponsoredBlogCard />}
+                                </React.Fragment>
+                            ))}
+                        </div>
+
+                        {/* Load More Button */}
+                        {hasMorePosts && (
+                            <div className="mt-12 flex justify-center pb-8">
+                                <button 
+                                    onClick={handleLoadMore}
+                                    className="group relative px-8 py-3 bg-gray-900 border border-purple-500/30 rounded-xl hover:border-purple-500 transition-all duration-300 shadow-lg hover:shadow-purple-500/20 active:scale-95"
+                                >
+                                    <span className="text-sm font-black text-white uppercase tracking-widest group-hover:text-purple-400 transition-colors">
+                                        Load More Articles
+                                    </span>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     // Empty State
                     <div className="flex flex-col items-center justify-center py-20 md:py-32 text-center border-2 border-dashed border-gray-800 rounded-3xl bg-gray-900/50">
