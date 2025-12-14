@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import App, { AppContext, AppProps } from 'next/app';
+import App from 'next/app';
+import type { AppContext, AppProps } from 'next/app';
 import { useRouter } from 'next/router';
 import Head from 'next/head'; // Import Head
 import { Inter } from 'next/font/google';

@@ -20,12 +20,13 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
 
   const handleMouseEnter = () => {
     setIsPlaying(true);
+    // If it's an MP4 file (not iframe), play it
     if (videoRef.current && !embedUrl) {
       videoRef.current.currentTime = 0;
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((error) => {
-          console.debug("Video autoplay prevented:", error);
+          // Auto-play was prevented
         });
       }
     }
@@ -33,7 +34,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
 
   const handleMouseLeave = () => {
     setIsPlaying(false);
-    setVideoLoaded(false); // Reset load state to ensure cover image shows immediately
+    setVideoLoaded(false); // Reset load state so cover image comes back instantly
     if (videoRef.current && !embedUrl) {
       videoRef.current.pause();
     }
@@ -42,7 +43,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
   // Pseudo-random rating generator based on ID for consistency
   const rating = game.id ? 80 + (game.id % 15) : 95;
 
-  // Generate a mock download count based on view_count or ID
+  // Generate a mock download count
   const downloads = game.view_count ? game.view_count * 12 + 500 : (game.id * 1500) + 7000;
   
   const formatCompactNumber = (number: number) => {
@@ -57,18 +58,50 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* 1. Image Container - Fixed Aspect Ratio */}
+      {/* 1. Image/Video Container - Fixed Aspect Ratio */}
       <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden mb-4 bg-gray-900 shrink-0 shadow-lg group-hover:shadow-purple-500/10 transition-all z-0">
         
-        {/* Static Image (Cover) - Always visible until video is FULLY loaded */}
-        <div className={`absolute inset-0 z-20 transition-opacity duration-500 ${isPlaying && videoLoaded ? 'opacity-0' : 'opacity-100'}`}>
+        {/* A. Video Layer (Background) */}
+        {/* We render this BEHIND the image. The image fades out to reveal it. */}
+        <div className="absolute inset-0 w-full h-full bg-black z-0">
+            {game.videoUrl && isPlaying ? (
+              embedUrl ? (
+                   <div className="w-full h-full overflow-hidden relative pointer-events-none">
+                     {/* SCALING TRICK: Zoom in to 135% to crop out YouTube UI bars */}
+                     <iframe 
+                       src={embedUrl}
+                       className="absolute top-1/2 left-1/2 w-[145%] h-[145%] -translate-x-1/2 -translate-y-1/2 pointer-events-none object-cover" 
+                       title={game.title}
+                       allow="autoplay; encrypted-media"
+                       loading="eager"
+                       onLoad={() => setVideoLoaded(true)}
+                     />
+                   </div>
+              ) : (
+                <video
+                  ref={videoRef}
+                  src={game.videoUrl}
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  onLoadedData={() => setVideoLoaded(true)}
+                  className="w-full h-full object-cover"
+                />
+              )
+            ) : null}
+        </div>
+
+        {/* B. Image Layer (Foreground) */}
+        {/* Opacity goes to 0 when playing AND video is loaded */}
+        <div className={`absolute inset-0 z-10 transition-opacity duration-500 ease-in-out ${isPlaying && videoLoaded ? 'opacity-0' : 'opacity-100'}`}>
             {!imageError ? (
             <Image 
                 src={game.imageUrl} 
                 alt={game.title} 
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover group-hover:scale-105 transition-transform duration-700"
+                className="object-cover"
                 priority={variant === 'featured'}
                 onError={() => setImageError(true)}
             />
@@ -76,51 +109,17 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
             <img 
                 src={game.imageUrl} 
                 alt={game.title}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                className="absolute inset-0 w-full h-full object-cover"
                 referrerPolicy="no-referrer"
             />
             )}
             
-            {/* Play Icon Overlay - Only visible when NOT playing */}
-            <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isPlaying ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
-                <div className="w-12 h-12 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                    <svg className="w-6 h-6 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                </div>
-            </div>
+            {/* Play Icon Removed Completely */}
         </div>
-
-        {/* Video Layer - Z-index 10, visible behind image */}
-        {game.videoUrl && isPlaying && (
-          embedUrl ? (
-               <div className="absolute inset-0 w-full h-full bg-black z-10 overflow-hidden">
-                 {/* Scale 1.35 crops the YouTube UI bars for a clean look */}
-                 <iframe 
-                   src={embedUrl}
-                   className="w-[135%] h-[135%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" 
-                   title={game.title}
-                   allow="autoplay; encrypted-media"
-                   loading="lazy"
-                   onLoad={() => setTimeout(() => setVideoLoaded(true), 500)} // Small delay to ensure render
-                 />
-               </div>
-          ) : (
-            <video
-              ref={videoRef}
-              src={game.videoUrl}
-              muted
-              loop
-              playsInline
-              preload="none"
-              onLoadedData={() => setVideoLoaded(true)}
-              className="absolute inset-0 w-full h-full object-cover z-10"
-            />
-          )
-        )}
       </div>
 
       {/* 2. Content Body */}
-      <div className="flex flex-col flex-grow relative z-30">
-        
+      <div className="flex flex-col flex-grow relative z-20">
         <div className="mb-4">
             <h3 className="text-white font-extrabold text-lg leading-snug line-clamp-1 group-hover:text-purple-400 transition-colors">
                 {game.title}
@@ -137,29 +136,30 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
             </div>
         </div>
 
-        {/* 3. Footer Stats - Bigger buttons & better spacing */}
+        {/* 3. Footer Stats */}
         <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/5">
-            {/* Rating */}
-            <div className="flex items-center gap-2 bg-[#27272a] px-3 py-2 rounded-xl border border-white/5 shadow-sm">
-                <div className="relative w-5 h-5 flex items-center justify-center">
+            {/* Rating Pill */}
+            <div className="flex items-center gap-2 bg-[#27272a] px-3 py-2 rounded-xl border border-white/5 shadow-sm group-hover:border-white/10 transition-colors">
+                <div className="relative w-4 h-4 flex items-center justify-center">
                     <div className="absolute inset-0 bg-green-500 rounded-full opacity-20 animate-pulse"></div>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-green-500 relative z-10" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-green-500 relative z-10" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-.464 5.535a1 1 0 10-1.415-1.414 3 3 0 01-4.242 0 1 1 0 00-1.415 1.414 5 5 0 007.072 0z" clipRule="evenodd" />
                     </svg>
                 </div>
-                <span className="text-sm font-bold text-gray-200">{rating}%</span>
+                <span className="text-xs font-bold text-gray-200">{rating}%</span>
             </div>
 
-            {/* Download Counter */}
+            {/* Download Button Area */}
             <div className="flex items-center gap-3 pl-2">
-                <div className="text-right">
-                    <span className="block text-[15px] font-black text-white leading-none tracking-tight">
+                <div className="text-right hidden sm:block">
+                    <span className="block text-sm font-black text-white leading-none tracking-tight">
                         {formatCompactNumber(downloads)}
                     </span>
                     <span className="block text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">
                         Downloads
                     </span>
                 </div>
+                {/* Big Action Button */}
                 <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/20 group-hover:scale-110 group-hover:bg-purple-500 transition-all duration-300">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
