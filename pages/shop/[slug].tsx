@@ -10,6 +10,7 @@ import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
 import StarRating from '../../components/StarRating';
 import StoreItemCard from '../../components/StoreItemCard';
+import Ad from '../../components/Ad';
 
 interface ProductDetailPageProps { 
     product: Product;
@@ -78,15 +79,19 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
     const mainImageIndex = mediaItems.findIndex(item => item.src === displayMainImage);
 
     // Reusable Section Component
-    const ProductCarouselSection = ({ title, items }: { title: string, items: Product[] }) => {
+    const ProductCarouselSection = ({ title, items, subtitle }: { title: string, items: Product[], subtitle?: string }) => {
         if (!items || items.length === 0) return null;
         return (
-            <div className="mt-16">
-                <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-6 flex items-center gap-3">
-                    <span className="w-1.5 h-8 bg-blue-500 rounded-full"></span>
-                    {title}
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="mt-20 border-t border-white/5 pt-10">
+                <div className="flex flex-col mb-8">
+                    <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                        <span className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
+                        {title}
+                    </h3>
+                    {subtitle && <p className="text-gray-500 text-sm font-bold uppercase tracking-wider ml-5 mt-1">{subtitle}</p>}
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     {items.slice(0, 4).map(item => (
                         <StoreItemCard key={item.id} product={item} />
                     ))}
@@ -113,7 +118,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                 <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
                         
-                        {/* --- LEFT COLUMN: Images (Style Screenshot) --- */}
+                        {/* --- LEFT COLUMN: Images --- */}
                         <div className="lg:col-span-7 flex flex-col gap-4">
                             {/* Main Image Stage */}
                             <div className="relative w-full aspect-[4/3] bg-white rounded-xl overflow-hidden border border-gray-200 group cursor-zoom-in p-8 flex items-center justify-center">
@@ -154,7 +159,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                             )}
                         </div>
 
-                        {/* --- RIGHT COLUMN: Product Info (Style Screenshot) --- */}
+                        {/* --- RIGHT COLUMN: Product Info --- */}
                         <div className="lg:col-span-5 flex flex-col h-full">
                             <div className="space-y-6">
                                 {/* Title & Brand */}
@@ -188,16 +193,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                     </div>
                                 </div>
 
-                                {/* Variant Selection (Mock) */}
-                                <div>
-                                    <p className="text-sm font-bold text-gray-300 mb-2">Also available as:</p>
-                                    <div className="flex gap-2">
-                                        <button className="px-3 py-1.5 border border-red-500/50 bg-red-500/10 text-red-400 text-xs font-bold rounded-md uppercase tracking-wide">
-                                            Demo ${ (parseFloat(product.price.replace('$', '')) * 0.7).toFixed(2) }
-                                        </button>
-                                    </div>
-                                </div>
-
                                 {/* Price Area */}
                                 <div className="border-t border-b border-white/5 py-6">
                                     <div className="flex items-baseline gap-3 mb-1">
@@ -207,7 +202,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                     </div>
                                 </div>
 
-                                {/* CTA Button (Green like screenshot) */}
+                                {/* CTA Button (Green) */}
                                 <div className="space-y-3">
                                     <a 
                                         href={product.url} 
@@ -226,6 +221,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                         <span className="flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg> Safe payments</span>
                                     </div>
                                 </div>
+                                
+                                {/* Ad Spot inside Product Info */}
+                                <div className="mt-4 pt-4 border-t border-white/5 flex justify-center">
+                                    <Ad placement="shop_square" className="scale-90 opacity-80" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -236,18 +236,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                             <h3 className="text-center text-xl font-bold text-white mb-6">Selected Accessories</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
                                 {boughtTogether.slice(0, 2).map(item => (
-                                    <div key={item.id} className="flex bg-white rounded-lg overflow-hidden h-24 shadow-sm border border-gray-200">
+                                    <Link href={`/shop/${item.slug}`} key={item.id} className="flex bg-white rounded-lg overflow-hidden h-24 shadow-sm border border-gray-200 hover:shadow-md transition-shadow group">
                                         <div className="w-24 relative bg-gray-100 flex-shrink-0">
-                                            <Image src={item.imageUrl} alt={item.name} fill className="object-contain p-2" />
+                                            <Image src={item.imageUrl} alt={item.name} fill className="object-contain p-2 group-hover:scale-105 transition-transform" />
                                         </div>
                                         <div className="p-3 flex flex-col justify-between flex-grow">
                                             <p className="text-xs font-bold text-black leading-tight line-clamp-2">{item.name}</p>
                                             <div className="flex justify-between items-end">
                                                 <span className="text-sm font-black text-black">{item.price}</span>
-                                                <Link href={`/shop/${item.slug}`} className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded uppercase hover:bg-blue-700">Add</Link>
+                                                <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded uppercase hover:bg-blue-700">Add</span>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         </div>
@@ -289,14 +289,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                 </div>
                             </div>
                             
-                            <div>
-                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Warranty</h4>
-                                <div className="flex justify-between border-b border-white/5 pb-2">
-                                    <span className="text-gray-400 text-sm">Manufacturer's Warranty</span>
-                                    <span className="text-white text-sm">2 Year Warranty</span>
-                                </div>
-                            </div>
-                            
                             <div className="flex justify-center pt-4">
                                 <button className="px-8 py-2 border border-white/20 hover:border-white/50 text-white text-xs font-bold uppercase tracking-widest transition-colors rounded-sm">
                                     Show More Specs
@@ -305,10 +297,10 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                         </div>
                     </div>
 
-                    {/* --- Bottom Carousels --- */}
-                    <ProductCarouselSection title="Related Products" items={relatedProducts} />
-                    <ProductCarouselSection title="Customers Also Bought" items={boughtTogether} />
-                    <ProductCarouselSection title="Others Also Viewed" items={othersViewed} />
+                    {/* --- Bottom Carousels (New Added Sections) --- */}
+                    <ProductCarouselSection title="Related Products" subtitle="You may also like" items={relatedProducts} />
+                    <ProductCarouselSection title="Customers Also Bought" subtitle="Frequent combinations" items={boughtTogether} />
+                    <ProductCarouselSection title="Others Also Viewed" subtitle="Trending in this category" items={othersViewed} />
 
                 </div>
             </div>
@@ -344,24 +336,27 @@ export const getStaticProps: GetStaticProps = async (context) => {
     // Fetch all products to simulate "Related", "Bought Together", "Others Viewed"
     const allProducts = await getAllProducts();
     
-    // Filter and Shuffle helpers
+    // Filter out current product
     const otherProducts = allProducts.filter(p => p.id !== product.id);
     
+    // Helper to shuffle array
     const shuffle = (array: Product[]) => array.sort(() => 0.5 - Math.random());
     
-    // Logic for related: Same category
-    const related = shuffle(otherProducts.filter(p => p.category === product.category));
+    // 1. Related: Same category
+    const related = otherProducts.filter(p => p.category === product.category);
     
-    // Logic for others: Random subset
+    // 2. Bought Together: Random Shuffle
     const bought = shuffle([...otherProducts]);
-    const viewed = shuffle([...otherProducts]).slice(0, 4);
+    
+    // 3. Others Viewed: Random Shuffle
+    const viewed = shuffle([...otherProducts]);
 
     return {
         props: { 
             product,
             relatedProducts: related.slice(0, 4),
             boughtTogether: bought.slice(0, 4),
-            othersViewed: viewed
+            othersViewed: viewed.slice(0, 4)
         },
         revalidate: 60,
     };
