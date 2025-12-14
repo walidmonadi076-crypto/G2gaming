@@ -6,6 +6,8 @@ export interface Game {
   slug: string;
   title: string;
   imageUrl: string;
+  iconUrl?: string; // New: Profile/Icon image
+  backgroundUrl?: string; // New: Hero background image
   category: string;
   platform?: 'mobile' | 'pc' | 'web';
   tags?: string[];

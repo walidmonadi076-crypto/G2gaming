@@ -49,6 +49,9 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
     }).format(number);
   };
 
+  // Determine profile image: explicit icon -> fallback to main image -> fallback to placeholder
+  const profileImageSrc = game.iconUrl || game.imageUrl || PLACEHOLDER_IMAGE;
+
   return (
     <Link 
       href={`/games/${game.slug}`}
@@ -133,13 +136,19 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
             </div>
          </div>
          
-         {/* Right: Small Rounded Icon */}
+         {/* Right: Small Rounded Icon (Uses iconUrl or fallback) */}
          <div className="relative w-11 h-11 rounded-2xl overflow-hidden shrink-0 border-2 border-[#1c1c24] shadow-sm bg-gray-800">
-             {!imageError ? (
-                <Image src={game.imageUrl} alt="" fill className="object-cover" unoptimized />
-             ) : (
-                <img src={game.imageUrl || PLACEHOLDER_IMAGE} className="w-full h-full object-cover" />
-             )}
+             <Image 
+                src={profileImageSrc} 
+                alt={`${game.title} icon`} 
+                fill 
+                className="object-cover" 
+                unoptimized 
+                onError={(e) => { 
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== PLACEHOLDER_IMAGE) target.src = PLACEHOLDER_IMAGE;
+                }}
+             />
          </div>
       </div>
 

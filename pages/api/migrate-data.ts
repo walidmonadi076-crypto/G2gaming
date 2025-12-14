@@ -43,7 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         view_count INTEGER DEFAULT 0,
         platform VARCHAR(20) DEFAULT 'pc',
         requirements JSONB,
-        download_url_ios TEXT
+        download_url_ios TEXT,
+        icon_url TEXT,
+        background_url TEXT
       );
     `);
 
@@ -51,6 +53,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS platform VARCHAR(20) DEFAULT 'pc'`);
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS requirements JSONB`);
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS download_url_ios TEXT`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS icon_url TEXT`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS background_url TEXT`);
 
     // ... (Keep existing blog/product/comment table creation logic) ...
     await client.query(`
@@ -115,8 +119,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 4. Insert Games with new fields
     for (const game of GAMES_DATA) {
       await client.query(
-        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
         [
             game.id, 
             game.slug, 
@@ -128,10 +132,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             game.description, 
             game.videoUrl || null, 
             game.downloadUrl, 
-            game.downloadUrlIos || null,
+            game.downloadUrlIos || null, 
             game.gallery,
             game.platform || 'pc',
-            game.requirements || null 
+            game.requirements || null,
+            null, // icon_url (defaults to null for initial data)
+            null  // background_url (defaults to null for initial data)
         ]
       );
     }
@@ -157,7 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 7. Insert Comments
     for (const [blogId, comments] of Object.entries(COMMENTS_DATA)) {
-      for (const comment of comments) {
+      for (const comment of (comments as any[])) {
         await client.query(
           `INSERT INTO comments (id, blog_post_id, author, avatar_url, date, text, status, email) 
            VALUES ($1, $2, $3, $4, $5, $6, 'approved', $7)`,

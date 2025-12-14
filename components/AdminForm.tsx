@@ -45,6 +45,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         games: { 
             title: '', 
             imageUrl: '', 
+            iconUrl: '', // Default empty
+            backgroundUrl: '', // Default empty
             category: '', 
             tags: [], 
             description: '', 
@@ -218,7 +220,12 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         </select>
       </div>
 
-      {renderField('imageUrl', 'URL de l\'image principale (Vignette)')}
+      {renderField('imageUrl', 'URL de l\'image principale (Cover)')}
+      
+      {/* New Fields */}
+      {renderField('iconUrl', 'URL de l\'icône du profil (Sera affiché sur la Game Card)', 'url', false)}
+      {renderField('backgroundUrl', 'URL de l\'image de fond (Page Détails)', 'url', false)}
+
       <div key="category-game">
         <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-1">Catégorie</label>
         <input id="category" name="category" list="category-list" value={formData.category || ''} onChange={handleChange} required className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"/>

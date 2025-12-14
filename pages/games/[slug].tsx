@@ -134,8 +134,23 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                 schema={gameSchema}
             />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-white font-sans selection:bg-purple-500 selection:text-white pb-20">
-                <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none z-0" />
+            <div className="min-h-screen bg-[#0d0d0d] text-white font-sans selection:bg-purple-500 selection:text-white pb-20 relative">
+                {/* Hero Background - Uses game.backgroundUrl if available, else standard gradient */}
+                {game.backgroundUrl ? (
+                    <div className="fixed top-0 left-0 w-full h-[800px] z-0">
+                        <Image 
+                            src={game.backgroundUrl} 
+                            alt={`${game.title} background`} 
+                            fill 
+                            className="object-cover opacity-30" 
+                            priority 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d]/80 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0d0d0d]/90 to-transparent" />
+                    </div>
+                ) : (
+                    <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none z-0" />
+                )}
 
                 <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
                     <div className="mb-8">
