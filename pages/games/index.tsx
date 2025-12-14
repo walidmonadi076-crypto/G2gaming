@@ -172,14 +172,14 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
 
             {/* --- Game Grid with Native Ad Injection --- */}
             {filteredGames.length > 0 ? (
-                // CHANGED: 2xl:grid-cols-5 to match request (5 per row max)
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-4 sm:gap-6 mt-4 lg:mt-0 auto-rows-fr">
+                // CHANGED: 3 Columns Grid as requested (3 b 3)
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-6 md:gap-8 mt-4 lg:mt-0 auto-rows-fr">
                     {filteredGames.map((game, index) => (
                         <React.Fragment key={game.id}>
                             <GameCard game={game} />
-                            {/* Inject Sponsored Native Ad after the 6th game (index 5) */}
-                            {index === 5 && (
-                                <div className="col-span-2 sm:col-span-1 h-full"> 
+                            {/* Inject Sponsored Native Ad after the 3rd game */}
+                            {index === 2 && (
+                                <div className="col-span-1 sm:col-span-1 h-full"> 
                                     <SponsoredGameCard />
                                 </div>
                             )}
