@@ -37,10 +37,15 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
     }
   }, [isHovered, embedUrl]);
 
-  // Generate a mock download count
-  const downloadCount = game.view_count ? game.view_count * 12 + 500 : (game.id * 1500) + 7000;
-  // Pseudo-random rating (high enough to look good)
-  const rating = game.id ? 85 + (game.id % 13) : 98;
+  // Determine Download Count (Manual DB override > Calculated from Views > Default)
+  const downloadCount = game.downloadsCount !== undefined && game.downloadsCount !== null 
+    ? game.downloadsCount 
+    : (game.view_count ? game.view_count * 12 + 500 : (game.id * 1500) + 7000);
+
+  // Determine Rating (Manual DB override > Calculated from ID > Default)
+  const rating = game.rating !== undefined && game.rating !== null
+    ? game.rating
+    : (game.id ? 85 + (game.id % 13) : 98);
   
   const formatCompactNumber = (number: number) => {
     return new Intl.NumberFormat('en-US', {

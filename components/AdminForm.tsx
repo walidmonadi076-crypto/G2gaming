@@ -45,8 +45,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         games: { 
             title: '', 
             imageUrl: '', 
-            iconUrl: '', // Default empty
-            backgroundUrl: '', // Default empty
+            iconUrl: '', 
+            backgroundUrl: '', 
             category: '', 
             tags: [], 
             description: '', 
@@ -54,7 +54,9 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             downloadUrlIos: '#',
             gallery: [], 
             platform: 'pc',
-            requirements: { os: '', ram: '', storage: '', processor: '' }
+            requirements: { os: '', ram: '', storage: '', processor: '' },
+            rating: 95, // Default rating
+            downloadsCount: 1000 // Default downloads
         },
         blogs: { title: '', summary: '', imageUrl: '', author: '', rating: 4.5, content: '', category: '' },
         products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
@@ -205,6 +207,17 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     <>
       {renderField('title', 'Titre')}
       
+      <div className="grid grid-cols-2 gap-4">
+          <div key="rating-game">
+            <label htmlFor="rating" className="block text-sm font-medium text-gray-300 mb-1">Score Rating (0-100)</label>
+            <input id="rating" name="rating" type="number" min="0" max="100" value={formData.rating || ''} onChange={handleChange} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="ex: 95"/>
+          </div>
+          <div key="downloads-game">
+            <label htmlFor="downloadsCount" className="block text-sm font-medium text-gray-300 mb-1">Nb. Téléchargements</label>
+            <input id="downloadsCount" name="downloadsCount" type="number" value={formData.downloadsCount || ''} onChange={handleChange} className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="ex: 15000"/>
+          </div>
+      </div>
+
       {/* Platform Selection */}
       <div key="platform-game">
         <label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">Plateforme</label>

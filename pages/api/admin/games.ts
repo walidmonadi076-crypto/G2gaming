@@ -65,7 +65,8 @@ export default async function handler(req: NextApiRequest & { method?: string },
             SELECT
                 id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
                 video_url AS "videoUrl", download_url AS "downloadUrl", download_url_ios AS "downloadUrlIos", gallery, view_count, platform, requirements,
-                icon_url AS "iconUrl", background_url AS "backgroundUrl"
+                icon_url AS "iconUrl", background_url AS "backgroundUrl",
+                rating, downloads_count AS "downloadsCount"
             FROM games
             ${whereClause}
             ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}
@@ -83,13 +84,13 @@ export default async function handler(req: NextApiRequest & { method?: string },
     }
     
     if (req.method === 'POST') {
-      const { title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, downloadUrlIos, gallery, platform, requirements, iconUrl, backgroundUrl } = req.body;
+      const { title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, downloadUrlIos, gallery, platform, requirements, iconUrl, backgroundUrl, rating, downloadsCount } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
 
       const slug = await generateUniqueSlug(client, title);
       const result = await client.query(
-        `INSERT INTO games (title, slug, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+        `INSERT INTO games (title, slug, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url, rating, downloads_count) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
         [
             title, 
             slug, 
@@ -105,7 +106,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
             platform || 'pc', 
             requirements || null,
             iconUrl || null,
-            backgroundUrl || null
+            backgroundUrl || null,
+            rating || 95,
+            downloadsCount || 1000
         ]
       );
       
@@ -119,14 +122,14 @@ export default async function handler(req: NextApiRequest & { method?: string },
       res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
-      const { id, title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, downloadUrlIos, gallery, platform, requirements, iconUrl, backgroundUrl } = req.body;
+      const { id, title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, downloadUrlIos, gallery, platform, requirements, iconUrl, backgroundUrl, rating, downloadsCount } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
       
       const slug = await generateUniqueSlug(client, title, id);
       const result = await client.query(
         `UPDATE games 
-         SET title = $1, slug = $2, image_url = $3, category = $4, tags = $5, theme = $6, description = $7, video_url = $8, download_url = $9, download_url_ios = $10, gallery = $11, platform = $12, requirements = $13, icon_url = $14, background_url = $15
-         WHERE id = $16 RETURNING *`,
+         SET title = $1, slug = $2, image_url = $3, category = $4, tags = $5, theme = $6, description = $7, video_url = $8, download_url = $9, download_url_ios = $10, gallery = $11, platform = $12, requirements = $13, icon_url = $14, background_url = $15, rating = $16, downloads_count = $17
+         WHERE id = $18 RETURNING *`,
         [
             title, 
             slug, 
@@ -143,6 +146,8 @@ export default async function handler(req: NextApiRequest & { method?: string },
             requirements || null, 
             iconUrl || null,
             backgroundUrl || null,
+            rating || 95,
+            downloadsCount || 1000,
             id
         ]
       );

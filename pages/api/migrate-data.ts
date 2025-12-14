@@ -45,7 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         requirements JSONB,
         download_url_ios TEXT,
         icon_url TEXT,
-        background_url TEXT
+        background_url TEXT,
+        rating DECIMAL(5,2) DEFAULT 95,
+        downloads_count INTEGER DEFAULT 1000
       );
     `);
 
@@ -55,6 +57,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS download_url_ios TEXT`);
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS icon_url TEXT`);
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS background_url TEXT`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS rating DECIMAL(5,2) DEFAULT 95`);
+    await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS downloads_count INTEGER DEFAULT 1000`);
 
     // ... (Keep existing blog/product/comment table creation logic) ...
     await client.query(`
@@ -119,8 +123,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 4. Insert Games with new fields
     for (const game of GAMES_DATA) {
       await client.query(
-        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+        `INSERT INTO games (id, slug, title, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url, rating, downloads_count) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
         [
             game.id, 
             game.slug, 
@@ -136,8 +140,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             game.gallery,
             game.platform || 'pc',
             game.requirements || null,
-            null, // icon_url (defaults to null for initial data)
-            null  // background_url (defaults to null for initial data)
+            null, // icon_url 
+            null,  // background_url
+            95, // default rating
+            1500 // default downloads
         ]
       );
     }

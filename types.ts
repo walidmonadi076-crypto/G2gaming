@@ -6,8 +6,8 @@ export interface Game {
   slug: string;
   title: string;
   imageUrl: string;
-  iconUrl?: string; // New: Profile/Icon image
-  backgroundUrl?: string; // New: Hero background image
+  iconUrl?: string;
+  backgroundUrl?: string;
   category: string;
   platform?: 'mobile' | 'pc' | 'web';
   tags?: string[];
@@ -18,6 +18,8 @@ export interface Game {
   downloadUrlIos?: string; // Specific for iOS
   gallery: string[];
   view_count?: number;
+  rating?: number; // New: Manual Rating (0-100)
+  downloadsCount?: number; // New: Manual Download Count
   requirements?: {
     os: string;
     ram: string;

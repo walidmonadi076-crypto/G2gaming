@@ -58,24 +58,26 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 /* ========== 🎮 GAMES ========== */
 
 export async function getAllGames(): Promise<Game[]> {
-  // Select updated columns including download_url_ios, icon_url, background_url
+  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count
   const result = await query(`
     SELECT
       id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
       video_url AS "videoUrl", download_url AS "downloadUrl", download_url_ios AS "downloadUrlIos", gallery, platform, requirements,
-      icon_url AS "iconUrl", background_url AS "backgroundUrl"
+      icon_url AS "iconUrl", background_url AS "backgroundUrl",
+      rating, downloads_count AS "downloadsCount"
     FROM games ORDER BY id ASC
   `);
   return result.rows;
 }
 
 export async function getGameBySlug(slug: string): Promise<Game | null> {
-  // Select updated columns including download_url_ios, icon_url, background_url
+  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count
   const result = await query(`
     SELECT
       id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
       video_url AS "videoUrl", download_url AS "downloadUrl", download_url_ios AS "downloadUrlIos", gallery, platform, requirements,
-      icon_url AS "iconUrl", background_url AS "backgroundUrl"
+      icon_url AS "iconUrl", background_url AS "backgroundUrl",
+      rating, downloads_count AS "downloadsCount"
     FROM games WHERE slug = $1
   `, [slug]);
   return result.rows.length > 0 ? result.rows[0] : null;
