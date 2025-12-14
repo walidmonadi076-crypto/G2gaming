@@ -55,7 +55,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             requirements: { os: '', ram: '', storage: '', processor: '' }
         },
         blogs: { title: '', summary: '', imageUrl: '', author: '', rating: 4.5, content: '', category: '' },
-        products: { name: '', imageUrl: '', price: '0.00', url: '#', description: '', category: '', gallery: [] },
+        products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
         'social-links': { name: '', url: '', icon_svg: '' },
       };
       setFormData(defaults[type]);
@@ -117,8 +117,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const addGalleryImage = () => {
     const url = galleryInput.trim();
     if (url && !(formData.gallery || []).includes(url)) {
-        // Simplified check: Just ensure it's not empty. 
-        // Strict validation was likely blocking WebP or unusual domains.
         if(url.length > 5) { 
             setFormData((prev: any) => ({ ...prev, gallery: [...(prev.gallery || []), url] }));
             setGalleryInput('');
@@ -153,6 +151,12 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         }
         finalData.tags = finalTags;
     }
+    
+    // Ensure product price has symbol if missing (optional cleaning)
+    if (type === 'products' && finalData.price && !finalData.price.includes('$') && !isNaN(parseFloat(finalData.price))) {
+        finalData.price = `$${finalData.price}`;
+    }
+
     onSubmit(finalData);
   };
   
@@ -305,7 +309,31 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const renderProductFields = () => (
     <>
       {renderField('name', 'Nom')}
-      {renderField('price', 'Prix')}
+      
+      {/* Price Field with Icon */}
+      <div key="price-product" className="relative">
+        <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-1">Prix</label>
+        <div className="relative rounded-md shadow-sm">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <span className="text-gray-400 sm:text-sm font-bold">$</span>
+            </div>
+            <input
+                id="price"
+                name="price"
+                type="text"
+                value={formData.price || ''}
+                onChange={(e) => {
+                    // Strip non-numeric chars except dot to allow cleaner typing
+                    const val = e.target.value.replace(/[^0-9.]/g, ''); 
+                    setFormData({...formData, price: val});
+                }}
+                required
+                className="w-full pl-7 pr-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="0.00"
+            />
+        </div>
+      </div>
+
       {renderField('imageUrl', 'URL de l\'image principale')}
       {renderField('url', 'URL du produit')}
       {renderField('category', 'Catégorie')}
