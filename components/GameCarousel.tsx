@@ -73,11 +73,11 @@ const GameCarousel: React.FC<GameCarouselProps> = ({ games, cardVariant = 'defau
     );
   };
   
-  // Updated widths to show ~3 cards on desktop (32% width approx means 3 items)
-  // This aligns with the "3 b 3" request for the homepage sections
+  // Updated widths:
+  // lg:w-[24%] means roughly 4 items will fit on large screens (100% / 4 = 25%, taking margin into account ~24%)
   const cardWidthClass = cardVariant === 'vertical' 
     ? "w-[40%] sm:w-[28%] md:w-[22%] lg:w-[16.66%]" 
-    : "w-[85%] sm:w-[45%] md:w-[32%] lg:w-[32%] xl:w-[32%]"; 
+    : "w-[85%] sm:w-[45%] md:w-[32%] lg:w-[24%] xl:w-[24%]"; 
 
   return (
     <div className="relative group px-2 md:px-0">
