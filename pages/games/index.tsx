@@ -172,8 +172,8 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
 
             {/* --- Game Grid with Native Ad Injection --- */}
             {filteredGames.length > 0 ? (
-                // Added items-stretch to force cards to be same height
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mt-4 lg:mt-0 auto-rows-fr">
+                // CHANGED: 2xl:grid-cols-5 to match request (5 per row max)
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-4 sm:gap-6 mt-4 lg:mt-0 auto-rows-fr">
                     {filteredGames.map((game, index) => (
                         <React.Fragment key={game.id}>
                             <GameCard game={game} />

@@ -38,8 +38,18 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
     }
   };
 
-  // Generate a consistent pseudo-rating based on ID if real rating is missing
+  // Pseudo-random rating generator
   const rating = game.id ? 80 + (game.id % 15) : 95;
+
+  // Simulate download count based on ID/ViewCount or random logic for demo
+  // In real app, use game.download_count
+  const rawDownloads = game.view_count ? game.view_count * 15 : (game.id * 8421) + 5000;
+  
+  const formatDownloads = (num: number) => {
+      if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+      return num.toString();
+  };
 
   return (
     <Link 
@@ -146,13 +156,22 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
                 </div>
             </div>
 
-            {/* Action Button */}
-            <button className="flex-1 h-[38px] bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-95">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-                </svg>
-                Free
-            </button>
+            {/* Download Stats (Replaces Free Button) */}
+            <div className="flex-1 flex items-center justify-end gap-2 bg-[#0f172a] rounded-xl px-3 py-2 border border-white/5">
+                <div className="text-right">
+                    <span className="block text-[13px] font-black text-white leading-none tracking-tight">
+                        {formatDownloads(rawDownloads)}
+                    </span>
+                    <span className="block text-[8px] text-gray-500 uppercase font-bold tracking-widest leading-none mt-0.5">
+                        Downloads
+                    </span>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-purple-400 border border-gray-700 shadow-sm group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-500 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                </div>
+            </div>
         </div>
       </div>
     </Link>
