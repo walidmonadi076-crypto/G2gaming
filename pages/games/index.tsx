@@ -172,15 +172,14 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
 
             {/* --- Game Grid with Native Ad Injection --- */}
             {filteredGames.length > 0 ? (
-                // Used 'grid-cols-2' on mobile with 'gap-3' for a dense, app-store feel.
-                // Switched to 'poster' variant for cards (vertical aspect ratio).
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6 mt-4 lg:mt-0">
+                // Added items-stretch to force cards to be same height
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mt-4 lg:mt-0 auto-rows-fr">
                     {filteredGames.map((game, index) => (
                         <React.Fragment key={game.id}>
-                            <GameCard game={game} variant="poster" />
+                            <GameCard game={game} />
                             {/* Inject Sponsored Native Ad after the 6th game (index 5) */}
                             {index === 5 && (
-                                <div className="col-span-2 sm:col-span-1"> {/* Ad takes full width on mobile grid row or 1 slot on desktop */}
+                                <div className="col-span-2 sm:col-span-1 h-full"> 
                                     <SponsoredGameCard />
                                 </div>
                             )}
