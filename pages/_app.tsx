@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import App, { type AppProps, type AppContext } from 'next/app';
+import App from 'next/app';
+import type { AppProps, AppContext } from 'next/app';
 import { useRouter } from 'next/router';
 import Head from 'next/head'; // Import Head
 import { Inter } from 'next/font/google';
@@ -150,7 +151,7 @@ function MyApp({ Component, pageProps }: MyAppProps) {
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
                 onSearchFocus={() => setSearchActive(true)}
-                onSearchBlur={() => setTimeout(() => setSearchActive(false), 200)}
+                onSearchBlur={() => setSearchActive(false)}
                 onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
                 socialLinks={socialLinks}
                 isLoadingSocials={isLoadingSocials}
