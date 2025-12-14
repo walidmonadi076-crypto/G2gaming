@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Product } from '../types';
@@ -9,16 +9,28 @@ interface StoreItemCardProps {
 }
 
 const StoreItemCard: React.FC<StoreItemCardProps> = ({ product }) => {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <Link href={`/shop/${product.slug}`} className="block group">
       <div className="bg-gray-800 rounded-xl overflow-hidden aspect-square relative mb-3 md:mb-4">
-        <Image 
-          src={product.imageUrl} 
-          alt={product.name} 
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-500" 
-        />
+        {!imageError ? (
+            <Image 
+              src={product.imageUrl} 
+              alt={product.name} 
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={() => setImageError(true)} 
+            />
+        ) : (
+            <img 
+              src={product.imageUrl} 
+              alt={product.name} 
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              referrerPolicy="no-referrer"
+            />
+        )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
       </div>
       

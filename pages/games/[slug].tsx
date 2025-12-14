@@ -28,6 +28,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
     const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
+    const [imageError, setImageError] = useState(false);
 
     const embedUrl = useMemo(() => getEmbedUrl(game.videoUrl), [game.videoUrl]);
 
@@ -177,14 +178,24 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                             />
                                         )
                                     ) : (
-                                        <Image 
-                                            src={game.gallery[0] || game.imageUrl} 
-                                            alt={game.title} 
-                                            fill 
-                                            sizes="(max-width: 1024px) 100vw, 800px" 
-                                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                            priority
-                                        />
+                                        !imageError ? (
+                                            <Image 
+                                                src={game.gallery[0] || game.imageUrl} 
+                                                alt={game.title} 
+                                                fill 
+                                                sizes="(max-width: 1024px) 100vw, 800px" 
+                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                priority
+                                                onError={() => setImageError(true)}
+                                            />
+                                        ) : (
+                                            <img 
+                                                src={game.gallery[0] || game.imageUrl} 
+                                                alt={game.title} 
+                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        )
                                     )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-transparent to-transparent opacity-80 pointer-events-none" />
                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
@@ -279,7 +290,19 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     <div className="grid grid-cols-2 gap-3">
                                         {game.gallery.slice(0, 4).map((img, index) => (
                                             <button key={index} onClick={() => openLightbox(game.videoUrl ? index + 1 : index)} className="relative aspect-video rounded-lg overflow-hidden border border-gray-800 group hover:border-purple-500 transition-colors">
-                                                <Image src={img} alt={`${game.title} screenshot ${index + 1}`} fill sizes="200px" className="object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                <Image 
+                                                    src={img} 
+                                                    alt={`${game.title} screenshot ${index + 1}`} 
+                                                    fill 
+                                                    sizes="200px" 
+                                                    className="object-cover transition-transform duration-500 group-hover:scale-110" 
+                                                    // Add fallback for screenshots too
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.style.display = 'none'; // Hide if failed
+                                                        // Or implement similar fallback to img tag logic if critical
+                                                    }}
+                                                />
                                             </button>
                                         ))}
                                     </div>

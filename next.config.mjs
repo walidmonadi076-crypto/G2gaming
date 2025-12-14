@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 
 // A more specific CSP to enhance security
@@ -6,7 +7,7 @@ const ContentSecurityPolicy = `
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com *;
   frame-src 'self' https://www.google.com *;
   connect-src 'self' *;
-  img-src 'self' data: https://picsum.photos https://i.pravatar.cc *;
+  img-src 'self' data: https: http: *;
   style-src 'self' 'unsafe-inline' *;
 `.replace(/\s{2,}/g, ' ').trim();
 
@@ -44,12 +45,12 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'picsum.photos',
+        protocol: "https",
+        hostname: "**",
       },
       {
-        protocol: 'https',
-        hostname: 'i.pravatar.cc',
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },

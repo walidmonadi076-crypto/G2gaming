@@ -14,6 +14,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const embedUrl = getEmbedUrl(game.videoUrl);
 
@@ -58,14 +59,26 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default' }) => {
       onMouseLeave={handleMouseLeave}
     >
       {/* 1. Static Thumbnail Image */}
-      <Image 
-        src={game.imageUrl} 
-        alt={game.title} 
-        fill
-        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-        className={`object-cover transition-opacity duration-300 ${isPlaying && (videoLoaded || embedUrl) ? 'opacity-0' : 'opacity-100'}`}
-        priority={variant === 'featured'}
-      />
+      {!imageError ? (
+        <Image 
+          src={game.imageUrl} 
+          alt={game.title} 
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          className={`object-cover transition-opacity duration-300 ${isPlaying && (videoLoaded || embedUrl) ? 'opacity-0' : 'opacity-100'}`}
+          priority={variant === 'featured'}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        // Fallback to standard img tag for hotlinked/problematic images
+        // We use referrerPolicy="no-referrer" to bypass some hotlink protections
+        <img 
+          src={game.imageUrl} 
+          alt={game.title}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isPlaying && (videoLoaded || embedUrl) ? 'opacity-0' : 'opacity-100'}`}
+          referrerPolicy="no-referrer"
+        />
+      )}
 
       {/* 2. Video Preview */}
       {game.videoUrl && (
