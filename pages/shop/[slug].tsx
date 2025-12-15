@@ -5,20 +5,23 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { getProductBySlug, getAllProducts } from '../../lib/data';
-import { getRelatedFreeDeals } from '../../lib/suggestions';
 import type { Product } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
+import StoreItemCard from '../../components/StoreItemCard';
 
-interface ProductDetailPageProps { product: Product; }
+interface ProductDetailPageProps { 
+    product: Product;
+    relatedProducts: Product[];
+    othersViewed: Product[];
+}
 
-const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
+const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedProducts, othersViewed }) => {
     const router = useRouter();
     const [mainImage, setMainImage] = useState<string>('');
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
-    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
 
     const mediaItems = useMemo(() => 
         product.gallery.map(img => ({ type: 'image' as const, src: img }))
@@ -30,7 +33,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
     };
 
     useEffect(() => {
-        // Track view on page load
         if (router.isReady && product.slug && process.env.NODE_ENV === 'production') {
             const trackView = async () => {
                 try {
@@ -45,14 +47,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
             };
             trackView();
         }
-
-        // Fetch suggestions based on product category
-        const fetchSuggestions = async () => {
-             const deals = await getRelatedFreeDeals(product.category);
-             setRelatedDeals(deals);
-        };
-        fetchSuggestions();
-    }, [router.isReady, product.slug, product.category]);
+    }, [router.isReady, product.slug]);
 
     useEffect(() => {
         if (product) setMainImage(product.gallery[0] || product.imageUrl);
@@ -79,6 +74,28 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
     
     const displayMainImage = mainImage || 'https://picsum.photos/seed/product-placeholder/400/400';
     const mainImageIndex = (product.gallery || []).findIndex(img => img === displayMainImage);
+
+    // Reusable Section Component
+    const ProductCarouselSection = ({ title, items, subtitle }: { title: string, items: Product[], subtitle?: string }) => {
+        if (!items || items.length === 0) return null;
+        return (
+            <div className="mt-20 border-t border-white/5 pt-10">
+                <div className="flex flex-col mb-8">
+                    <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                        <span className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>
+                        {title}
+                    </h3>
+                    {subtitle && <p className="text-gray-500 text-sm font-bold uppercase tracking-wider ml-5 mt-1">{subtitle}</p>}
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                    {items.slice(0, 4).map(item => (
+                        <StoreItemCard key={item.id} product={item} />
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <>
@@ -213,28 +230,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product }) => {
                                     </div>
                                 </div>
 
-                                {/* Related Free Deals Section (Suggestions) */}
-                                {relatedDeals.length > 0 && (
-                                    <div className="mt-8 border-t border-white/5 pt-8">
-                                        <h3 className="text-xl font-bold text-white mb-4">Game Deals for You</h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {relatedDeals.slice(0, 2).map((deal: any) => (
-                                                <a href={deal.deal_url} target="_blank" rel="noopener noreferrer" key={deal.id} className="block group">
-                                                    <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
-                                                        <Image src={deal.image_url} alt={deal.title} fill className="object-cover group-hover:scale-105 transition-transform" />
-                                                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">Free</div>
-                                                    </div>
-                                                    <p className="text-xs font-bold text-gray-300 group-hover:text-white truncate">{deal.title}</p>
-                                                </a>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
                             </div>
                         </div>
 
                     </div>
+
+                    {/* --- Bottom Carousels --- */}
+                    <ProductCarouselSection title="Related Products" subtitle="You may also like" items={relatedProducts} />
+                    <ProductCarouselSection title="Others Also Viewed" subtitle="Trending in this category" items={othersViewed} />
+
                 </div>
             </div>
 
@@ -266,8 +270,25 @@ export const getStaticProps: GetStaticProps = async (context) => {
     const product = await getProductBySlug(slug);
     if (!product) return { notFound: true };
 
+    const allProducts = await getAllProducts();
+    const otherProducts = allProducts.filter(p => p.id !== product.id);
+    const shuffle = (array: Product[]) => array.sort(() => 0.5 - Math.random());
+
+    // Related by Category
+    const related = otherProducts.filter(p => p.category === product.category);
+    
+    // Bought Together now just falls back to shuffle since manual ID linking is removed
+    const bought = shuffle([...otherProducts]).slice(0, 4);
+
+    const viewed = shuffle([...otherProducts]).slice(0, 4);
+
     return {
-        props: { product },
+        props: { 
+            product,
+            relatedProducts: related.slice(0, 4),
+            boughtTogether: bought,
+            othersViewed: viewed
+        },
         revalidate: 60,
     };
 };
