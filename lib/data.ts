@@ -40,16 +40,24 @@ export async function getCommentsByBlogId(blogId: number): Promise<Comment[]> {
 /* ========== 🛍️ PRODUCTS ========== */
 
 export async function getAllProducts(): Promise<Product[]> {
+  // Added: rating, reviews_count, features
   const result = await query(`
-    SELECT id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, description, gallery, category, is_pinned AS "isPinned"
+    SELECT 
+        id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, 
+        description, gallery, category, is_pinned AS "isPinned", features,
+        rating::float, reviews_count AS "reviewsCount"
     FROM products ORDER BY is_pinned DESC, id DESC
   `);
   return result.rows;
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
+  // Added: rating, reviews_count, features
   const result = await query(`
-    SELECT id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, description, gallery, category, is_pinned AS "isPinned"
+    SELECT 
+        id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, 
+        description, gallery, category, is_pinned AS "isPinned", features,
+        rating::float, reviews_count AS "reviewsCount"
     FROM products WHERE slug = $1
   `, [slug]);
   return result.rows.length > 0 ? result.rows[0] : null;
@@ -58,7 +66,6 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 /* ========== 🎮 GAMES ========== */
 
 export async function getAllGames(): Promise<Game[]> {
-  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count, is_pinned
   const result = await query(`
     SELECT
       id, slug, title, image_url AS "imageUrl", category, tags, theme, description,
@@ -71,7 +78,6 @@ export async function getAllGames(): Promise<Game[]> {
 }
 
 export async function getGameBySlug(slug: string): Promise<Game | null> {
-  // Select updated columns including download_url_ios, icon_url, background_url, rating, downloads_count, is_pinned
   const result = await query(`
     SELECT
       id, slug, title, image_url AS "imageUrl", category, tags, theme, description,

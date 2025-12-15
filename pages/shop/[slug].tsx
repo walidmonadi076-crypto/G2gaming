@@ -24,7 +24,19 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
     const [mainImage, setMainImage] = useState<string>('');
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
-    const [selectedColor, setSelectedColor] = useState<string>('black');
+    const [selectedColor, setSelectedColor] = useState<string>('');
+
+    // Dynamic Features from DB
+    const features = product.features || {};
+    const availableColors = features.colors && features.colors.length > 0 
+        ? features.colors 
+        : ['black', 'white', 'purple']; // Fallback default
+
+    useEffect(() => {
+        if (availableColors.length > 0) {
+            setSelectedColor(availableColors[0]);
+        }
+    }, [product]); // Update default color when product changes
 
     // UI Mock Data to match screenshot vibe
     const oldPrice = (parseFloat(product.price.replace(/[^0-9.]/g, '')) * 1.22).toFixed(2);
@@ -174,22 +186,28 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                     </div>
                                 </div>
 
-                                {/* Color Selection (Mock) */}
+                                {/* Dynamic Color Selection */}
                                 <div>
                                     <p className="text-sm font-bold text-gray-300 mb-2">Color:</p>
                                     <div className="flex gap-3">
-                                        {['black', 'white', 'purple'].map(color => (
-                                            <button 
-                                                key={color}
-                                                onClick={() => setSelectedColor(color)}
-                                                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${selectedColor === color ? 'border-white scale-110' : 'border-transparent'}`}
-                                                style={{ backgroundColor: color === 'black' ? '#111' : color === 'white' ? '#eee' : '#7c3aed' }}
-                                            >
-                                                {selectedColor === color && (
-                                                    <svg className={`w-4 h-4 ${color === 'white' ? 'text-black' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                                )}
-                                            </button>
-                                        ))}
+                                        {availableColors.map(color => {
+                                            const normalizedColor = color.trim().toLowerCase();
+                                            // Handle Hex or Name
+                                            const bgColor = normalizedColor.startsWith('#') ? normalizedColor : normalizedColor;
+                                            return (
+                                                <button 
+                                                    key={color}
+                                                    onClick={() => setSelectedColor(color)}
+                                                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${selectedColor === color ? 'border-white scale-110' : 'border-transparent ring-1 ring-gray-700'}`}
+                                                    style={{ backgroundColor: bgColor }}
+                                                    title={color}
+                                                >
+                                                    {selectedColor === color && (
+                                                        <svg className={`w-4 h-4 ${['white', '#ffffff', '#fff'].includes(bgColor) ? 'text-black' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
                                     </div>
                                 </div>
 
@@ -233,7 +251,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                     {/* --- Selected Accessories (Middle Section) --- */}
                     {boughtTogether.length > 0 && (
                         <div className="mt-16 bg-gray-900/50 border border-white/5 rounded-2xl p-6">
-                            <h3 className="text-center text-xl font-bold text-white mb-6">Selected Accessories</h3>
+                            <h3 className="text-center text-xl font-bold text-white mb-6">
+                                {features.sectionTitle || 'Selected Accessories'}
+                            </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
                                 {boughtTogether.slice(0, 2).map(item => (
                                     <Link href={`/shop/${item.slug}`} key={item.id} className="flex bg-white rounded-lg overflow-hidden h-24 shadow-sm border border-gray-200 hover:shadow-md transition-shadow group">
@@ -333,20 +353,22 @@ export const getStaticProps: GetStaticProps = async (context) => {
     const product = await getProductBySlug(slug);
     if (!product) return { notFound: true };
 
-    // Fetch all products to simulate "Related", "Bought Together", "Others Viewed"
     const allProducts = await getAllProducts();
     
     // Filter out current product
     const otherProducts = allProducts.filter(p => p.id !== product.id);
-    
-    // Helper to shuffle array
     const shuffle = (array: Product[]) => array.sort(() => 0.5 - Math.random());
     
     // 1. Related: Same category
     const related = otherProducts.filter(p => p.category === product.category);
     
-    // 2. Bought Together: Random Shuffle
-    const bought = shuffle([...otherProducts]);
+    // 2. Bought Together: Check for manually linked Accessories via features
+    let bought = [];
+    if (product.features?.accessoryIds && product.features.accessoryIds.length > 0) {
+        bought = allProducts.filter(p => product.features?.accessoryIds?.includes(p.id));
+    } else {
+        bought = shuffle([...otherProducts]).slice(0, 4); // Fallback to random
+    }
     
     // 3. Others Viewed: Random Shuffle
     const viewed = shuffle([...otherProducts]);

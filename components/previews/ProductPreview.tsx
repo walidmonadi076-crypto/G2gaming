@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Product } from '../../types';
-import StoreItemCard from '../StoreItemCard'; // Reuse the card component for consistency
+import StarRating from '../StarRating';
 
 interface ProductPreviewProps {
   data: Partial<Product>;
@@ -13,104 +13,137 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ data }) => {
     name = 'Product Name',
     price = '$29.99',
     imageUrl = 'https://picsum.photos/seed/product-placeholder/400/400',
-    description = 'A detailed and convincing description of the product will be displayed here. Highlight the key features and benefits.',
+    description = 'A detailed and convincing description of the product will be displayed here.',
     gallery = [],
     category = 'Gear',
+    features = {}
   } = data;
   
-  const mainImage = gallery[0] || imageUrl || 'https://picsum.photos/seed/product-placeholder/400/400';
-  const displayGallery = gallery.length > 0 ? gallery : (imageUrl ? [imageUrl] : []);
+  const [mainImage, setMainImage] = useState(imageUrl);
+  
+  useEffect(() => {
+      setMainImage(imageUrl || 'https://picsum.photos/seed/product-placeholder/400/400');
+  }, [imageUrl]);
 
-  // Mock data for the bottom sections in preview
-  const mockProducts: Product[] = [
-      { id: 101, slug: 'mock-1', name: 'Pro Gaming Headset', price: '$89.99', imageUrl: 'https://picsum.photos/seed/mock1/300/300', category: 'Audio', description: '', gallery: [], url: '#' },
-      { id: 102, slug: 'mock-2', name: 'RGB Keyboard', price: '$129.00', imageUrl: 'https://picsum.photos/seed/mock2/300/300', category: 'Peripherals', description: '', gallery: [], url: '#' },
-      { id: 103, slug: 'mock-3', name: 'Gaming Mouse', price: '$59.99', imageUrl: 'https://picsum.photos/seed/mock3/300/300', category: 'Peripherals', description: '', gallery: [], url: '#' },
-      { id: 104, slug: 'mock-4', name: 'Desk Mat', price: '$29.99', imageUrl: 'https://picsum.photos/seed/mock4/300/300', category: 'Accessories', description: '', gallery: [], url: '#' },
-  ];
+  const displayGallery = gallery && gallery.length > 0 ? gallery : (imageUrl ? [imageUrl] : []);
+  const availableColors = features.colors && features.colors.length > 0 ? features.colors : ['black', 'white', 'purple'];
+  const [selectedColor, setSelectedColor] = useState(availableColors[0]);
 
-  const PreviewSection = ({ title, items }: { title: string, items: Product[] }) => (
-    <div className="mt-12 border-t border-gray-700 pt-8">
-        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-            <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
-            {title}
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {items.map(item => (
-                <div key={item.id} className="opacity-80 pointer-events-none transform scale-95">
-                    <StoreItemCard product={item} />
-                </div>
-            ))}
-        </div>
-    </div>
-  );
+  // Mock data for the accessories preview
+  const mockAccessory = {
+      name: "Suggested Accessory",
+      price: "$19.99",
+      imageUrl: "https://picsum.photos/seed/accessory/100/100"
+  };
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in p-4 bg-[#0d0d0d] min-h-screen">
+    <div className="bg-[#0d0d0d] min-h-screen text-gray-300 p-4 font-sans animate-fade-in">
         
         {/* Breadcrumb Mock */}
-        <div className="mb-6 text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 pb-4">
-            Store / {category} / <span className="text-white">{name}</span>
+        <div className="border-b border-white/5 pb-4 mb-8">
+            <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Shop / {category} / <span className="text-white">{name}</span></span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-            {/* Left Col: Images */}
-            <div className="space-y-4">
-                <div className="bg-white rounded-xl overflow-hidden aspect-[4/3] relative w-full p-8 border border-gray-800 flex items-center justify-center">
-                   <Image src={mainImage} alt={name || 'Product Preview'} key={mainImage} fill sizes="100vw" className="object-contain" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+            
+            {/* Left: Images */}
+            <div className="lg:col-span-7 flex flex-col gap-4">
+                <div className="relative w-full aspect-[4/3] bg-white rounded-xl overflow-hidden p-8 flex items-center justify-center border border-gray-800">
+                    <span className="absolute top-4 right-4 bg-yellow-400 text-black text-xs font-black px-3 py-1 rounded shadow-sm z-10 uppercase tracking-wide">Save 20%</span>
+                    <div className="relative w-full h-full">
+                        <Image src={mainImage || ''} alt={name || ''} fill className="object-contain" />
+                    </div>
                 </div>
                 {displayGallery.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto pb-2">
+                    <div className="flex gap-3 overflow-x-auto pb-2">
                         {displayGallery.map((img, index) => (
-                            <div key={index} className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-700 relative bg-white">
-                                <Image src={img} alt={`Thumb ${index}`} fill className="object-contain p-1" />
-                            </div>
+                            <button key={index} onClick={() => setMainImage(img)} className={`relative flex-shrink-0 w-20 h-20 bg-white rounded-lg overflow-hidden border-2 p-1 ${mainImage === img ? 'border-blue-500' : 'border-gray-700'}`}>
+                                <Image src={img} alt={`Thumb ${index}`} fill className="object-contain" />
+                            </button>
                         ))}
                     </div>
                 )}
             </div>
 
-            {/* Right Col: Info */}
-            <div className="flex flex-col">
-                 <div className="mb-1 text-xs font-bold text-gray-500 uppercase tracking-widest">G2Gaming Gear</div>
-                 <h1 className="text-3xl font-black text-white mb-2 leading-tight">{name}</h1>
-                 
-                 {/* Mock Rating */}
-                 <div className="flex items-center gap-2 mb-6">
-                    <div className="flex text-yellow-400 text-sm">★★★★☆</div>
-                    <span className="text-xs text-gray-500 font-bold">(12 Reviews)</span>
-                 </div>
+            {/* Right: Details */}
+            <div className="lg:col-span-5 flex flex-col">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">G2Gaming Gear</p>
+                <h1 className="text-3xl font-black text-white leading-tight mb-2">{name}</h1>
+                <div className="flex items-center gap-2 mb-6">
+                    <StarRating rating={4.5} />
+                    <span className="text-xs text-gray-500 font-bold">(12)</span>
+                </div>
 
-                 <div className="border-t border-b border-gray-800 py-6 mb-6">
+                <div className="mb-6">
+                    <p className="text-sm font-bold text-gray-300 mb-2">Color:</p>
+                    <div className="flex gap-3">
+                        {availableColors.map((color: string) => {
+                             const bg = color.trim().toLowerCase();
+                             return (
+                                <button key={color} onClick={() => setSelectedColor(color)} className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${selectedColor === color ? 'border-white scale-110' : 'border-transparent'}`} style={{ backgroundColor: bg }}>
+                                    {selectedColor === color && <span className="block w-2 h-2 bg-current rounded-full invert mix-blend-difference" />}
+                                </button>
+                             )
+                        })}
+                    </div>
+                </div>
+
+                <div className="border-t border-b border-white/5 py-6 mb-6">
                     <div className="flex items-baseline gap-3">
                         <span className="text-4xl font-black text-red-500">{price}</span>
-                        <span className="text-sm text-gray-600 line-through font-bold">
-                            {price.includes('$') ? `$${(parseFloat(price.replace('$', '')) * 1.2).toFixed(2)}` : ''}
-                        </span>
+                        <span className="text-lg text-gray-500 line-through decoration-gray-600 font-bold">$99.99</span>
                     </div>
-                 </div>
+                </div>
 
-                 <div className="space-y-4 mb-8">
-                    <button className="w-full py-4 bg-[#22c55e] text-white font-black uppercase tracking-widest text-lg rounded-sm shadow-lg">
-                        Add to Cart
-                    </button>
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        In Stock & Ready to Ship
-                    </div>
-                 </div>
-
-                 <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-3 border-b border-gray-800 pb-2">Overview</h3>
-                 <div className="prose prose-invert prose-p:text-gray-400 prose-sm max-w-none">
-                     <p>{description}</p>
-                 </div>
+                <button className="w-full py-4 bg-[#22c55e] text-white font-black uppercase tracking-widest text-lg rounded-sm shadow-lg mb-3">Add to Cart</button>
+                <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Availability: In Stock
+                </div>
             </div>
         </div>
 
-        {/* Bottom Sections Preview */}
-        <PreviewSection title="Related Products" items={mockProducts} />
-        <PreviewSection title="Customers Also Bought" items={[mockProducts[3], mockProducts[0], mockProducts[2], mockProducts[1]]} />
-        <PreviewSection title="Others Also Viewed" items={[mockProducts[2], mockProducts[1], mockProducts[3], mockProducts[0]]} />
+        {/* Selected Accessories Section Preview */}
+        <div className="mt-16 bg-gray-900/50 border border-white/5 rounded-2xl p-6">
+            <h3 className="text-center text-xl font-bold text-white mb-6">
+                {features.sectionTitle || 'Selected Accessories'}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                {[1, 2].map((i) => (
+                    <div key={i} className="flex bg-white rounded-lg overflow-hidden h-24 shadow-sm border border-gray-200 opacity-80">
+                        <div className="w-24 relative bg-gray-100 flex-shrink-0 p-2">
+                            <Image src={mockAccessory.imageUrl} alt="Acc" fill className="object-contain" />
+                        </div>
+                        <div className="p-3 flex flex-col justify-between flex-grow">
+                            <p className="text-xs font-bold text-black leading-tight">Linked Accessory {i}</p>
+                            <div className="flex justify-between items-end">
+                                <span className="text-sm font-black text-black">{mockAccessory.price}</span>
+                                <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded uppercase">Add</span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {(!features.accessoryIds || features.accessoryIds.length === 0) && (
+                <p className="text-center text-xs text-gray-500 mt-2">(Add Accessory IDs in form to populate this section)</p>
+            )}
+        </div>
+
+        {/* Description Grid */}
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-white/5 pt-12">
+            <div>
+                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Product Description</h4>
+                <div className="prose prose-invert prose-sm text-gray-400">
+                    <p>{description}</p>
+                </div>
+            </div>
+            <div>
+                 <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Specifications</h4>
+                 <div className="grid grid-cols-2 gap-4 text-sm">
+                     <div className="border-b border-white/5 pb-2"><span className="block text-gray-500 text-xs">Brand</span><span className="text-white font-bold">G2Gaming</span></div>
+                     <div className="border-b border-white/5 pb-2"><span className="block text-gray-500 text-xs">Color</span><span className="text-white font-bold capitalize">{selectedColor}</span></div>
+                 </div>
+            </div>
+        </div>
     </div>
   );
 };

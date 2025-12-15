@@ -41,9 +41,14 @@ export interface Product {
   category: string;
   view_count?: number;
   isPinned?: boolean;
-  // UI Helpers
+  // Database Columns
   rating?: number;
-  reviewsCount?: number;
+  reviewsCount?: number; // Mapped from reviews_count
+  features?: {
+    colors?: string[]; 
+    accessoryIds?: number[]; 
+    sectionTitle?: string;
+  };
 }
 
 export interface Comment {
