@@ -26,10 +26,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const [currentTag, setCurrentTag] = useState('');
   const [galleryInput, setGalleryInput] = useState('');
 
-  // New states for product features
-  const [colorsInput, setColorsInput] = useState('');
-  const [accessoryIdsInput, setAccessoryIdsInput] = useState('');
-
   const canPreview = PREVIEWABLE_TYPES.includes(type);
 
   useEffect(() => {
@@ -46,13 +42,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       setIsPinned(!!item.isPinned);
       if (type === 'games' && 'tags' in item && Array.isArray(item.tags)) {
         setIsFeatured(item.tags.includes('Featured'));
-      }
-      // Populate custom product features inputs
-      if (type === 'products' && 'features' in item) {
-          // @ts-ignore
-          const features = item.features || {};
-          setColorsInput(features.colors ? features.colors.join(', ') : '');
-          setAccessoryIdsInput(features.accessoryIds ? features.accessoryIds.join(', ') : '');
       }
     } else {
       const defaults = {
@@ -73,14 +62,12 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             downloadsCount: 1000
         },
         blogs: { title: '', summary: '', imageUrl: '', author: '', rating: 4.5, content: '', category: '' },
-        products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [], features: {} },
+        products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
         'social-links': { name: '', url: '', icon_svg: '' },
       };
       setFormData(defaults[type]);
       setIsFeatured(false);
       setIsPinned(false);
-      setColorsInput('');
-      setAccessoryIdsInput('');
     }
   }, [item, type]);
 
@@ -174,19 +161,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         finalData.tags = finalTags;
     }
     
-    if (type === 'products') {
-        if (finalData.price && !finalData.price.includes('$') && !isNaN(parseFloat(finalData.price))) {
-            finalData.price = `$${finalData.price}`;
-        }
-        // Process Features (Colors & Accessories)
-        const colors = colorsInput.split(',').map(c => c.trim()).filter(c => c.length > 0);
-        const accessoryIds = accessoryIdsInput.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-        
-        finalData.features = {
-            ...finalData.features,
-            colors: colors.length > 0 ? colors : undefined,
-            accessoryIds: accessoryIds.length > 0 ? accessoryIds : undefined
-        };
+    if (type === 'products' && finalData.price && !finalData.price.includes('$') && !isNaN(parseFloat(finalData.price))) {
+        finalData.price = `$${finalData.price}`;
     }
 
     onSubmit(finalData);
@@ -398,37 +374,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('description', 'Description', 'textarea')}
       {renderGalleryManager()}
 
-      {/* --- New Advanced Shop Features --- */}
-      <div className="bg-gray-750 p-4 rounded-md border border-gray-600 mt-6">
-          <h3 className="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-              Shop Customization
-          </h3>
-          <div className="space-y-4">
-              <div>
-                  <label className="block text-xs text-gray-400 mb-1">Colors (virgule séparée, ex: Black, White)</label>
-                  <input 
-                    type="text"
-                    value={colorsInput}
-                    onChange={(e) => setColorsInput(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-gray-700 rounded border border-gray-600 text-sm" 
-                    placeholder="Black, White, Purple" 
-                  />
-              </div>
-              <div>
-                  <label className="block text-xs text-gray-400 mb-1">IDs Accessoires Suggérés (virgule séparée, ex: 10, 24)</label>
-                  <input 
-                    type="text"
-                    value={accessoryIdsInput}
-                    onChange={(e) => setAccessoryIdsInput(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-gray-700 rounded border border-gray-600 text-sm" 
-                    placeholder="ex: 1, 5, 8" 
-                  />
-                  <p className="text-[10px] text-gray-500 mt-1">Utilisez l'ID du produit (visible dans la liste) pour le lier comme accessoire.</p>
-              </div>
-          </div>
-      </div>
-
       <AIHelperPanel
         contextType="product"
         onApplyTitle={(text) => setFieldValue('name', text)}
@@ -480,7 +425,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
           </div>
           {canPreview && (
             <div className="hidden md:block h-full">
-              <AdminPreview data={{...formData, features: { colors: colorsInput.split(','), accessoryIds: accessoryIdsInput.split(',') }}} type={type as 'games' | 'blogs' | 'products' | 'social-links'} />
+              <AdminPreview data={formData} type={type as 'games' | 'blogs' | 'products' | 'social-links'} />
             </div>
           )}
         </div>

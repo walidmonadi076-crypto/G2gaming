@@ -96,13 +96,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         gallery TEXT[],
         category VARCHAR(100),
         view_count INTEGER DEFAULT 0,
-        is_pinned BOOLEAN DEFAULT FALSE,
-        features JSONB
+        is_pinned BOOLEAN DEFAULT FALSE
       );
     `);
     
     await client.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE`);
-    await client.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS features JSONB`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS comments (
@@ -172,9 +170,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const product of PRODUCTS_DATA) {
       const numericPrice = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
       await client.query(
-        `INSERT INTO products (id, slug, name, image_url, price, url, description, gallery, category, is_pinned, features) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [product.id, product.slug, product.name, product.imageUrl, numericPrice, product.url, product.description, product.gallery, product.category, false, null]
+        `INSERT INTO products (id, slug, name, image_url, price, url, description, gallery, category, is_pinned) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [product.id, product.slug, product.name, product.imageUrl, numericPrice, product.url, product.description, product.gallery, product.category, false]
       );
     }
 

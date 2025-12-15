@@ -29,6 +29,7 @@ async function generateUniqueSlug(client: any, name: string, currentId: number |
   return slug;
 }
 
+// FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   let client;
   try {
@@ -60,13 +61,8 @@ export default async function handler(req: NextApiRequest & { method?: string },
       const totalPages = Math.ceil(totalItems / limit);
 
       queryParams.push(limit, offset);
-      
-      // Fetch full object including features, rating, reviews_count
       const itemsResult = await client.query(`
-        SELECT 
-            id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, 
-            description, gallery, category, view_count, is_pinned AS "isPinned", 
-            features, rating, reviews_count AS "reviewsCount"
+        SELECT id, slug, name, image_url AS "imageUrl", price, url, description, gallery, category, view_count, is_pinned AS "isPinned"
         FROM products
         ${whereClause}
         ORDER BY is_pinned DESC, ${sanitizedSortBy} ${sanitizedSortOrder}
@@ -84,58 +80,27 @@ export default async function handler(req: NextApiRequest & { method?: string },
     }
 
     if (req.method === 'POST') {
-        const { name, imageUrl, price, url, description, gallery, category, isPinned, features, rating, reviewsCount } = req.body;
+        const { name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
-        const numericPrice = parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
         const slug = await generateUniqueSlug(client, name);
-        
         const result = await client.query(
-            `INSERT INTO products (name, slug, image_url, price, url, description, gallery, category, is_pinned, features, rating, reviews_count) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
-            [
-                name, 
-                slug, 
-                imageUrl, 
-                numericPrice, 
-                url || '#', 
-                description, 
-                gallery || [], 
-                category, 
-                isPinned || false, 
-                features || {}, 
-                rating || 4.5, 
-                reviewsCount || 0
-            ]
+            `INSERT INTO products (name, slug, image_url, price, url, description, gallery, category, is_pinned) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [name, slug, imageUrl, price, url || '#', description, gallery || [], category, isPinned || false]
         );
         res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
-        const { id, name, imageUrl, price, url, description, gallery, category, isPinned, features, rating, reviewsCount } = req.body;
+        const { id, name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
-        const numericPrice = parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
         const slug = await generateUniqueSlug(client, name, id);
-        
         const result = await client.query(
             `UPDATE products 
-            SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8, is_pinned = $9, features = $10, rating = $11, reviews_count = $12
-            WHERE id = $13 RETURNING *`,
-            [
-                name, 
-                slug, 
-                imageUrl, 
-                numericPrice, 
-                url || '#', 
-                description, 
-                gallery || [], 
-                category, 
-                isPinned || false, 
-                features || {}, 
-                rating || 4.5, 
-                reviewsCount || 0,
-                id
-            ]
+            SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8, is_pinned = $9
+            WHERE id = $10 RETURNING *`,
+            [name, slug, imageUrl, price, url || '#', description, gallery || [], category, isPinned || false, id]
         );
       
         if (result.rows.length === 0) {
