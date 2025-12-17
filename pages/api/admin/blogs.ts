@@ -11,13 +11,12 @@ async function generateUniqueSlug(client: any, title: string, currentId: number 
   let counter = 1;
 
   while (!isUnique) {
-    const query = currentId 
+    const q = currentId 
       ? 'SELECT id FROM blog_posts WHERE slug = $1 AND id != $2'
       : 'SELECT id FROM blog_posts WHERE slug = $1';
     
     const params = currentId ? [slug, currentId] : [slug];
-    
-    const { rows } = await client.query(query, params);
+    const { rows } = await client.query(q, params);
 
     if (rows.length === 0) {
       isUnique = true;
@@ -34,9 +33,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
   try {
     client = await getDbClient();
     if (req.method === 'GET') {
-      if (!isAuthorized(req)) {
-          return res.status(401).json({ error: 'Non autorisé' });
-      }
+      if (!isAuthorized(req)) return res.status(401).json({ error: 'Non autorisé' });
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       const search = req.query.search as string || '';
@@ -77,9 +74,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
       });
     }
     
-    if (!isAuthorized(req)) {
-      return res.status(401).json({ error: 'Non autorisé' });
-    }
+    if (!isAuthorized(req)) return res.status(401).json({ error: 'Non autorisé' });
 
     if (req.method === 'POST') {
       const { title, summary, imageUrl, videoUrl, author, publishDate, rating, affiliateUrl, content, category, isPinned } = req.body;
@@ -95,9 +90,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
       try {
           await res.revalidate('/blog');
           await res.revalidate(`/blog/${slug}`);
-      } catch (err) {
-          console.error('Revalidation error:', err);
-      }
+      } catch (err) { console.error('Revalidation error:', err); }
 
       res.status(201).json(result.rows[0]);
 
@@ -105,12 +98,15 @@ export default async function handler(req: NextApiRequest & { method?: string },
       const { id, title, summary, imageUrl, videoUrl, author, publishDate, rating, affiliateUrl, content, category, isPinned } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
 
-      const slug = await generateUniqueSlug(client, title, id);
+      const oldData = await client.query('SELECT slug FROM blog_posts WHERE id = $1', [id]);
+      const oldSlug = oldData.rows[0]?.slug;
+
+      const newSlug = await generateUniqueSlug(client, title, id);
       const result = await client.query(
         `UPDATE blog_posts 
          SET title = $1, slug = $2, summary = $3, image_url = $4, video_url = $5, author = $6, publish_date = $7, rating = $8, affiliate_url = $9, content = $10, category = $11, is_pinned = $12
          WHERE id = $13 RETURNING *`,
-        [title, slug, summary, imageUrl, videoUrl || null, author, publishDate || new Date().toISOString().split('T')[0], parseFloat(rating) || 0, affiliateUrl || null, content, category, isPinned || false, id]
+        [title, newSlug, summary, imageUrl, videoUrl || null, author, publishDate || new Date().toISOString().split('T')[0], parseFloat(rating) || 0, affiliateUrl || null, content, category, isPinned || false, id]
       );
       
       if (result.rows.length === 0) {
@@ -118,10 +114,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
       } else {
         try {
             await res.revalidate('/blog');
-            await res.revalidate(`/blog/${slug}`);
-        } catch (err) {
-            console.error('Revalidation error:', err);
-        }
+            if (oldSlug) await res.revalidate(`/blog/${oldSlug}`);
+            if (newSlug !== oldSlug) await res.revalidate(`/blog/${newSlug}`);
+        } catch (err) { console.error('Revalidation error:', err); }
         res.status(200).json(result.rows[0]);
       }
 
@@ -137,9 +132,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
         try {
             await res.revalidate('/blog');
             if (slug) await res.revalidate(`/blog/${slug}`);
-        } catch (err) {
-            console.error('Revalidation error:', err);
-        }
+        } catch (err) { console.error('Revalidation error:', err); }
         res.status(200).json({ message: 'Blog post deleted successfully' });
       }
     } else {
@@ -150,8 +143,6 @@ export default async function handler(req: NextApiRequest & { method?: string },
     console.error("API Error in /api/admin/blogs:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-     if (client) {
-       client.release();
-     }
+     if (client) client.release();
   }
 }

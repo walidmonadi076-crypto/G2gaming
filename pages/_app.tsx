@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import App from 'next/app';
 // import type { AppContext, AppProps } from 'next/app'; // Removing faulty imports
@@ -131,11 +130,16 @@ function MyApp({ Component, pageProps }: MyAppProps) {
     <ThemeProvider>
       <AdProvider>
         <SettingsProvider value={settingsValue}>
-          <Head>
-            {/* Critical Viewport Meta Tag for Auto-Sizing */}
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-            <meta name="HandheldFriendly" content="true" />
-          </Head>
+          {/* FIX: Using explicit children prop for Head to resolve type resolution issues in strict environments. */}
+          <Head
+            children={
+              <>
+                {/* Critical Viewport Meta Tag for Auto-Sizing */}
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                <meta name="HandheldFriendly" content="true" />
+              </>
+            }
+          />
           <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans overflow-x-hidden`}>
             {isMobileSidebarOpen && (
               <div

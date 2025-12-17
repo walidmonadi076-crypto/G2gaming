@@ -1,3 +1,4 @@
+import React from 'react';
 import Head from 'next/head';
 
 interface SEOProps {
@@ -21,42 +22,49 @@ export default function SEO({
   keywords = ['G2gaming', 'download games', 'free games', 'pc games', 'gaming guides', 'gaming tips', 'gaming techniques', 'gaming gear', 'gaming accessories', 'gaming products'],
   schema,
   noindex,
+  children,
 }: SEOProps) {
   const fullTitle = title.includes('G2gaming') ? title : `${title} | G2gaming`;
   const fullUrl = url ? `https://yoursite.com${url}` : 'https://yoursite.com';
 
   return (
-    <Head>
-      <title>{fullTitle}</title>
-      <meta name="description" content={description} />
-      <meta name="keywords" content={keywords.join(', ')} />
+    /* FIX: Using explicit children prop for Head to resolve type resolution issues with JSX children in some environments. */
+    <Head
+      children={
+        <>
+          <title>{fullTitle}</title>
+          <meta name="description" content={description} />
+          <meta name="keywords" content={keywords.join(', ')} />
 
-      {/* FIX: Conditionally render the 'noindex' meta tag for search engines. */}
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
+          {/* FIX: Conditionally render the 'noindex' meta tag for search engines. */}
+          {noindex && <meta name="robots" content="noindex, nofollow" />}
 
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
-      <meta property="og:url" content={fullUrl} />
-      <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="G2gaming" />
+          <meta property="og:title" content={fullTitle} />
+          <meta property="og:description" content={description} />
+          <meta property="og:image" content={image} />
+          <meta property="og:url" content={fullUrl} />
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="G2gaming" />
 
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={fullTitle} />
+          <meta name="twitter:description" content={description} />
+          <meta name="twitter:image" content={image} />
 
-      <meta name="theme-color" content="#7c3aed" />
-      <link rel="canonical" href={fullUrl} />
+          <meta name="theme-color" content="#7c3aed" />
+          <link rel="canonical" href={fullUrl} />
 
-      <link rel="icon" href="/favicon.ico" />
+          <link rel="icon" href="/favicon.ico" />
 
-      {schema && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-        />
-      )}
-    </Head>
+          {schema && (
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+            />
+          )}
+          {children}
+        </>
+      }
+    />
   );
 }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -42,6 +43,7 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
   const [device, setDevice] = useState<Device>('desktop');
   const [scale, setScale] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [timestamp, setTimestamp] = useState(Date.now());
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -58,38 +60,25 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
 
   useEffect(() => {
     const container = previewContainerRef.current;
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     const calculateScale = () => {
       if (!previewContainerRef.current) return;
       const { width: deviceWidth, height: deviceHeight } = deviceDimensions[device];
-      
       const containerWidth = previewContainerRef.current.offsetWidth;
       const containerHeight = previewContainerRef.current.offsetHeight;
-
       const padding = 16;
       const availableWidth = containerWidth - padding;
       const availableHeight = containerHeight - padding;
-
       const scaleX = availableWidth / deviceWidth;
       const scaleY = availableHeight / deviceHeight;
-      
-      const newScale = Math.min(scaleX, scaleY, 1);
-      setScale(newScale);
+      setScale(Math.min(scaleX, scaleY, 1));
     };
 
-    const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(calculateScale);
-    });
-    
+    const resizeObserver = new ResizeObserver(() => requestAnimationFrame(calculateScale));
     resizeObserver.observe(container);
-    calculateScale(); // Initial calculation
-
-    return () => {
-      resizeObserver.disconnect();
-    };
+    calculateScale();
+    return () => resizeObserver.disconnect();
   }, [device]);
 
   useEffect(() => {
@@ -102,6 +91,7 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
   }, [data, iframeLoaded, previewTarget]);
 
   const handleRefresh = () => {
+    setTimestamp(Date.now());
     if (iframeRef.current) {
       iframeRef.current.src = iframeRef.current.src;
     }
@@ -109,18 +99,14 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
 
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      previewRootRef.current?.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-      });
+      previewRootRef.current?.requestFullscreen().catch(err => console.error(err));
     } else {
       document.exitFullscreen();
     }
   };
 
   useEffect(() => {
-    const onFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
@@ -174,7 +160,7 @@ const AdminPreview: React.FC<AdminPreviewProps> = ({ data, type }) => {
           {previewTarget ? (
             <iframe
               ref={iframeRef}
-              src={`/admin/previews/${previewTarget}`}
+              src={`/admin/previews/${previewTarget}?t=${timestamp}`}
               title={`${previewTarget} Preview`}
               className="w-full h-full"
               onLoad={() => setIframeLoaded(true)}

@@ -11,13 +11,12 @@ async function generateUniqueSlug(client: any, name: string, currentId: number |
   let counter = 1;
 
   while (!isUnique) {
-    const query = currentId 
+    const q = currentId 
       ? 'SELECT id FROM products WHERE slug = $1 AND id != $2'
       : 'SELECT id FROM products WHERE slug = $1';
     
     const params = currentId ? [slug, currentId] : [slug];
-    
-    const { rows } = await client.query(query, params);
+    const { rows } = await client.query(q, params);
 
     if (rows.length === 0) {
       isUnique = true;
@@ -34,9 +33,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
   try {
     client = await getDbClient();
     if (req.method === 'GET') {
-      if (!isAuthorized(req)) {
-          return res.status(401).json({ error: 'Non autorisé' });
-      }
+      if (!isAuthorized(req)) return res.status(401).json({ error: 'Non autorisé' });
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       const search = req.query.search as string || '';
@@ -77,9 +74,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
       });
     }
 
-    if (!isAuthorized(req)) {
-        return res.status(401).json({ error: 'Non autorisé' });
-    }
+    if (!isAuthorized(req)) return res.status(401).json({ error: 'Non autorisé' });
 
     if (req.method === 'POST') {
         const { name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
@@ -97,9 +92,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
         try {
             await res.revalidate('/shop');
             await res.revalidate(`/shop/${slug}`);
-        } catch (err) {
-            console.error('Revalidation error:', err);
-        }
+        } catch (err) { console.error('Revalidation error:', err); }
 
         res.status(201).json(result.rows[0]);
 
@@ -107,14 +100,18 @@ export default async function handler(req: NextApiRequest & { method?: string },
         const { id, name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
+        // Get old slug to clear old cache if it changes
+        const oldData = await client.query('SELECT slug FROM products WHERE id = $1', [id]);
+        const oldSlug = oldData.rows[0]?.slug;
+
         const numericPrice = parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
-        const slug = await generateUniqueSlug(client, name, id);
+        const newSlug = await generateUniqueSlug(client, name, id);
         
         const result = await client.query(
             `UPDATE products 
             SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8, is_pinned = $9
             WHERE id = $10 RETURNING *`,
-            [name, slug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false, id]
+            [name, newSlug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false, id]
         );
       
         if (result.rows.length === 0) {
@@ -122,10 +119,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
         } else {
             try {
                 await res.revalidate('/shop');
-                await res.revalidate(`/shop/${slug}`);
-            } catch (err) {
-                console.error('Revalidation error:', err);
-            }
+                if (oldSlug) await res.revalidate(`/shop/${oldSlug}`);
+                if (newSlug !== oldSlug) await res.revalidate(`/shop/${newSlug}`);
+            } catch (err) { console.error('Revalidation error:', err); }
             res.status(200).json(result.rows[0]);
         }
     } else if (req.method === 'DELETE') {
@@ -140,9 +136,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
         try {
             await res.revalidate('/shop');
             if (slug) await res.revalidate(`/shop/${slug}`);
-        } catch (err) {
-            console.error('Revalidation error:', err);
-        }
+        } catch (err) { console.error('Revalidation error:', err); }
         res.status(200).json({ message: 'Product deleted successfully' });
       }
     } else {
@@ -153,8 +147,6 @@ export default async function handler(req: NextApiRequest & { method?: string },
     console.error("API Error in /api/admin/products:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-    if (client) {
-      client.release();
-    }
+    if (client) client.release();
   }
 }

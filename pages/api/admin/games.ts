@@ -11,13 +11,12 @@ async function generateUniqueSlug(client: any, title: string, currentId: number 
   let counter = 1;
 
   while (!isUnique) {
-    const query = currentId 
+    const q = currentId 
       ? 'SELECT id FROM games WHERE slug = $1 AND id != $2'
       : 'SELECT id FROM games WHERE slug = $1';
     
     const params = currentId ? [slug, currentId] : [slug];
-    
-    const { rows } = await client.query(query, params);
+    const { rows } = await client.query(q, params);
 
     if (rows.length === 0) {
       isUnique = true;
@@ -29,15 +28,12 @@ async function generateUniqueSlug(client: any, title: string, currentId: number 
   return slug;
 }
 
-// FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   let client;
   try {
     client = await getDbClient();
     if (req.method === 'GET') {
-        if (!isAuthorized(req)) {
-            return res.status(401).json({ error: 'Non autorisé' });
-        }
+        if (!isAuthorized(req)) return res.status(401).json({ error: 'Non autorisé' });
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
         const search = req.query.search as string || '';
@@ -79,9 +75,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
         });
     }
 
-    if (!isAuthorized(req)) {
-        return res.status(401).json({ error: 'Non autorisé' });
-    }
+    if (!isAuthorized(req)) return res.status(401).json({ error: 'Non autorisé' });
     
     if (req.method === 'POST') {
       const { title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, downloadUrlIos, gallery, platform, requirements, iconUrl, backgroundUrl, rating, downloadsCount, isPinned } = req.body;
@@ -91,34 +85,14 @@ export default async function handler(req: NextApiRequest & { method?: string },
       const result = await client.query(
         `INSERT INTO games (title, slug, image_url, category, tags, theme, description, video_url, download_url, download_url_ios, gallery, platform, requirements, icon_url, background_url, rating, downloads_count, is_pinned) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *`,
-        [
-            title, 
-            slug, 
-            imageUrl, 
-            category, 
-            tags || [], 
-            theme || null, 
-            description, 
-            videoUrl || null, 
-            downloadUrl || '#',
-            downloadUrlIos || null,
-            gallery || [], 
-            platform || 'pc', 
-            requirements || null,
-            iconUrl || null,
-            backgroundUrl || null,
-            rating || 95,
-            downloadsCount || 1000,
-            isPinned || false
-        ]
+        [title, slug, imageUrl, category, tags || [], theme || null, description, videoUrl || null, downloadUrl || '#', downloadUrlIos || null, gallery || [], platform || 'pc', requirements || null, iconUrl || null, backgroundUrl || null, rating || 95, downloadsCount || 1000, isPinned || false]
       );
       
       try {
         await res.revalidate('/');
         await res.revalidate('/games');
-      } catch (err) {
-        console.error('Error revalidating pages after game creation:', err);
-      }
+        await res.revalidate(`/games/${slug}`);
+      } catch (err) { console.error('Error revalidating:', err); }
       
       res.status(201).json(result.rows[0]);
 
@@ -126,32 +100,15 @@ export default async function handler(req: NextApiRequest & { method?: string },
       const { id, title, imageUrl, category, tags, theme, description, videoUrl, downloadUrl, downloadUrlIos, gallery, platform, requirements, iconUrl, backgroundUrl, rating, downloadsCount, isPinned } = req.body;
       if (!title) return res.status(400).json({ error: 'Le champ "Titre" est obligatoire.' });
       
-      const slug = await generateUniqueSlug(client, title, id);
+      const oldData = await client.query('SELECT slug FROM games WHERE id = $1', [id]);
+      const oldSlug = oldData.rows[0]?.slug;
+
+      const newSlug = await generateUniqueSlug(client, title, id);
       const result = await client.query(
         `UPDATE games 
          SET title = $1, slug = $2, image_url = $3, category = $4, tags = $5, theme = $6, description = $7, video_url = $8, download_url = $9, download_url_ios = $10, gallery = $11, platform = $12, requirements = $13, icon_url = $14, background_url = $15, rating = $16, downloads_count = $17, is_pinned = $18
          WHERE id = $19 RETURNING *`,
-        [
-            title, 
-            slug, 
-            imageUrl, 
-            category, 
-            tags || [], 
-            theme || null, 
-            description, 
-            videoUrl || null, 
-            downloadUrl || '#', 
-            downloadUrlIos || null,
-            gallery || [], 
-            platform || 'pc', 
-            requirements || null, 
-            iconUrl || null,
-            backgroundUrl || null,
-            rating || 95,
-            downloadsCount || 1000,
-            isPinned || false,
-            id
-        ]
+        [title, newSlug, imageUrl, category, tags || [], theme || null, description, videoUrl || null, downloadUrl || '#', downloadUrlIos || null, gallery || [], platform || 'pc', requirements || null, iconUrl || null, backgroundUrl || null, rating || 95, downloadsCount || 1000, isPinned || false, id]
       );
       
       if (result.rows.length === 0) {
@@ -160,17 +117,16 @@ export default async function handler(req: NextApiRequest & { method?: string },
         try {
             await res.revalidate('/');
             await res.revalidate('/games');
-            const updatedSlug = result.rows[0].slug;
-            if (updatedSlug) {
-                await res.revalidate(`/games/${updatedSlug}`);
-            }
-        } catch (err) {
-            console.error('Error revalidating pages after game update:', err);
-        }
+            if (oldSlug) await res.revalidate(`/games/${oldSlug}`);
+            if (newSlug !== oldSlug) await res.revalidate(`/games/${newSlug}`);
+        } catch (err) { console.error('Error revalidating:', err); }
         res.status(200).json(result.rows[0]);
       }
     } else if (req.method === 'DELETE') {
       const { id } = req.query;
+      const findRes = await client.query('SELECT slug FROM games WHERE id = $1', [id]);
+      const slug = findRes.rows[0]?.slug;
+
       const result = await client.query('DELETE FROM games WHERE id = $1 RETURNING id', [id]);
       if (result.rows.length === 0) {
         res.status(404).json({ message: 'Game not found' });
@@ -178,9 +134,8 @@ export default async function handler(req: NextApiRequest & { method?: string },
         try {
             await res.revalidate('/');
             await res.revalidate('/games');
-        } catch (err) {
-            console.error('Error revalidating pages after game deletion:', err);
-        }
+            if (slug) await res.revalidate(`/games/${slug}`);
+        } catch (err) { console.error('Error revalidating:', err); }
         res.status(200).json({ message: 'Game deleted successfully' });
       }
     } else {
@@ -191,8 +146,6 @@ export default async function handler(req: NextApiRequest & { method?: string },
     console.error("API Error in /api/admin/games:", error);
     res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
   } finally {
-    if (client) {
-      client.release();
-    }
+    if (client) client.release();
   }
 }
