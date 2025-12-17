@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Game, BlogPost, Product, SocialLink } from '../types';
 import AdminPreview from './AdminPreview'; 
 import AIHelperPanel from './admin/AIHelperPanel';
@@ -14,12 +14,107 @@ interface AdminFormProps {
   onSubmit: (data: any) => Promise<void>;
 }
 
+// --- Minimal Rich Text Editor Component ---
+const RichTextEditor: React.FC<{ 
+    value: string; 
+    onChange: (val: string) => void;
+    label: string;
+    id: string;
+}> = ({ value, onChange, label, id }) => {
+    const [mode, setMode] = useState<'visual' | 'html'>('visual');
+    const editorRef = useRef<HTMLDivElement>(null);
+
+    // Sync contentEditable with value when mode changes to visual
+    useEffect(() => {
+        if (mode === 'visual' && editorRef.current) {
+            if (editorRef.current.innerHTML !== value) {
+                editorRef.current.innerHTML = value || '';
+            }
+        }
+    }, [mode, value]);
+
+    const handleInput = () => {
+        if (editorRef.current) {
+            onChange(editorRef.current.innerHTML);
+        }
+    };
+
+    const execCommand = (command: string, value: string | undefined = undefined) => {
+        document.execCommand(command, false, value);
+        handleInput();
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+                <label htmlFor={id} className="block text-sm font-medium text-gray-300">{label}</label>
+                <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-700">
+                    <button 
+                        type="button"
+                        onClick={() => setMode('visual')}
+                        className={`px-3 py-1 text-[10px] font-black uppercase rounded ${mode === 'visual' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        Visual
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setMode('html')}
+                        className={`px-3 py-1 text-[10px] font-black uppercase rounded ${mode === 'html' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        HTML
+                    </button>
+                </div>
+            </div>
+
+            <div className="relative rounded-xl border border-gray-600 overflow-hidden bg-gray-750">
+                {mode === 'visual' ? (
+                    <>
+                        <div className="flex items-center gap-1 p-2 bg-gray-800 border-b border-gray-700 overflow-x-auto no-scrollbar">
+                            <button type="button" onClick={() => execCommand('bold')} className="p-1.5 hover:bg-gray-700 rounded text-xs font-bold" title="Bold">B</button>
+                            <button type="button" onClick={() => execCommand('italic')} className="p-1.5 hover:bg-gray-700 rounded text-xs italic" title="Italic">I</button>
+                            <button type="button" onClick={() => execCommand('underline')} className="p-1.5 hover:bg-gray-700 rounded text-xs underline" title="Underline">U</button>
+                            <div className="w-px h-4 bg-gray-600 mx-1"></div>
+                            <button type="button" onClick={() => execCommand('insertUnorderedList')} className="p-1.5 hover:bg-gray-700 rounded text-xs" title="Bullet List">• List</button>
+                            <button type="button" onClick={() => execCommand('insertOrderedList')} className="p-1.5 hover:bg-gray-700 rounded text-xs" title="Numbered List">1. List</button>
+                            <div className="w-px h-4 bg-gray-600 mx-1"></div>
+                            <button type="button" onClick={() => {
+                                const url = prompt("Enter URL:");
+                                if (url) execCommand('createLink', url);
+                            }} className="p-1.5 hover:bg-gray-700 rounded text-xs text-blue-400" title="Link">Link</button>
+                            <button type="button" onClick={() => execCommand('unlink')} className="p-1.5 hover:bg-gray-700 rounded text-xs" title="Unlink">⎌</button>
+                            <button type="button" onClick={() => execCommand('removeFormat')} className="p-1.5 hover:bg-gray-700 rounded text-xs" title="Clear Format">🗑</button>
+                        </div>
+                        <div 
+                            ref={editorRef}
+                            contentEditable
+                            onInput={handleInput}
+                            className="w-full min-h-[250px] max-h-[500px] overflow-y-auto px-4 py-3 bg-gray-700 text-gray-200 outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500/30 prose prose-invert prose-sm max-w-none"
+                            style={{ whiteSpace: 'pre-wrap' }}
+                        />
+                    </>
+                ) : (
+                    <textarea
+                        id={id}
+                        value={value || ''}
+                        onChange={(e) => onChange(e.target.value)}
+                        className="w-full min-h-[250px] max-h-[500px] px-4 py-3 bg-gray-900 text-purple-300 font-mono text-xs outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500/30 resize-y"
+                        spellCheck={false}
+                    />
+                )}
+            </div>
+            <p className="text-[10px] text-gray-500 italic">
+                {mode === 'visual' ? "Mode Visual: K-t-shof dakchi b7al l-page." : "Mode HTML: T-9dar t-zid code sghoun hna."}
+            </p>
+        </div>
+    );
+};
+
 const PREVIEWABLE_TYPES: ItemType[] = ['games', 'blogs', 'products', 'social-links'];
 
 export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormProps) {
   const [formData, setFormData] = useState<any>({});
   const [isFeatured, setIsFeatured] = useState(false);
-  const [isPinned, setIsPinned] = useState(false); // State for Pinned
+  const [isPinned, setIsPinned] = useState(false);
   
   const [categories, setCategories] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -46,20 +141,9 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     } else {
       const defaults = {
         games: { 
-            title: '', 
-            imageUrl: '', 
-            iconUrl: '', 
-            backgroundUrl: '', 
-            category: '', 
-            tags: [], 
-            description: '', 
-            downloadUrl: '#', 
-            downloadUrlIos: '#',
-            gallery: [], 
-            platform: 'pc',
-            requirements: { os: '', ram: '', storage: '', processor: '' },
-            rating: 95, 
-            downloadsCount: 1000
+            title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], 
+            description: '', downloadUrl: '#', downloadUrlIos: '#', gallery: [], platform: 'pc',
+            requirements: { os: '', ram: '', storage: '', processor: '' }, rating: 95, downloadsCount: 1000
         },
         blogs: { title: '', summary: '', imageUrl: '', author: '', rating: 4.5, content: '', category: '' },
         products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
@@ -150,7 +234,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
 
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    let finalData = { ...formData, isPinned }; // Include isPinned
+    let finalData = { ...formData, isPinned }; 
     
     if (type === 'games') {
         let finalTags = finalData.tags || [];
@@ -271,7 +355,13 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       <div key="featured-game">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-300 cursor-pointer"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-4 h-4 bg-gray-700 rounded border-gray-600 text-purple-600 focus:ring-purple-500"/>Featured</label>
       </div>
-      {renderField('description', 'Description', 'textarea')}
+      
+      <RichTextEditor 
+        id="game-description"
+        label="Description"
+        value={formData.description || ''}
+        onChange={(val) => setFieldValue('description', val)}
+      />
       
       <div className="bg-gray-750 p-4 rounded-md border border-gray-600 mt-4">
           <h3 className="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider">Configuration Requise</h3>
@@ -320,7 +410,14 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     <>
       {renderPinOption()}
       {renderField('title', 'Titre')}
-      {renderField('summary', 'Résumé', 'textarea')}
+      
+      <RichTextEditor 
+        id="blog-summary"
+        label="Résumé"
+        value={formData.summary || ''}
+        onChange={(val) => setFieldValue('summary', val)}
+      />
+      
       {renderField('imageUrl', 'URL de l\'image')}
       {renderField('author', 'Auteur')}
       {renderField('category', 'Catégorie')}
@@ -328,7 +425,14 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         <label htmlFor="rating" className="block text-sm font-medium text-gray-300 mb-1">Note (sur 5)</label>
         <input id="rating" name="rating" type="number" value={formData.rating || ''} onChange={handleChange} step="0.1" min="0" max="5" required className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"/>
       </div>
-      {renderField('content', 'Contenu', 'textarea')}
+      
+      <RichTextEditor 
+        id="blog-content"
+        label="Contenu Principal"
+        value={formData.content || ''}
+        onChange={(val) => setFieldValue('content', val)}
+      />
+      
       {renderField('affiliateUrl', 'URL d\'affiliation', 'url', false)}
       {renderField('publishDate', 'Date de publication', 'date', false)}
 
@@ -371,7 +475,14 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       {renderField('imageUrl', 'URL de l\'image principale')}
       {renderField('url', 'URL du produit')}
       {renderField('category', 'Catégorie')}
-      {renderField('description', 'Description', 'textarea')}
+      
+      <RichTextEditor 
+        id="product-description"
+        label="Description"
+        value={formData.description || ''}
+        onChange={(val) => setFieldValue('description', val)}
+      />
+      
       {renderGalleryManager()}
 
       <AIHelperPanel
@@ -416,7 +527,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         
         <div className={`flex-grow grid ${canPreview ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 p-6 overflow-hidden`}>
           <div className="overflow-y-auto pr-2">
-            <div className="p-6 space-y-4">
+            <div className="p-2 space-y-6">
               {type === 'games' && renderGameFields()}
               {type === 'blogs' && renderBlogFields()}
               {type === 'products' && renderProductFields()}
