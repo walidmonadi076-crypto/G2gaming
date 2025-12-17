@@ -227,9 +227,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
 
                                 <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-[0.9]">{game.title}</h1>
                                 
-                                {/* FIX: Using dangerouslySetInnerHTML to correctly render HTML from Admin description */}
-                                <div className="text-lg text-gray-400 leading-relaxed max-w-3xl prose prose-invert" dangerouslySetInnerHTML={{ __html: game.description }} />
-
                                 <div className="mt-8">
                                     <div className="mb-6">
                                         <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-tight">Downloads</h3>
@@ -301,7 +298,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
 
                                 <div className="mt-4 border-t border-white/5 pt-8">
                                     <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2"><span className="w-1 h-6 bg-purple-500 rounded-full"></span>About This Game</h2>
-                                    {/* Using same HTML rendering for about section */}
                                     <div className="prose prose-invert prose-lg text-gray-400 max-w-none" dangerouslySetInnerHTML={{ __html: game.description }} />
                                 </div>
 

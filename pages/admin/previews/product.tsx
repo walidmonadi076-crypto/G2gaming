@@ -208,9 +208,8 @@ const ProductPreviewPage: React.FC = () => {
                                         <span className="w-1 h-4 bg-green-500 rounded-full"></span>
                                         Overview
                                     </h3>
-                                    <div className="prose prose-invert prose-p:text-gray-400 prose-p:leading-relaxed max-w-none text-sm">
-                                        <p>{product.description}</p>
-                                    </div>
+                                    {/* FIX: Render HTML correctly in product preview */}
+                                    <div className="prose prose-invert prose-p:text-gray-400 prose-p:leading-relaxed max-w-none text-sm" dangerouslySetInnerHTML={{ __html: product.description || 'Product description...' }} />
                                 </div>
 
                             </div>

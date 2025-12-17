@@ -69,7 +69,9 @@ const GamePreviewPage: React.FC = () => {
                             <div className="p-6">
                                 <h1 className="text-4xl font-extrabold text-white mb-3">{game.title || 'Game Title'}</h1>
                                 <div className="flex flex-wrap gap-2 mb-6">{(game.tags || []).map(tag => <span key={tag} className="text-xs font-semibold bg-gray-700 text-gray-300 px-2.5 py-1 rounded-full">{tag}</span>)}</div>
-                                <p className="text-gray-300 leading-relaxed">{game.description || 'Game description...'}</p>
+                                
+                                {/* FIX: Render HTML correctly in preview */}
+                                <div className="text-gray-300 leading-relaxed prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: game.description || 'Game description...' }} />
                                 
                                 <div className="mt-8">
                                     <button 
