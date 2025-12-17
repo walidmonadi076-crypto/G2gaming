@@ -29,7 +29,6 @@ async function generateUniqueSlug(client: any, title: string, currentId: number 
   return slug;
 }
 
-// FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   let client;
   try {
@@ -92,6 +91,14 @@ export default async function handler(req: NextApiRequest & { method?: string },
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
         [title, slug, summary, imageUrl, videoUrl || null, author, publishDate || new Date().toISOString().split('T')[0], parseFloat(rating) || 0, affiliateUrl || null, content, category, isPinned || false]
       );
+
+      try {
+          await res.revalidate('/blog');
+          await res.revalidate(`/blog/${slug}`);
+      } catch (err) {
+          console.error('Revalidation error:', err);
+      }
+
       res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
@@ -109,15 +116,30 @@ export default async function handler(req: NextApiRequest & { method?: string },
       if (result.rows.length === 0) {
         res.status(404).json({ message: 'Blog post not found' });
       } else {
+        try {
+            await res.revalidate('/blog');
+            await res.revalidate(`/blog/${slug}`);
+        } catch (err) {
+            console.error('Revalidation error:', err);
+        }
         res.status(200).json(result.rows[0]);
       }
 
     } else if (req.method === 'DELETE') {
       const { id } = req.query;
+      const findRes = await client.query('SELECT slug FROM blog_posts WHERE id = $1', [id]);
+      const slug = findRes.rows[0]?.slug;
+
       const result = await client.query('DELETE FROM blog_posts WHERE id = $1 RETURNING id', [id]);
       if (result.rows.length === 0) {
         res.status(404).json({ message: 'Blog post not found' });
       } else {
+        try {
+            await res.revalidate('/blog');
+            if (slug) await res.revalidate(`/blog/${slug}`);
+        } catch (err) {
+            console.error('Revalidation error:', err);
+        }
         res.status(200).json({ message: 'Blog post deleted successfully' });
       }
     } else {

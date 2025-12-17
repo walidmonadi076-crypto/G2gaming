@@ -1,4 +1,3 @@
-
 import Head from 'next/head';
 
 interface SEOProps {
@@ -10,6 +9,8 @@ interface SEOProps {
   schema?: Record<string, any>;
   // FIX: Added noindex prop to allow pages to opt-out of search engine indexing.
   noindex?: boolean;
+  // FIX: Added optional children to satisfy strict type checks when used as a component.
+  children?: React.ReactNode;
 }
 
 export default function SEO({

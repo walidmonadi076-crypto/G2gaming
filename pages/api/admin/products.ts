@@ -61,7 +61,6 @@ export default async function handler(req: NextApiRequest & { method?: string },
 
       queryParams.push(limit, offset);
       
-      // Removed features, rating, reviews_count
       const itemsResult = await client.query(`
         SELECT 
             id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, 
@@ -92,18 +91,16 @@ export default async function handler(req: NextApiRequest & { method?: string },
         const result = await client.query(
             `INSERT INTO products (name, slug, image_url, price, url, description, gallery, category, is_pinned) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [
-                name, 
-                slug, 
-                imageUrl, 
-                numericPrice, 
-                url || '#', 
-                description, 
-                gallery || [], 
-                category, 
-                isPinned || false
-            ]
+            [name, slug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false]
         );
+
+        try {
+            await res.revalidate('/shop');
+            await res.revalidate(`/shop/${slug}`);
+        } catch (err) {
+            console.error('Revalidation error:', err);
+        }
+
         res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
@@ -117,31 +114,35 @@ export default async function handler(req: NextApiRequest & { method?: string },
             `UPDATE products 
             SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8, is_pinned = $9
             WHERE id = $10 RETURNING *`,
-            [
-                name, 
-                slug, 
-                imageUrl, 
-                numericPrice, 
-                url || '#', 
-                description, 
-                gallery || [], 
-                category, 
-                isPinned || false, 
-                id
-            ]
+            [name, slug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false, id]
         );
       
         if (result.rows.length === 0) {
             res.status(404).json({ message: 'Product not found' });
         } else {
+            try {
+                await res.revalidate('/shop');
+                await res.revalidate(`/shop/${slug}`);
+            } catch (err) {
+                console.error('Revalidation error:', err);
+            }
             res.status(200).json(result.rows[0]);
         }
     } else if (req.method === 'DELETE') {
       const { id } = req.query;
+      const findRes = await client.query('SELECT slug FROM products WHERE id = $1', [id]);
+      const slug = findRes.rows[0]?.slug;
+
       const result = await client.query('DELETE FROM products WHERE id = $1 RETURNING id', [id]);
       if (result.rows.length === 0) {
         res.status(404).json({ message: 'Product not found' });
       } else {
+        try {
+            await res.revalidate('/shop');
+            if (slug) await res.revalidate(`/shop/${slug}`);
+        } catch (err) {
+            console.error('Revalidation error:', err);
+        }
         res.status(200).json({ message: 'Product deleted successfully' });
       }
     } else {

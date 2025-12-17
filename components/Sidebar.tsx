@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -32,7 +31,8 @@ const MoonIcon = () => (
   </svg>
 );
 
-const ThemeToggle: React.FC<{ isExpanded: boolean }> = ({ isExpanded }) => {
+// FIX: Removed React.FC to avoid implicit 'children' requirement in some TypeScript/React configurations.
+const ThemeToggle = ({ isExpanded }: { isExpanded: boolean }) => {
   const { theme, toggleTheme } = useTheme();
   
   return (
@@ -54,7 +54,8 @@ const ThemeToggle: React.FC<{ isExpanded: boolean }> = ({ isExpanded }) => {
 };
 
 
-const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobileClose }) => {
+// FIX: Removed React.FC to avoid implicit 'children' requirement in some TypeScript/React configurations.
+const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobileClose }: SidebarProps) => {
   const router = useRouter();
   const { settings } = useSettings();
   const [popularCategories, setPopularCategories] = useState<SidebarCategory[]>([]);

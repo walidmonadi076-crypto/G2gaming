@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -53,7 +52,8 @@ interface AdminStats { totalGames: number; totalBlogs: number; totalProducts: nu
 interface TopItem { name: string; slug: string; view_count: number; }
 interface AnalyticsData { topGames: TopItem[]; topBlogs: TopItem[]; topProducts: TopItem[]; }
 
-const TopContentList: React.FC<{title: string, items: TopItem[], type: 'games' | 'blogs' | 'products'}> = ({title, items, type}) => {
+// FIX: Removed React.FC to avoid implicit 'children' requirement in some TypeScript/React configurations.
+const TopContentList = ({title, items, type}: {title: string, items: TopItem[], type: 'games' | 'blogs' | 'products'}) => {
     const maxViews = Math.max(...items.map(item => item.view_count), 1);
     return (
         <div className="bg-gray-800 rounded-lg p-6">
@@ -77,7 +77,8 @@ const TopContentList: React.FC<{title: string, items: TopItem[], type: 'games' |
     );
 };
 
-const AnalyticsPanel: React.FC<{ loading: boolean; data: AnalyticsData | null }> = ({ loading, data }) => {
+// FIX: Removed React.FC to avoid implicit 'children' requirement in some TypeScript/React configurations.
+const AnalyticsPanel = ({ loading, data }: { loading: boolean; data: AnalyticsData | null }) => {
     if (loading) return <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse"><div className="bg-gray-800 rounded-lg h-64"></div><div className="bg-gray-800 rounded-lg h-64"></div><div className="bg-gray-800 rounded-lg h-64"></div></div>;
     if (!data) return <div className="text-center py-10 text-gray-400">Aucune donnée d'analyse disponible.</div>;
     return (
@@ -367,7 +368,8 @@ export default function AdminPanel() {
     );
   }
 
-  const SortableHeader: React.FC<{ label: string; columnKey: string; className?: string }> = ({ label, columnKey, className }) => (
+  // FIX: Removed React.FC to avoid implicit 'children' requirement in some TypeScript/React configurations.
+  const SortableHeader = ({ label, columnKey, className }: { label: string; columnKey: string; className?: string }) => (
       <th onClick={() => requestSort(columnKey)} className={`text-left p-3 text-sm font-semibold uppercase cursor-pointer ${className}`}>{label} {sortConfig.key === columnKey ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}</th>
   );
 

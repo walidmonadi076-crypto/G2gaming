@@ -10,7 +10,7 @@ import StoreItemCard from '../../../components/StoreItemCard';
 const ProductPreviewPage: React.FC = () => {
     const [product, setProduct] = useState<Partial<Product>>({
         name: 'Product Preview',
-        price: '0.00',
+        price: '$0.00',
         imageUrl: 'https://picsum.photos/seed/product-placeholder/400/400',
         description: 'Product description will appear here.',
         gallery: [],
@@ -94,7 +94,7 @@ const ProductPreviewPage: React.FC = () => {
         <>
             <SEO title={`Preview: ${product.name}`} noindex={true} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-gray-200 font-sans selection:bg-green-500 selection:text-white pb-20">
+            <div className="min-h-screen bg-[#0d0d0d] text-gray-200 font-sans selection:bg-green-500 selection:text-white pb-20 overflow-x-hidden">
                 {/* Background Glow */}
                 <div className="fixed top-0 right-0 w-1/2 h-[600px] bg-gradient-to-b from-green-900/10 to-transparent pointer-events-none z-0" />
 
@@ -164,14 +164,16 @@ const ProductPreviewPage: React.FC = () => {
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
                                         <span className="inline-block px-3 py-1 bg-gray-800 border border-gray-700 rounded-md text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                            {product.category || 'Category'}
+                                            {product.category || 'Gear'}
                                         </span>
                                     </div>
                                     <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4">
                                         {product.name}
                                     </h1>
                                     <div className="inline-block bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text">
-                                        <p className="text-4xl md:text-5xl font-bold tracking-tight">{product.price}</p>
+                                        <p className="text-4xl md:text-5xl font-bold tracking-tight">
+                                            {product.price?.startsWith('$') ? product.price : `$${product.price || '0.00'}`}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -206,7 +208,7 @@ const ProductPreviewPage: React.FC = () => {
                                         <span className="w-1 h-4 bg-green-500 rounded-full"></span>
                                         Overview
                                     </h3>
-                                    <div className="prose prose-invert prose-p:text-gray-400 prose-p:leading-relaxed max-w-none">
+                                    <div className="prose prose-invert prose-p:text-gray-400 prose-p:leading-relaxed max-w-none text-sm">
                                         <p>{product.description}</p>
                                     </div>
                                 </div>
