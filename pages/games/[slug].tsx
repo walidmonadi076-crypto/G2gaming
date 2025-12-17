@@ -135,7 +135,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
             />
             
             <div className="min-h-screen bg-[#0d0d0d] text-white font-sans selection:bg-purple-500 selection:text-white pb-20 relative">
-                {/* Hero Background - Uses game.backgroundUrl if available, else standard gradient */}
                 {game.backgroundUrl ? (
                     <div className="fixed top-0 left-0 w-full h-[800px] z-0">
                         <Image 
@@ -166,9 +165,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-                        {/* --- LEFT COLUMN (Main Content) --- */}
                         <div className="lg:col-span-8 flex flex-col gap-8">
-                            
                             <div className="relative w-full aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10 group">
                                 <button 
                                     className="w-full h-full relative block cursor-zoom-in"
@@ -229,9 +226,10 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                 </div>
 
                                 <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-[0.9]">{game.title}</h1>
-                                <p className="text-lg text-gray-400 leading-relaxed max-w-3xl">{game.description}</p>
+                                
+                                {/* FIX: Using dangerouslySetInnerHTML to correctly render HTML from Admin description */}
+                                <div className="text-lg text-gray-400 leading-relaxed max-w-3xl prose prose-invert" dangerouslySetInnerHTML={{ __html: game.description }} />
 
-                                {/* Action Area - Download Buttons */}
                                 <div className="mt-8">
                                     <div className="mb-6">
                                         <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-tight">Downloads</h3>
@@ -240,71 +238,40 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     <div className="flex flex-col gap-6">
                                         {game.platform === 'mobile' ? (
                                             <div className="flex flex-col sm:flex-row gap-6 w-full">
-                                                {/* Android Button - Neon Pill Style */}
                                                 <a 
                                                     href={isUnlocked ? game.downloadUrl : '#'} 
                                                     onClick={!isUnlocked ? handleVerificationClick : undefined}
-                                                    className={`
-                                                        relative flex-1 group rounded-full p-[3px] 
-                                                        bg-gradient-to-r from-yellow-400 to-green-500 
-                                                        hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95
-                                                        ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}
-                                                    `}
+                                                    className={`relative flex-1 group rounded-full p-[3px] bg-gradient-to-r from-yellow-400 to-green-500 hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
                                                 >
                                                     <div className="flex items-center justify-center gap-3 w-full h-full bg-[#0d0d0d] group-hover:bg-[#1a1a1a] rounded-full px-6 py-4 transition-colors">
-                                                        {/* Android Icon */}
-                                                        <svg className="w-8 h-8 text-yellow-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                                                            <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0225 3.503c-1.6704-.7618-3.52-1.1927-5.4867-1.2227v.0039c-1.9667.03-3.8163.4609-5.4866 1.2227L4.1402 5.4496a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592c-2.3271 1.2647-3.9209 3.5355-4.3297 6.1831h19.1465c-.4089-2.6476-2.0026-4.9184-4.3297-6.1831" />
-                                                        </svg>
-                                                        <span className="text-xl font-black italic uppercase tracking-tight text-yellow-400 group-hover:text-yellow-300">
-                                                            Download APK
-                                                        </span>
+                                                        <svg className="w-8 h-8 text-yellow-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0225 3.503c-1.6704-.7618-3.52-1.1927-5.4867-1.2227v.0039c-1.9667.03-3.8163.4609-5.4866 1.2227L4.1402 5.4496a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592c-2.3271 1.2647-3.9209 3.5355-4.3297 6.1831h19.1465c-.4089-2.6476-2.0026-4.9184-4.3297-6.1831" /></svg>
+                                                        <span className="text-xl font-black italic uppercase tracking-tight text-yellow-400 group-hover:text-yellow-300">Download APK</span>
                                                     </div>
                                                 </a>
-
-                                                {/* iOS Button - Neon Pill Style */}
                                                 <a 
                                                     href={isUnlocked ? (game.downloadUrlIos || '#') : '#'} 
                                                     onClick={!isUnlocked ? handleVerificationClick : undefined}
-                                                    className={`
-                                                        relative flex-1 group rounded-full p-[3px] 
-                                                        bg-gradient-to-r from-cyan-400 to-blue-500 
-                                                        hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95
-                                                        ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}
-                                                    `}
+                                                    className={`relative flex-1 group rounded-full p-[3px] bg-gradient-to-r from-cyan-400 to-blue-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
                                                 >
                                                     <div className="flex items-center justify-center gap-3 w-full h-full bg-[#0d0d0d] group-hover:bg-[#1a1a1a] rounded-full px-6 py-4 transition-colors">
-                                                        {/* Apple Icon */}
-                                                        <svg className="w-8 h-8 text-cyan-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                                                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.3-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.68-.83 1.14-1.99 1.01-3.15-1.02.05-2.29.69-3 1.53-.63.75-1.18 1.96-1.03 3.07 1.14.09 2.3-.64 3.02-1.45"/>
-                                                        </svg>
-                                                        <span className="text-xl font-black italic uppercase tracking-tight text-cyan-400 group-hover:text-cyan-300">
-                                                            Download iOS
-                                                        </span>
+                                                        <svg className="w-8 h-8 text-cyan-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.3-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.68-.83 1.14-1.99 1.01-3.15-1.02.05-2.29.69-3 1.53-.63.75-1.18 1.96-1.03 3.07 1.14.09 2.3-.64 3.02-1.45"/></svg>
+                                                        <span className="text-xl font-black italic uppercase tracking-tight text-cyan-400 group-hover:text-cyan-300">Download iOS</span>
                                                     </div>
                                                 </a>
                                             </div>
                                         ) : (
-                                            // PC/Other Button - Neon Pill Style (Purple/Pink)
                                             <a 
                                                 href={isUnlocked ? game.downloadUrl : '#'} 
                                                 onClick={!isUnlocked ? handleVerificationClick : undefined}
                                                 target={isUnlocked ? "_blank" : undefined}
                                                 rel={isUnlocked ? "noopener noreferrer" : undefined}
-                                                className={`
-                                                    relative w-full sm:w-auto group rounded-full p-[3px] 
-                                                    bg-gradient-to-r from-purple-500 to-pink-500 
-                                                    hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95
-                                                    ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}
-                                                `}
+                                                className={`relative w-full sm:w-auto group rounded-full p-[3px] bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
                                             >
                                                 <div className="flex items-center justify-center gap-3 w-full h-full bg-[#0d0d0d] group-hover:bg-[#1a1a1a] rounded-full px-8 py-4 transition-colors">
                                                     {isOgadsReady || isUnlocked ? (
                                                         <>
                                                             <svg className="w-8 h-8 text-purple-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                                            <span className="text-xl font-black italic uppercase tracking-tight text-purple-400 group-hover:text-purple-300">
-                                                                {isUnlocked ? 'Download Now' : 'Verify & Download'}
-                                                            </span>
+                                                            <span className="text-xl font-black italic uppercase tracking-tight text-purple-400 group-hover:text-purple-300">{isUnlocked ? 'Download Now' : 'Verify & Download'}</span>
                                                         </>
                                                     ) : (
                                                         <>
@@ -334,7 +301,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
 
                                 <div className="mt-4 border-t border-white/5 pt-8">
                                     <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2"><span className="w-1 h-6 bg-purple-500 rounded-full"></span>About This Game</h2>
-                                    <div className="prose prose-invert prose-lg text-gray-400 max-w-none"><p>Experience the thrill of <strong>{game.title}</strong>. {game.description} Dive into immersive gameplay, stunning visuals, and challenging mechanics that will keep you on the edge of your seat.</p></div>
+                                    {/* Using same HTML rendering for about section */}
+                                    <div className="prose prose-invert prose-lg text-gray-400 max-w-none" dangerouslySetInnerHTML={{ __html: game.description }} />
                                 </div>
 
                                 {relatedDeals.length > 0 && (
@@ -346,7 +314,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                             </div>
                         </div>
 
-                        {/* --- RIGHT COLUMN (Sticky Sidebar) --- */}
                         <div className="lg:col-span-4 relative">
                             <div className="sticky top-24 flex flex-col gap-8">
                                 <div className="bg-gray-900 rounded-2xl p-6 border border-white/5 shadow-xl">
@@ -354,19 +321,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                                     <div className="grid grid-cols-2 gap-3">
                                         {game.gallery.slice(0, 4).map((img, index) => (
                                             <button key={index} onClick={() => openLightbox(game.videoUrl ? index + 1 : index)} className="relative aspect-video rounded-lg overflow-hidden border border-gray-800 group hover:border-purple-500 transition-colors">
-                                                <Image 
-                                                    src={img} 
-                                                    alt={`${game.title} screenshot ${index + 1}`} 
-                                                    fill 
-                                                    sizes="200px" 
-                                                    className="object-cover transition-transform duration-500 group-hover:scale-110" 
-                                                    // Add fallback for screenshots too
-                                                    onError={(e) => {
-                                                        const target = e.target as HTMLImageElement;
-                                                        target.style.display = 'none'; // Hide if failed
-                                                        // Or implement similar fallback to img tag logic if critical
-                                                    }}
-                                                />
+                                                <Image src={img} alt={`${game.title} screenshot ${index + 1}`} fill sizes="200px" className="object-cover transition-transform duration-500 group-hover:scale-110" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                             </button>
                                         ))}
                                     </div>
@@ -377,7 +332,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                     </div>
                 </div>
             </div>
-
             {lightboxOpen && <Lightbox items={mediaItems} startIndex={lightboxIndex} onClose={() => setLightboxOpen(false)} />}
         </>
     );

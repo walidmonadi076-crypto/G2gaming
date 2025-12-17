@@ -75,7 +75,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
     const displayMainImage = mainImage || 'https://picsum.photos/seed/product-placeholder/400/400';
     const mainImageIndex = (product.gallery || []).findIndex(img => img === displayMainImage);
 
-    // Reusable Section Component
     const ProductCarouselSection = ({ title, items, subtitle }: { title: string, items: Product[], subtitle?: string }) => {
         if (!items || items.length === 0) return null;
         return (
@@ -108,12 +107,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
             />
             
             <div className="min-h-screen bg-[#0d0d0d] text-gray-200 font-sans selection:bg-green-500 selection:text-white pb-20">
-                {/* Background Glow */}
                 <div className="fixed top-0 right-0 w-1/2 h-[600px] bg-gradient-to-b from-green-900/10 to-transparent pointer-events-none z-0" />
-
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-                    
-                    {/* Breadcrumb */}
                     <div className="mb-8">
                         <Link 
                             href="/shop" 
@@ -127,11 +122,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
-                        
-                        {/* --- LEFT COLUMN: Images --- */}
                         <div className="lg:col-span-7 flex flex-col gap-6">
-                            
-                            {/* Main Image Stage */}
                             <button 
                                 className="relative w-full aspect-square md:aspect-[4/3] bg-gray-900 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5 group cursor-zoom-in ring-1 ring-white/5 hover:ring-green-500/50 transition-all duration-500" 
                                 onClick={() => openLightbox(mainImageIndex > -1 ? mainImageIndex : 0)}
@@ -153,19 +144,13 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                     </div>
                                 </div>
                             </button>
-
-                            {/* Thumbnails */}
                             {(product.gallery && product.gallery.length > 1) && (
                                 <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
                                     {product.gallery.map((img, index) => (
                                         <button 
                                             key={index} 
                                             onClick={() => setMainImage(img)} 
-                                            className={`relative flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 snap-start ${
-                                                mainImage === img 
-                                                ? 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105' 
-                                                : 'border-transparent hover:border-gray-600 opacity-70 hover:opacity-100'
-                                            }`}
+                                            className={`relative flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 snap-start ${mainImage === img ? 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105' : 'border-transparent hover:border-gray-600 opacity-70 hover:opacity-100'}`}
                                         >
                                             <Image src={img} alt={`${product.name} thumbnail ${index + 1}`} fill sizes="100px" className="object-cover" />
                                         </button>
@@ -174,11 +159,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                             )}
                         </div>
 
-                        {/* --- RIGHT COLUMN: Info & CTA --- */}
                         <div className="lg:col-span-5 flex flex-col h-full">
                             <div className="sticky top-24 space-y-8">
-                                
-                                {/* Header Info */}
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
                                         <span className="inline-block px-3 py-1 bg-gray-800 border border-gray-700 rounded-md text-[10px] font-black uppercase tracking-widest text-gray-400">
@@ -193,7 +175,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                     </div>
                                 </div>
 
-                                {/* Buy Action Box */}
                                 <div className="p-1 rounded-2xl bg-gradient-to-r from-green-500/20 to-emerald-500/20">
                                     <div className="bg-gray-900/90 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
                                         <a 
@@ -211,34 +192,25 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                                         <p className="text-center text-xs text-gray-500 mt-3 font-medium uppercase tracking-wider mb-4">
                                             Secure Transaction via Partner
                                         </p>
-
-                                        {/* Sponsored Ad Area - Inside Buy Box */}
                                         <div className="w-full flex justify-center border-t border-white/5 pt-4">
                                             <Ad placement="shop_square" className="shadow-none border-none bg-black/20" />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Description */}
                                 <div className="border-t border-white/10 pt-6">
                                     <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
                                         <span className="w-1 h-4 bg-green-500 rounded-full"></span>
                                         Overview
                                     </h3>
-                                    <div className="prose prose-invert prose-p:text-gray-400 prose-p:leading-relaxed max-w-none">
-                                        <p>{product.description}</p>
-                                    </div>
+                                    {/* FIX: Using dangerouslySetInnerHTML to correctly render HTML from Admin description */}
+                                    <div className="prose prose-invert prose-p:text-gray-400 prose-p:leading-relaxed max-w-none prose-sm" dangerouslySetInnerHTML={{ __html: product.description }} />
                                 </div>
-
                             </div>
                         </div>
-
                     </div>
-
-                    {/* --- Bottom Carousels --- */}
                     <ProductCarouselSection title="Related Products" subtitle="You may also like" items={relatedProducts} />
                     <ProductCarouselSection title="Others Also Viewed" subtitle="Trending in this category" items={othersViewed} />
-
                 </div>
             </div>
 
@@ -273,20 +245,13 @@ export const getStaticProps: GetStaticProps = async (context) => {
     const allProducts = await getAllProducts();
     const otherProducts = allProducts.filter(p => p.id !== product.id);
     const shuffle = (array: Product[]) => array.sort(() => 0.5 - Math.random());
-
-    // Related by Category
     const related = otherProducts.filter(p => p.category === product.category);
-    
-    // Bought Together now just falls back to shuffle since manual ID linking is removed
-    const bought = shuffle([...otherProducts]).slice(0, 4);
-
     const viewed = shuffle([...otherProducts]).slice(0, 4);
 
     return {
         props: { 
             product,
             relatedProducts: related.slice(0, 4),
-            boughtTogether: bought,
             othersViewed: viewed
         },
         revalidate: 60,
