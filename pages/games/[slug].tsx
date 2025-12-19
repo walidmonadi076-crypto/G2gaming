@@ -11,6 +11,7 @@ import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
 import { getEmbedUrl } from '../../lib/utils';
+import HtmlContent from '../../components/HtmlContent';
 
 declare global {
     interface Window { 
@@ -28,21 +29,14 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
     const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
-    const [imageError, setImageError] = useState(false);
 
     const embedUrl = useMemo(() => getEmbedUrl(game.videoUrl), [game.videoUrl]);
 
     const mediaItems = useMemo(() => {
         const items = [];
-        if (game.videoUrl) {
-            items.push({ type: 'video' as const, src: game.videoUrl });
-        }
-        game.gallery.forEach(img => {
-            items.push({ type: 'image' as const, src: img });
-        });
-        if (items.length === 0 && game.imageUrl) {
-            items.push({ type: 'image' as const, src: game.imageUrl });
-        }
+        if (game.videoUrl) items.push({ type: 'video' as const, src: game.videoUrl });
+        game.gallery.forEach(img => items.push({ type: 'image' as const, src: img }));
+        if (items.length === 0 && game.imageUrl) items.push({ type: 'image' as const, src: game.imageUrl });
         return items;
     }, [game]);
     
@@ -53,278 +47,131 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
 
     useEffect(() => {
         if (router.isReady && game.slug && process.env.NODE_ENV === 'production') {
-            const trackView = async () => {
-                try {
-                    await fetch('/api/views/track', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: 'games', slug: game.slug }),
-                    });
-                } catch (error) {
-                    console.error('Failed to track view:', error);
-                }
-            };
-            trackView();
+            fetch('/api/views/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'games', slug: game.slug }),
+            }).catch(console.error);
         }
-
-        const fetchSuggestions = async () => {
-             const deals = await getRelatedFreeDeals(game.category);
-             setRelatedDeals(deals);
-        };
-        fetchSuggestions();
-
+        getRelatedFreeDeals(game.category).then(setRelatedDeals);
     }, [router.isReady, game.slug, game.category]);
 
     useEffect(() => {
-        const handleUnlock = () => {
-            console.log("OGAds locker unlocked! Enabling download button.");
-            setIsUnlocked(true);
-        };
-        window.onLockerUnlock = handleUnlock;
-        return () => {
-            delete window.onLockerUnlock;
-        };
-    }, []);
-
-    useEffect(() => {
+        window.onLockerUnlock = () => setIsUnlocked(true);
         if (typeof window.og_load === 'function') {
             setIsOgadsReady(true);
-            return;
+        } else {
+            const int = setInterval(() => { if (typeof window.og_load === 'function') { setIsOgadsReady(true); clearInterval(int); } }, 200);
+            return () => clearInterval(int);
         }
-        const intervalId = setInterval(() => {
-            if (typeof window.og_load === 'function') {
-                setIsOgadsReady(true);
-                clearInterval(intervalId);
-            }
-        }, 200);
-        return () => clearInterval(intervalId);
+        return () => { delete window.onLockerUnlock; };
     }, []);
 
-    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading Game Data...</div>;
+    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading...</div>;
 
-    const gameSchema = {
-        "@context": "https://schema.org",
-        "@type": "VideoGame",
-        "name": game.title,
-        "description": game.description,
-        "image": game.imageUrl,
-        "applicationCategory": "Game",
-        "operatingSystem": game.platform === 'mobile' ? "Android, iOS" : "Windows, macOS, Linux",
-        "genre": game.category,
-        "keywords": game.tags?.join(', ') || ''
-    };
-    
     const handleVerificationClick = (e: React.MouseEvent) => {
         e.preventDefault();
-        if (isOgadsReady && typeof window.og_load === 'function') {
-            window.og_load();
-        } else {
-            console.error("OGAds script (og_load) is not available.");
-            alert("The verification service is currently unavailable. Please try again later.");
-        }
+        if (isOgadsReady) window.og_load();
+        else alert("Verification service unavailable.");
     };
 
     return (
         <>
-            <SEO
-                title={game.title}
-                description={game.description}
-                image={game.imageUrl}
-                url={`/games/${game.slug}`}
-                schema={gameSchema}
-            />
+            <SEO title={game.title} description={game.description.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} url={`/games/${game.slug}`} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-white font-sans selection:bg-purple-500 selection:text-white pb-20 relative">
-                {game.backgroundUrl ? (
+            <div className="min-h-screen bg-[#0d0d0d] text-white font-sans selection:bg-purple-500 pb-20 relative">
+                {game.backgroundUrl && (
                     <div className="fixed top-0 left-0 w-full h-[800px] z-0">
-                        <Image 
-                            src={game.backgroundUrl} 
-                            alt={`${game.title} background`} 
-                            fill 
-                            className="object-cover opacity-30" 
-                            priority 
-                        />
+                        <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-30" priority />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d]/80 to-transparent" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#0d0d0d]/90 to-transparent" />
                     </div>
-                ) : (
-                    <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none z-0" />
                 )}
 
-                <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+                <div className="relative z-10 max-w-[1400px] mx-auto px-4 pt-8">
                     <div className="mb-8">
-                        <Link 
-                            href={`/games?platform=${game.platform || 'pc'}`} 
-                            className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
-                        >
+                        <Link href={`/games?platform=${game.platform || 'pc'}`} className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
                             <span className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500/20 transition-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
                             </span>
-                            Back to {game.platform === 'mobile' ? 'Mobile' : 'PC'} Library
+                            Back to Library
                         </Link>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-                        <div className="lg:col-span-8 flex flex-col gap-8">
-                            <div className="relative w-full aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10 group">
-                                <button 
-                                    className="w-full h-full relative block cursor-zoom-in"
-                                    onClick={() => openLightbox(0)}
-                                >
+                        <div className="lg:col-span-8 space-y-10">
+                            <div className="relative w-full aspect-video bg-gray-900 rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
+                                <button className="w-full h-full relative block cursor-zoom-in" onClick={() => openLightbox(0)}>
                                     {game.videoUrl ? (
-                                        embedUrl ? (
-                                            <iframe 
-                                                src={embedUrl} 
-                                                className="w-full h-full pointer-events-none" 
-                                                title={game.title}
-                                                allow="autoplay; encrypted-media"
-                                            />
-                                        ) : (
-                                            <video 
-                                                src={game.videoUrl} 
-                                                autoPlay 
-                                                muted 
-                                                loop 
-                                                playsInline
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                            />
-                                        )
-                                    ) : (
-                                        !imageError ? (
-                                            <Image 
-                                                src={game.gallery[0] || game.imageUrl} 
-                                                alt={game.title} 
-                                                fill 
-                                                sizes="(max-width: 1024px) 100vw, 800px" 
-                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                                priority
-                                                onError={() => setImageError(true)}
-                                            />
-                                        ) : (
-                                            <img 
-                                                src={game.gallery[0] || game.imageUrl} 
-                                                alt={game.title} 
-                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                        )
-                                    )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-transparent to-transparent opacity-80 pointer-events-none" />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-                                        <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-xl transform scale-75 group-hover:scale-100 transition-transform">
-                                            <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                        </div>
-                                    </div>
+                                        embedUrl ? <iframe src={embedUrl} className="w-full h-full pointer-events-none" title={game.title} allow="autoplay; encrypted-media" /> 
+                                        : <video src={game.videoUrl} autoPlay muted loop playsInline className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    ) : <Image src={game.gallery[0] || game.imageUrl} alt={game.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" priority unoptimized />}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-transparent to-transparent opacity-80" />
                                 </button>
                             </div>
 
-                            <div className="flex flex-col gap-6">
+                            <div className="space-y-6">
                                 <div className="flex flex-wrap gap-2">
-                                    <span className="px-2 py-1 rounded bg-gray-800 text-gray-400 text-[10px] font-black uppercase tracking-widest border border-gray-700">{game.category}</span>
-                                    {game.platform === 'mobile' && <span className="px-2 py-1 rounded bg-purple-900/30 text-purple-400 text-[10px] font-black uppercase tracking-widest border border-purple-500/30">Mobile Exclusive</span>}
-                                    {game.tags?.map(tag => <span key={tag} className="px-2 py-1 rounded bg-gray-800 text-gray-300 text-[10px] font-black uppercase tracking-widest border border-gray-700">{tag}</span>)}
+                                    <span className="px-3 py-1 rounded-full bg-purple-900/30 text-purple-400 text-[10px] font-black uppercase tracking-widest border border-purple-500/30">{game.category}</span>
+                                    {game.tags?.map(tag => <span key={tag} className="px-3 py-1 rounded-full bg-gray-800 text-gray-300 text-[10px] font-black uppercase tracking-widest border border-gray-700">{tag}</span>)}
                                 </div>
 
-                                <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-[0.9]">{game.title}</h1>
+                                <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none">{game.title}</h1>
                                 
-                                <div className="mt-8">
-                                    <div className="mb-6">
-                                        <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-tight">Downloads</h3>
-                                        <p className="text-sm text-gray-400">{isUnlocked ? "Links unlocked. Select your platform." : "Verify below to unlock high-speed downloads."}</p>
-                                    </div>
-                                    <div className="flex flex-col gap-6">
-                                        {game.platform === 'mobile' ? (
-                                            <div className="flex flex-col sm:flex-row gap-6 w-full">
-                                                <a 
-                                                    href={isUnlocked ? game.downloadUrl : '#'} 
-                                                    onClick={!isUnlocked ? handleVerificationClick : undefined}
-                                                    className={`relative flex-1 group rounded-full p-[3px] bg-gradient-to-r from-yellow-400 to-green-500 hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
-                                                >
-                                                    <div className="flex items-center justify-center gap-3 w-full h-full bg-[#0d0d0d] group-hover:bg-[#1a1a1a] rounded-full px-6 py-4 transition-colors">
-                                                        <svg className="w-8 h-8 text-yellow-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0225 3.503c-1.6704-.7618-3.52-1.1927-5.4867-1.2227v.0039c-1.9667.03-3.8163.4609-5.4866 1.2227L4.1402 5.4496a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592c-2.3271 1.2647-3.9209 3.5355-4.3297 6.1831h19.1465c-.4089-2.6476-2.0026-4.9184-4.3297-6.1831" /></svg>
-                                                        <span className="text-xl font-black italic uppercase tracking-tight text-yellow-400 group-hover:text-yellow-300">Download APK</span>
-                                                    </div>
-                                                </a>
-                                                <a 
-                                                    href={isUnlocked ? (game.downloadUrlIos || '#') : '#'} 
-                                                    onClick={!isUnlocked ? handleVerificationClick : undefined}
-                                                    className={`relative flex-1 group rounded-full p-[3px] bg-gradient-to-r from-cyan-400 to-blue-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
-                                                >
-                                                    <div className="flex items-center justify-center gap-3 w-full h-full bg-[#0d0d0d] group-hover:bg-[#1a1a1a] rounded-full px-6 py-4 transition-colors">
-                                                        <svg className="w-8 h-8 text-cyan-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.3-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.68-.83 1.14-1.99 1.01-3.15-1.02.05-2.29.69-3 1.53-.63.75-1.18 1.96-1.03 3.07 1.14.09 2.3-.64 3.02-1.45"/></svg>
-                                                        <span className="text-xl font-black italic uppercase tracking-tight text-cyan-400 group-hover:text-cyan-300">Download iOS</span>
-                                                    </div>
-                                                </a>
+                                <div className="bg-gray-900/50 rounded-3xl p-8 border border-white/5 shadow-xl">
+                                    <h3 className="text-xl font-bold text-white mb-6 uppercase tracking-tight flex items-center gap-3">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                        Download Links
+                                    </h3>
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <a href={isUnlocked ? game.downloadUrl : '#'} onClick={!isUnlocked ? handleVerificationClick : undefined} className={`flex-1 group relative rounded-2xl p-[2px] bg-gradient-to-r from-purple-500 to-blue-500 transition-all active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 grayscale' : ''}`}>
+                                            <div className="bg-gray-900 rounded-[14px] py-4 text-center font-black uppercase tracking-widest text-sm group-hover:bg-transparent transition-colors">
+                                                {isUnlocked ? (game.platform === 'mobile' ? 'Download APK' : 'Download Now') : 'Unlock Link'}
                                             </div>
-                                        ) : (
-                                            <a 
-                                                href={isUnlocked ? game.downloadUrl : '#'} 
-                                                onClick={!isUnlocked ? handleVerificationClick : undefined}
-                                                target={isUnlocked ? "_blank" : undefined}
-                                                rel={isUnlocked ? "noopener noreferrer" : undefined}
-                                                className={`relative w-full sm:w-auto group rounded-full p-[3px] bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
-                                            >
-                                                <div className="flex items-center justify-center gap-3 w-full h-full bg-[#0d0d0d] group-hover:bg-[#1a1a1a] rounded-full px-8 py-4 transition-colors">
-                                                    {isOgadsReady || isUnlocked ? (
-                                                        <>
-                                                            <svg className="w-8 h-8 text-purple-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                                            <span className="text-xl font-black italic uppercase tracking-tight text-purple-400 group-hover:text-purple-300">{isUnlocked ? 'Download Now' : 'Verify & Download'}</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="animate-spin h-6 w-6 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                            <span className="text-lg font-bold text-gray-400 uppercase tracking-widest ml-3">Loading...</span>
-                                                        </>
-                                                    )}
+                                        </a>
+                                        {game.platform === 'mobile' && (
+                                            <a href={isUnlocked ? game.downloadUrlIos : '#'} onClick={!isUnlocked ? handleVerificationClick : undefined} className={`flex-1 group relative rounded-2xl p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 transition-all active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 grayscale' : ''}`}>
+                                                <div className="bg-gray-900 rounded-[14px] py-4 text-center font-black uppercase tracking-widest text-sm group-hover:bg-transparent transition-colors">
+                                                    {isUnlocked ? 'Download iOS' : 'Unlock iOS Link'}
                                                 </div>
                                             </a>
                                         )}
                                     </div>
+                                    {!isUnlocked && <p className="text-center text-[10px] text-gray-500 mt-4 uppercase tracking-widest font-bold">Complete verification to reveal high-speed servers</p>}
                                 </div>
-                                
-                                <div className="mt-4 w-full flex justify-center lg:hidden"><Ad placement="game_horizontal" className="shadow-lg" /></div>
 
                                 {game.requirements && (
-                                    <div className="mt-8 border-t border-white/5 pt-8">
-                                        <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2"><span className="w-1 h-6 bg-purple-500 rounded-full"></span>Requirements</h2>
-                                        <div className="bg-gray-900 rounded-xl p-4 border border-white/5 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="bg-gray-800/50 p-3 rounded-lg"><span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">OS</span><span className="text-white font-medium">{game.requirements.os}</span></div>
-                                            <div className="bg-gray-800/50 p-3 rounded-lg"><span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">RAM</span><span className="text-white font-medium">{game.requirements.ram}</span></div>
-                                            <div className="bg-gray-800/50 p-3 rounded-lg"><span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Storage</span><span className="text-white font-medium">{game.requirements.storage}</span></div>
-                                            {game.requirements.processor && <div className="bg-gray-800/50 p-3 rounded-lg md:col-span-3"><span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Processor</span><span className="text-white font-medium">{game.requirements.processor}</span></div>}
-                                        </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-y border-white/5 py-8">
+                                        <div className="bg-gray-900/30 p-4 rounded-xl border border-white/5"><span className="block text-[10px] font-black text-gray-500 uppercase mb-1">OS</span><span className="text-sm font-bold">{game.requirements.os}</span></div>
+                                        <div className="bg-gray-900/30 p-4 rounded-xl border border-white/5"><span className="block text-[10px] font-black text-gray-500 uppercase mb-1">Memory</span><span className="text-sm font-bold">{game.requirements.ram}</span></div>
+                                        <div className="bg-gray-900/30 p-4 rounded-xl border border-white/5"><span className="block text-[10px] font-black text-gray-500 uppercase mb-1">Storage</span><span className="text-sm font-bold">{game.requirements.storage}</span></div>
                                     </div>
                                 )}
 
-                                <div className="mt-4 border-t border-white/5 pt-8">
-                                    <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2"><span className="w-1 h-6 bg-purple-500 rounded-full"></span>About This Game</h2>
-                                    <div className="prose prose-invert prose-lg text-gray-400 max-w-none" dangerouslySetInnerHTML={{ __html: game.description }} />
-                                </div>
-
-                                {relatedDeals.length > 0 && (
-                                    <div className="mt-8 border-t border-white/5 pt-8">
-                                        <h3 className="text-xl font-bold text-white mb-4">Related Free Games</h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{relatedDeals.map((deal: any) => (<a href={deal.deal_url} target="_blank" rel="noopener noreferrer" key={deal.id} className="block group"><div className="relative aspect-video rounded-lg overflow-hidden mb-2"><Image src={deal.image_url} alt={deal.title} fill className="object-cover group-hover:scale-105 transition-transform" /><div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">Free</div></div><p className="text-xs font-bold text-gray-300 group-hover:text-white truncate">{deal.title}</p><p className="text-[10px] text-gray-500">{deal.store_name}</p></a>))}</div>
-                                    </div>
-                                )}
+                                <section>
+                                    <h2 className="text-2xl font-black text-white uppercase mb-6 flex items-center gap-3">
+                                        <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
+                                        About This Game
+                                    </h2>
+                                    <HtmlContent html={game.description} />
+                                </section>
                             </div>
                         </div>
 
-                        <div className="lg:col-span-4 relative">
-                            <div className="sticky top-24 flex flex-col gap-8">
-                                <div className="bg-gray-900 rounded-2xl p-6 border border-white/5 shadow-xl">
-                                    <h3 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center justify-between">Screenshots <span className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">{game.gallery.length + (game.videoUrl ? 1 : 0)}</span></h3>
+                        <aside className="lg:col-span-4 relative space-y-8">
+                            <div className="sticky top-24 space-y-8">
+                                <div className="bg-gray-900/80 backdrop-blur-md rounded-3xl p-6 border border-white/5 shadow-2xl">
+                                    <h3 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-4">Screenshots</h3>
                                     <div className="grid grid-cols-2 gap-3">
                                         {game.gallery.slice(0, 4).map((img, index) => (
-                                            <button key={index} onClick={() => openLightbox(game.videoUrl ? index + 1 : index)} className="relative aspect-video rounded-lg overflow-hidden border border-gray-800 group hover:border-purple-500 transition-colors">
-                                                <Image src={img} alt={`${game.title} screenshot ${index + 1}`} fill sizes="200px" className="object-cover transition-transform duration-500 group-hover:scale-110" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            <button key={index} onClick={() => openLightbox(game.videoUrl ? index + 1 : index)} className="relative aspect-video rounded-xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-colors group bg-black">
+                                                <Image src={img} alt="" fill className="object-cover transition-transform group-hover:scale-110" unoptimized />
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="hidden lg:flex w-full justify-center"><Ad placement="game_vertical" className="shadow-2xl" /></div>
+                                <div className="flex justify-center"><Ad placement="game_vertical" className="w-full" /></div>
                             </div>
-                        </div>
+                        </aside>
                     </div>
                 </div>
             </div>
@@ -335,14 +182,11 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
 
 export const getStaticPaths: GetStaticPaths = async () => {
     const games = await getAllGames();
-    const paths = games.filter(game => game && game.slug).map(game => ({ params: { slug: game.slug } }));
-    return { paths, fallback: 'blocking' };
+    return { paths: games.map(g => ({ params: { slug: g.slug } })), fallback: 'blocking' };
 };
 
-export const getStaticProps: GetStaticProps = async (context) => {
-    const slug = context.params?.slug as string;
-    if (!slug) return { notFound: true };
-    const game = await getGameBySlug(slug);
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+    const game = await getGameBySlug(params?.slug as string);
     if (!game) return { notFound: true };
     return { props: { game }, revalidate: 60 };
 };
