@@ -4,8 +4,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-import { getBlogPostBySlug, getAllBlogPosts, getCommentsByBlogId } from '../../lib/data';
-import { getRelatedFreeDeals } from '../../lib/suggestions';
+import { getBlogPostBySlug, getAllBlogPosts, getCommentsByBlogId, getRelatedBlogs, getPopularBlogs } from '../../lib/data';
 import type { BlogPost, Comment } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -14,13 +13,38 @@ import CommentCard from '../../components/CommentCard';
 import CommentForm from '../../components/CommentForm';
 import ShareBar from '../../components/ShareBar';
 import HtmlContent from '../../components/HtmlContent';
+import BlogCard from '../../components/BlogCard';
 
-interface BlogDetailPageProps { post: BlogPost; comments: Comment[]; }
+interface BlogDetailPageProps { 
+    post: BlogPost; 
+    comments: Comment[]; 
+    relatedBlogs: BlogPost[];
+    popularBlogs: BlogPost[];
+}
 
-const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initialComments }) => {
+const RecommendedSection = ({ title, subtitle, items, accentColor = "bg-blue-500" }: { title: string, subtitle: string, items: BlogPost[], accentColor?: string }) => {
+    if (!items || items.length === 0) return null;
+    return (
+        <section className="mt-20 border-t border-white/5 pt-12">
+            <div className="flex flex-col mb-10">
+                <div className="flex items-center gap-3">
+                    <div className={`w-1.5 h-8 ${accentColor} rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)]`}></div>
+                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">{title}</h3>
+                </div>
+                <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em] ml-5 mt-1">{subtitle}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {items.map(item => (
+                    <BlogCard key={item.id} post={item} />
+                ))}
+            </div>
+        </section>
+    );
+};
+
+const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initialComments, relatedBlogs, popularBlogs }) => {
     const router = useRouter();
     const [comments, setComments] = useState<Comment[]>(initialComments);
-    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
 
     useEffect(() => {
         if (router.isReady && post.slug && process.env.NODE_ENV === 'production') {
@@ -30,8 +54,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                 body: JSON.stringify({ type: 'blogs', slug: post.slug }),
             }).catch(console.error);
         }
-        getRelatedFreeDeals(post.category).then(setRelatedDeals);
-    }, [router.isReady, post.slug, post.category]);
+    }, [router.isReady, post.slug]);
 
     if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading...</div>;
 
@@ -88,6 +111,9 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                                     <a href={post.affiliateUrl} target="_blank" rel="noopener" className="inline-flex items-center gap-2 px-10 py-4 font-black text-white uppercase tracking-widest text-sm bg-purple-600 rounded-xl hover:shadow-[0_0_25px_rgba(147,51,234,0.5)] transition-all transform active:scale-95">View Product</a>
                                 </div>
                             )}
+
+                            <RecommendedSection title="Related Articles" subtitle="More from this topic" items={relatedBlogs} />
+                            <RecommendedSection title="Popular Reads" subtitle="Trending community content" items={popularBlogs} accentColor="bg-pink-500" />
                             
                             <div className="mt-16 pt-10 border-t border-white/5">
                                 <h2 className="text-3xl font-black text-white mb-8 flex items-center gap-3"><span className="w-1 h-8 bg-blue-500 rounded-full"></span>Community <span className="text-gray-600 text-xl font-bold">({comments.length})</span></h2>
@@ -115,7 +141,11 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     const post = await getBlogPostBySlug(params?.slug as string);
     if (!post) return { notFound: true };
     const comments = await getCommentsByBlogId(post.id);
-    return { props: { post, comments }, revalidate: 60 };
+    
+    const related = await getRelatedBlogs(post.id, post.category, 3);
+    const popular = await getPopularBlogs(post.id, 3);
+    
+    return { props: { post, comments, relatedBlogs: related, popularBlogs: popular }, revalidate: 60 };
 };
 
 export default BlogDetailPage;

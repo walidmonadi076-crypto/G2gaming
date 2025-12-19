@@ -4,12 +4,12 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-import { getGameBySlug, getAllGames } from '../../lib/data';
-import { getRelatedFreeDeals } from '../../lib/suggestions'; 
+import { getGameBySlug, getAllGames, getRelatedGames, getTrendingGames } from '../../lib/data';
 import type { Game } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
+import GameCard from '../../components/GameCard';
 import { getEmbedUrl } from '../../lib/utils';
 import HtmlContent from '../../components/HtmlContent';
 
@@ -20,15 +20,38 @@ declare global {
     }
 }
 
-interface GameDetailPageProps { game: Game; }
+interface GameDetailPageProps { 
+    game: Game; 
+    similarGames: Game[]; 
+    trendingGames: Game[]; 
+}
 
-const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
+const RecommendedSection = ({ title, subtitle, items, accentColor = "bg-purple-600" }: { title: string, subtitle: string, items: Game[], accentColor?: string }) => {
+    if (!items || items.length === 0) return null;
+    return (
+        <section className="mt-20 border-t border-white/5 pt-12">
+            <div className="flex flex-col mb-10">
+                <div className="flex items-center gap-3">
+                    <div className={`w-1.5 h-8 ${accentColor} rounded-full shadow-[0_0_15px_rgba(168,85,247,0.4)]`}></div>
+                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">{title}</h3>
+                </div>
+                <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em] ml-5 mt-1">{subtitle}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {items.map(item => (
+                    <GameCard key={item.id} game={item} />
+                ))}
+            </div>
+        </section>
+    );
+};
+
+const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames, trendingGames }) => {
     const router = useRouter();
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [isOgadsReady, setIsOgadsReady] = useState(false);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
-    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
 
     const embedUrl = useMemo(() => getEmbedUrl(game.videoUrl), [game.videoUrl]);
 
@@ -53,8 +76,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                 body: JSON.stringify({ type: 'games', slug: game.slug }),
             }).catch(console.error);
         }
-        getRelatedFreeDeals(game.category).then(setRelatedDeals);
-    }, [router.isReady, game.slug, game.category]);
+    }, [router.isReady, game.slug]);
 
     useEffect(() => {
         window.onLockerUnlock = () => setIsUnlocked(true);
@@ -173,6 +195,9 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game }) => {
                             </div>
                         </aside>
                     </div>
+
+                    <RecommendedSection title="Similar Games" subtitle="Explore more in this genre" items={similarGames} />
+                    <RecommendedSection title="Trending Now" subtitle="What everyone is playing" items={trendingGames} accentColor="bg-blue-500" />
                 </div>
             </div>
             {lightboxOpen && <Lightbox items={mediaItems} startIndex={lightboxIndex} onClose={() => setLightboxOpen(false)} />}
@@ -188,7 +213,11 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
     const game = await getGameBySlug(params?.slug as string);
     if (!game) return { notFound: true };
-    return { props: { game }, revalidate: 60 };
+    
+    const similar = await getRelatedGames(game.id, game.category);
+    const trending = await getTrendingGames(game.id);
+    
+    return { props: { game, similarGames: similar, trendingGames: trending }, revalidate: 60 };
 };
 
 export default GameDetailPage;

@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-import { getProductBySlug, getAllProducts } from '../../lib/data';
+import { getProductBySlug, getAllProducts, getRelatedProducts, getTrendingProducts } from '../../lib/data';
 import type { Product } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
@@ -12,7 +12,31 @@ import Lightbox from '../../components/Lightbox';
 import StoreItemCard from '../../components/StoreItemCard';
 import HtmlContent from '../../components/HtmlContent';
 
-interface ProductDetailPageProps { product: Product; relatedProducts: Product[]; othersViewed: Product[]; }
+interface ProductDetailPageProps { 
+    product: Product; 
+    relatedProducts: Product[]; 
+    othersViewed: Product[]; 
+}
+
+const RecommendedSection = ({ title, subtitle, items, accentColor = "bg-green-500" }: { title: string, subtitle: string, items: Product[], accentColor?: string }) => {
+    if (!items || items.length === 0) return null;
+    return (
+        <section className="mt-24 border-t border-white/5 pt-12">
+            <div className="flex flex-col mb-10">
+                <div className="flex items-center gap-3">
+                    <div className={`w-1.5 h-8 ${accentColor} rounded-full shadow-[0_0_15px_rgba(34,197,94,0.4)]`}></div>
+                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">{title}</h3>
+                </div>
+                <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em] ml-5 mt-1">{subtitle}</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {items.map(item => (
+                    <StoreItemCard key={item.id} product={item} />
+                ))}
+            </div>
+        </section>
+    );
+};
 
 const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedProducts, othersViewed }) => {
     const router = useRouter();
@@ -94,6 +118,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                             </div>
                         </div>
                     </div>
+                    
+                    <RecommendedSection title="Related Products" subtitle="You may also like" items={relatedProducts} />
+                    <RecommendedSection title="Others Also Viewed" subtitle="Trending in this category" items={othersViewed} />
                 </div>
             </div>
             {lightboxOpen && <Lightbox items={mediaItems} startIndex={lightboxIndex} onClose={() => setLightboxOpen(false)} />}
@@ -109,9 +136,10 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
     const product = await getProductBySlug(params?.slug as string);
     if (!product) return { notFound: true };
-    const all = await getAllProducts();
-    const related = all.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4);
-    const viewed = all.filter(p => p.id !== product.id).sort(() => 0.5 - Math.random()).slice(0, 4);
+    
+    const related = await getRelatedProducts(product.id, product.category);
+    const viewed = await getTrendingProducts(product.id);
+    
     return { props: { product, relatedProducts: related, othersViewed: viewed }, revalidate: 60 };
 };
 
