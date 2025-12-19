@@ -23,7 +23,6 @@ const RichTextEditor: React.FC<{
 }> = ({ value, onChange, label, id }) => {
     const [mode, setMode] = useState<'visual' | 'html'>('visual');
     const editorRef = useRef<HTMLDivElement>(null);
-    const lastValue = useRef(value);
 
     useEffect(() => {
         if (mode === 'visual' && editorRef.current && value !== editorRef.current.innerHTML) {
@@ -33,9 +32,7 @@ const RichTextEditor: React.FC<{
 
     const handleInput = () => {
         if (editorRef.current) {
-            const html = editorRef.current.innerHTML;
-            lastValue.current = html;
-            onChange(html);
+            onChange(editorRef.current.innerHTML);
         }
     };
 
@@ -62,7 +59,6 @@ const RichTextEditor: React.FC<{
                             <div className="w-px h-4 bg-gray-700 mx-1"></div>
                             <button type="button" onClick={() => execCommand('insertUnorderedList')} className="px-3 h-8 hover:bg-gray-700 rounded text-[10px] font-black uppercase">List •</button>
                             <button type="button" onClick={() => { const url = prompt("URL:"); if(url) execCommand('createLink', url); }} className="px-3 h-8 text-blue-400 hover:bg-gray-700 rounded text-[10px] font-black uppercase">Link</button>
-                            <button type="button" onClick={() => execCommand('removeFormat')} className="w-8 h-8 flex items-center justify-center hover:bg-red-900/30 text-red-500 rounded" title="Clear">🗑</button>
                         </div>
                         <div ref={editorRef} contentEditable onInput={handleInput} className="flex-grow p-5 text-gray-200 outline-none prose prose-invert prose-sm max-w-none focus:bg-white/[0.02] transition-colors" />
                     </>
@@ -128,9 +124,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-gray-900/50">
             <div>
                 <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{item ? 'Update' : 'Create'} {type.replace('-', ' ')}</h2>
-                <div className="text-[10px] font-mono text-purple-400 mt-1 uppercase tracking-widest">
-                    URL: /{(type==='products'?'shop':type==='blogs'?'blog':type)}/{formData.slug || '...'}
-                </div>
             </div>
             <div className="flex gap-4">
               <button type="button" onClick={onClose} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Cancel</button>
@@ -166,14 +159,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                         {renderBasicField('rating', 'Rating (0-100)')}
                     </div>
                     <RichTextEditor id="desc" label="Game Description" value={formData.description} onChange={v=>setField('description', v)} />
-                    <div className="p-6 bg-gray-900/80 rounded-3xl border border-white/5 space-y-4">
-                        <h4 className="text-xs font-black uppercase text-gray-500 border-b border-white/5 pb-2">System Specs</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <input placeholder="OS" value={formData.requirements?.os} onChange={e=>setField('requirements', {...formData.requirements, os:e.target.value})} className="bg-transparent border-b border-gray-700 text-sm py-1 outline-none focus:border-purple-500" />
-                            <input placeholder="RAM" value={formData.requirements?.ram} onChange={e=>setField('requirements', {...formData.requirements, ram:e.target.value})} className="bg-transparent border-b border-gray-700 text-sm py-1 outline-none focus:border-purple-500" />
-                            <input placeholder="Disk" value={formData.requirements?.storage} onChange={e=>setField('requirements', {...formData.requirements, storage:e.target.value})} className="bg-transparent border-b border-gray-700 text-sm py-1 outline-none focus:border-purple-500 col-span-2" />
-                        </div>
-                    </div>
                     <AIHelperPanel contextType="game" onApplyLongDescription={v=>setField('description', v)} />
                 </>
             )}
@@ -181,7 +166,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                 <>
                     <input type="text" value={formData.title} onChange={handleTitleChange} className="text-3xl font-black bg-transparent border-b border-gray-700 w-full outline-none focus:border-purple-500 uppercase tracking-tighter" placeholder="Article Title..." />
                     {renderBasicField('imageUrl', 'Banner URL')}
-                    {renderBasicField('videoUrl', 'Video URL (Optional)', '', false)}
                     <RichTextEditor id="cont" label="Article Content" value={formData.content} onChange={v=>setField('content', v)} />
                     <AIHelperPanel contextType="blog" onApplyLongDescription={v=>setField('content', v)} />
                 </>
@@ -194,9 +178,24 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                         {renderBasicField('category', 'Category')}
                     </div>
                     {renderBasicField('imageUrl', 'Main Image URL')}
-                    {renderBasicField('videoUrl', 'YouTube/Video URL (Optional)', '', false)}
                     <RichTextEditor id="pdesc" label="Product Details" value={formData.description} onChange={v=>setField('description', v)} />
                 </>
+            )}
+            {type === 'social-links' && (
+                <div className="space-y-6">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Social Connection</h3>
+                    {renderBasicField('name', 'Link Name (e.g. Discord, YouTube)')}
+                    {renderBasicField('url', 'Target URL')}
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">SVG Icon Code</label>
+                        <textarea 
+                            value={formData.icon_svg} 
+                            onChange={e=>setField('icon_svg', e.target.value)} 
+                            className="w-full h-48 bg-gray-900 border border-gray-700 rounded-xl p-4 font-mono text-xs text-blue-300 outline-none focus:border-purple-500" 
+                            placeholder='<svg ...>...</svg>'
+                        />
+                    </div>
+                </div>
             )}
           </div>
           <div className="hidden lg:block h-full"><AdminPreview data={formData} type={type} /></div>

@@ -187,6 +187,22 @@ export default function AdminPanel() {
     if (res.ok) { addToast('Category optimized.', 'success'); refreshCurrentTab(); }
   };
 
+  const handleSuggestIcon = async (cat: CategorySetting) => {
+    try {
+        const csrf = getCookie('csrf_token');
+        const res = await fetch(`${API_BASE}/api/admin/ai/suggest-icon`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf || '' },
+            body: JSON.stringify({ categoryName: cat.name, section: cat.section })
+        });
+        if (res.ok) {
+            const { iconName } = await res.json();
+            handleUpdateCategory({ ...cat, icon_name: iconName });
+            addToast(`Magic: Suggested ${iconName} for ${cat.name}`, 'success');
+        }
+    } catch (e) { addToast('AI could not suggest icon.', 'error'); }
+  };
+
   const handleApproveComment = async (id: number) => {
     const csrf = getCookie('csrf_token');
     const res = await fetch(`${API_BASE}/api/admin/comments`, {
@@ -210,7 +226,6 @@ export default function AdminPanel() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
              </div>
              <h1 className="text-3xl font-black uppercase tracking-tighter">System Auth</h1>
-             <p className="text-gray-500 text-[10px] mt-1 uppercase tracking-widest font-black">Control Level 1 Access</p>
           </div>
           <form onSubmit={async (e) => {
               e.preventDefault();
@@ -309,11 +324,19 @@ export default function AdminPanel() {
                                 </div>
                             </div>
                             <div className="space-y-6">
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b border-white/5 pb-2">Hero Section</h3>
+                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b border-white/5 pb-2">Promo Banner</h3>
                                 <div className="space-y-4">
-                                    <input type="text" value={settings.hero_title} onChange={e=>setSettings({...settings, hero_title:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Hero Title (HTML ok)" />
-                                    <textarea value={settings.hero_subtitle} onChange={e=>setSettings({...settings, hero_subtitle:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm h-20" placeholder="Hero Subtitle" />
-                                    <input type="text" value={settings.hero_bg_url} onChange={e=>setSettings({...settings, hero_bg_url:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Hero BG Image URL" />
+                                    <div className="flex items-center gap-4 bg-gray-900 p-4 rounded-xl border border-gray-700">
+                                        <span className="text-xs font-bold uppercase tracking-widest">Enable Promo?</span>
+                                        <button type="button" onClick={()=>setSettings({...settings, promo_enabled: !settings.promo_enabled})} className={`w-12 h-6 rounded-full transition-all relative ${settings.promo_enabled ? 'bg-green-600':'bg-gray-700'}`}>
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.promo_enabled ? 'left-7':'left-1'}`} />
+                                        </button>
+                                    </div>
+                                    <input type="text" value={settings.promo_text} onChange={e=>setSettings({...settings, promo_text:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Promo Text" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input type="text" value={settings.promo_button_text} onChange={e=>setSettings({...settings, promo_button_text:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Button Text" />
+                                        <input type="text" value={settings.promo_button_url} onChange={e=>setSettings({...settings, promo_button_url:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Button URL" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -342,9 +365,12 @@ export default function AdminPanel() {
                                         <td className="p-6 uppercase font-black text-[10px] text-purple-400">{cat.section}</td>
                                         <td className="p-6 font-bold">{cat.name} <span className="text-[10px] text-gray-600 font-bold ml-2">({cat.count} items)</span></td>
                                         <td className="p-6">
-                                            <select value={cat.icon_name} onChange={e=>handleUpdateCategory({...cat, icon_name:e.target.value})} className="bg-gray-900 border border-gray-700 rounded-lg p-1 text-xs">
-                                                {Object.keys(ICON_MAP).map(i=><option key={i} value={i}>{i}</option>)}
-                                            </select>
+                                            <div className="flex items-center gap-2">
+                                                <select value={cat.icon_name} onChange={e=>handleUpdateCategory({...cat, icon_name:e.target.value})} className="bg-gray-900 border border-gray-700 rounded-lg p-1 text-xs">
+                                                    {Object.keys(ICON_MAP).map(i=><option key={i} value={i}>{i}</option>)}
+                                                </select>
+                                                <button onClick={()=>handleSuggestIcon(cat)} className="p-1.5 bg-purple-900/30 text-purple-400 rounded-lg hover:bg-purple-600 hover:text-white transition-all shadow-sm border border-purple-500/20" title="AI Suggest Icon">✨</button>
+                                            </div>
                                         </td>
                                         <td className="p-6">
                                             <button onClick={()=>handleUpdateCategory({...cat, show_in_sidebar: !cat.show_in_sidebar})} className={`w-10 h-5 rounded-full transition-all relative ${cat.show_in_sidebar?'bg-green-600':'bg-gray-700'}`}>
@@ -402,7 +428,7 @@ export default function AdminPanel() {
                                                     <td className="p-6">
                                                         <div className="flex items-center gap-5">
                                                             <div className="w-12 h-12 rounded-xl bg-gray-900 border border-white/10 flex-shrink-0 overflow-hidden relative shadow-lg">
-                                                                {item.imageUrl ? <Image src={item.imageUrl} alt="" fill className="object-cover" unoptimized /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase text-gray-700">NA</div>}
+                                                                {item.imageUrl ? <Image src={item.imageUrl} alt="" fill className="object-cover" unoptimized /> : item.icon_svg ? <div className="w-full h-full flex items-center justify-center p-2 text-purple-500" dangerouslySetInnerHTML={{ __html: item.icon_svg }} /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase text-gray-700">NA</div>}
                                                             </div>
                                                             <div className="flex flex-col">
                                                                 <span className="font-bold text-white group-hover:text-purple-400 transition-colors uppercase tracking-tight text-sm line-clamp-1">{item.title || item.name || (item.text?.slice(0, 30) + '...')}</span>
