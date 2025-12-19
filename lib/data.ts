@@ -58,7 +58,7 @@ export async function getCommentsByBlogId(blogId: number): Promise<Comment[]> {
 export async function getAllProducts(): Promise<Product[]> {
   const result = await query(`
     SELECT 
-        id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, 
+        id, slug, name, image_url AS "imageUrl", video_url AS "videoUrl", '$' || price::text AS price, url, 
         description, gallery, category, is_pinned AS "isPinned", view_count
     FROM products ORDER BY is_pinned DESC, id DESC
   `);
@@ -68,7 +68,7 @@ export async function getAllProducts(): Promise<Product[]> {
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const result = await query(`
     SELECT 
-        id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, 
+        id, slug, name, image_url AS "imageUrl", video_url AS "videoUrl", '$' || price::text AS price, url, 
         description, gallery, category, is_pinned AS "isPinned", view_count
     FROM products WHERE slug = $1
   `, [slug]);
@@ -77,7 +77,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 export async function getRelatedProducts(excludeId: number, category: string, limit: number = 4): Promise<Product[]> {
   const result = await query(`
-    SELECT id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, category
+    SELECT id, slug, name, image_url AS "imageUrl", video_url AS "videoUrl", '$' || price::text AS price, category
     FROM products WHERE id != $1 AND category = $2 LIMIT $3
   `, [excludeId, category, limit]);
   return result.rows;
@@ -85,7 +85,7 @@ export async function getRelatedProducts(excludeId: number, category: string, li
 
 export async function getTrendingProducts(excludeId: number, limit: number = 4): Promise<Product[]> {
   const result = await query(`
-    SELECT id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, category
+    SELECT id, slug, name, image_url AS "imageUrl", video_url AS "videoUrl", '$' || price::text AS price, category
     FROM products WHERE id != $1 ORDER BY view_count DESC LIMIT $2
   `, [excludeId, limit]);
   return result.rows;

@@ -34,6 +34,7 @@ export interface Product {
   slug: string;
   name: string;
   imageUrl: string;
+  videoUrl?: string;
   price: string;
   url: string;
   description: string;

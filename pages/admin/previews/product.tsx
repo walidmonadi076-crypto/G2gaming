@@ -6,12 +6,14 @@ import Ad from '../../../components/Ad';
 import SEO from '../../../components/SEO';
 import Lightbox from '../../../components/Lightbox';
 import StoreItemCard from '../../../components/StoreItemCard';
+import { getEmbedUrl } from '../../../lib/utils';
 
 const ProductPreviewPage: React.FC = () => {
     const [product, setProduct] = useState<Partial<Product>>({
         name: 'Product Preview',
         price: '$0.00',
         imageUrl: 'https://picsum.photos/seed/product-placeholder/400/400',
+        videoUrl: '',
         description: 'Product description will appear here.',
         gallery: [],
         url: '#',
@@ -21,6 +23,8 @@ const ProductPreviewPage: React.FC = () => {
     const [mainImage, setMainImage] = useState<string>('');
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
+
+    const embedUrl = useMemo(() => getEmbedUrl(product.videoUrl), [product.videoUrl]);
 
     // Mock data for bottom sections to simulate full page look
     const mockProducts: Product[] = [
@@ -57,9 +61,13 @@ const ProductPreviewPage: React.FC = () => {
         }
     }, [product, mainImage]);
 
-    const mediaItems = useMemo(() => 
-        (product.gallery || []).map(img => ({ type: 'image' as const, src: img }))
-    , [product.gallery]);
+    const mediaItems = useMemo(() => {
+        const items = [];
+        if (product.videoUrl) items.push({ type: 'video' as const, src: product.videoUrl });
+        (product.gallery || []).forEach(img => items.push({ type: 'image' as const, src: img }));
+        if (items.length === 0 && product.imageUrl) items.push({ type: 'image' as const, src: product.imageUrl });
+        return items;
+    }, [product]);
 
     const openLightbox = (index: number) => {
         setLightboxIndex(index);
@@ -118,22 +126,32 @@ const ProductPreviewPage: React.FC = () => {
                             {/* Main Image Stage */}
                             <button 
                                 className="relative w-full aspect-square md:aspect-[4/3] bg-gray-900 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5 group cursor-zoom-in ring-1 ring-white/5 hover:ring-green-500/50 transition-all duration-500" 
-                                onClick={() => openLightbox(mainImageIndex > -1 ? mainImageIndex : 0)}
+                                onClick={() => openLightbox(0)}
                             >
-                                <Image 
-                                    src={displayMainImage} 
-                                    alt={product.name || ''} 
-                                    fill 
-                                    sizes="(max-width: 768px) 100vw, 800px" 
-                                    className="object-cover transition-transform duration-700 group-hover:scale-110" 
-                                    priority
-                                />
+                                {product.videoUrl ? (
+                                    embedUrl ? (
+                                        <iframe src={embedUrl} className="w-full h-full pointer-events-none" title={product.name} />
+                                    ) : (
+                                        <video src={product.videoUrl} autoPlay muted loop className="w-full h-full object-cover" />
+                                    )
+                                ) : (
+                                    <Image 
+                                        src={displayMainImage} 
+                                        alt={product.name || ''} 
+                                        fill 
+                                        sizes="(max-width: 768px) 100vw, 800px" 
+                                        className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                                        priority
+                                    />
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d]/60 via-transparent to-transparent opacity-60" />
-                                <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <div className="bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/20">
-                                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                                {product.videoUrl && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                                            <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </button>
 
                             {/* Thumbnails */}

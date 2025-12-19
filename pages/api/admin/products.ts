@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest & { method?: string },
       
       const itemsResult = await client.query(`
         SELECT 
-            id, slug, name, image_url AS "imageUrl", '$' || price::text AS price, url, 
+            id, slug, name, image_url AS "imageUrl", video_url AS "videoUrl", '$' || price::text AS price, url, 
             description, gallery, category, view_count, is_pinned AS "isPinned"
         FROM products
         ${whereClause}
@@ -77,16 +77,16 @@ export default async function handler(req: NextApiRequest & { method?: string },
     if (!isAuthorized(req)) return res.status(401).json({ error: 'Non autorisé' });
 
     if (req.method === 'POST') {
-        const { name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
+        const { name, imageUrl, videoUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
         const numericPrice = parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
         const slug = await generateUniqueSlug(client, name);
         
         const result = await client.query(
-            `INSERT INTO products (name, slug, image_url, price, url, description, gallery, category, is_pinned) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [name, slug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false]
+            `INSERT INTO products (name, slug, image_url, video_url, price, url, description, gallery, category, is_pinned) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+            [name, slug, imageUrl, videoUrl || null, numericPrice, url || '#', description, gallery || [], category, isPinned || false]
         );
 
         try {
@@ -97,10 +97,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
         res.status(201).json(result.rows[0]);
 
     } else if (req.method === 'PUT') {
-        const { id, name, imageUrl, price, url, description, gallery, category, isPinned } = req.body;
+        const { id, name, imageUrl, videoUrl, price, url, description, gallery, category, isPinned } = req.body;
         if (!name) return res.status(400).json({ error: 'Le champ "Nom" est obligatoire.' });
 
-        // Get old slug to clear old cache if it changes
         const oldData = await client.query('SELECT slug FROM products WHERE id = $1', [id]);
         const oldSlug = oldData.rows[0]?.slug;
 
@@ -109,9 +108,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
         
         const result = await client.query(
             `UPDATE products 
-            SET name = $1, slug = $2, image_url = $3, price = $4, url = $5, description = $6, gallery = $7, category = $8, is_pinned = $9
-            WHERE id = $10 RETURNING *`,
-            [name, newSlug, imageUrl, numericPrice, url || '#', description, gallery || [], category, isPinned || false, id]
+            SET name = $1, slug = $2, image_url = $3, video_url = $4, price = $5, url = $6, description = $7, gallery = $8, category = $9, is_pinned = $10
+            WHERE id = $11 RETURNING *`,
+            [name, newSlug, imageUrl, videoUrl || null, numericPrice, url || '#', description, gallery || [], category, isPinned || false, id]
         );
       
         if (result.rows.length === 0) {

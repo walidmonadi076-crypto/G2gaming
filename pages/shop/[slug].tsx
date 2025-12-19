@@ -11,6 +11,7 @@ import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
 import StoreItemCard from '../../components/StoreItemCard';
 import HtmlContent from '../../components/HtmlContent';
+import { getEmbedUrl } from '../../lib/utils';
 
 interface ProductDetailPageProps { 
     product: Product; 
@@ -44,7 +45,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
 
-    const mediaItems = useMemo(() => product.gallery.map(img => ({ type: 'image' as const, src: img })), [product.gallery]);
+    const embedUrl = useMemo(() => getEmbedUrl(product.videoUrl), [product.videoUrl]);
+
+    const mediaItems = useMemo(() => {
+        const items = [];
+        if (product.videoUrl) items.push({ type: 'video' as const, src: product.videoUrl });
+        product.gallery.forEach(img => items.push({ type: 'image' as const, src: img }));
+        if (items.length === 0 && product.imageUrl) items.push({ type: 'image' as const, src: product.imageUrl });
+        return items;
+    }, [product]);
 
     useEffect(() => {
         if (router.isReady && product.slug && process.env.NODE_ENV === 'production') {
@@ -79,14 +88,29 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
                         <div className="lg:col-span-7 flex flex-col gap-6">
-                            <button className="relative w-full aspect-square md:aspect-[4/3] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-white/5 group cursor-zoom-in ring-1 ring-white/5 hover:ring-green-500/50 transition-all duration-500" onClick={() => { setLightboxIndex(product.gallery.indexOf(mainImage)); setLightboxOpen(true); }}>
-                                <Image src={displayMainImage} alt={product.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" priority unoptimized />
+                            <button className="relative w-full aspect-square md:aspect-[4/3] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-white/5 group cursor-zoom-in ring-1 ring-white/5 hover:ring-green-500/50 transition-all duration-500" onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}>
+                                {product.videoUrl ? (
+                                    embedUrl ? (
+                                        <iframe src={embedUrl} className="w-full h-full pointer-events-none" title={product.name} allow="autoplay; encrypted-media" />
+                                    ) : (
+                                        <video src={product.videoUrl} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+                                    )
+                                ) : (
+                                    <Image src={displayMainImage} alt={product.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" priority unoptimized />
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d]/60 via-transparent to-transparent opacity-60" />
+                                {product.videoUrl && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform group-hover:scale-110 transition-transform">
+                                            <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                        </div>
+                                    </div>
+                                )}
                             </button>
-                            {product.gallery.length > 1 && (
+                            {product.gallery.length > 0 && (
                                 <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
                                     {product.gallery.map((img, index) => (
-                                        <button key={index} onClick={() => setMainImage(img)} className={`relative flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 snap-start ${mainImage === img ? 'border-green-500 shadow-lg scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+                                        <button key={index} onClick={() => { setMainImage(img); if(product.videoUrl) setLightboxIndex(index+1); else setLightboxIndex(index); }} className={`relative flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 snap-start ${mainImage === img && !product.videoUrl ? 'border-green-500 shadow-lg scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}>
                                             <Image src={img} alt="" fill className="object-cover" unoptimized />
                                         </button>
                                     ))}

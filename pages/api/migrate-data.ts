@@ -62,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS downloads_count INTEGER DEFAULT 1000`);
     await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE`);
 
-    // ... (Keep existing blog/product/comment table creation logic) ...
     await client.query(`
       CREATE TABLE IF NOT EXISTS blog_posts (
         id SERIAL PRIMARY KEY,
@@ -90,6 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         slug VARCHAR(255) UNIQUE NOT NULL,
         name VARCHAR(255) NOT NULL,
         image_url TEXT,
+        video_url TEXT,
         price DECIMAL(10, 2),
         url TEXT,
         description TEXT,
@@ -101,6 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `);
     
     await client.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE`);
+    await client.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS video_url TEXT`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS comments (
@@ -170,9 +171,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const product of PRODUCTS_DATA) {
       const numericPrice = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
       await client.query(
-        `INSERT INTO products (id, slug, name, image_url, price, url, description, gallery, category, is_pinned) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [product.id, product.slug, product.name, product.imageUrl, numericPrice, product.url, product.description, product.gallery, product.category, false]
+        `INSERT INTO products (id, slug, name, image_url, video_url, price, url, description, gallery, category, is_pinned) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [product.id, product.slug, product.name, product.imageUrl, product.videoUrl || null, numericPrice, product.url, product.description, product.gallery, product.category, false]
       );
     }
 

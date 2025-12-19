@@ -79,7 +79,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const [categories, setCategories] = useState<string[]>([]);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [galleryInput, setGalleryInput] = useState('');
 
   useEffect(() => {
     if (type === 'games') fetch('/api/meta/categories').then(res => res.json()).then(setCategories);
@@ -94,7 +93,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       const defaults = {
         games: { title: '', imageUrl: '', iconUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [], platform: 'pc', requirements: { os: '', ram: '', storage: '' } },
         blogs: { title: '', summary: '', imageUrl: '', author: 'Admin', content: '', category: '' },
-        products: { name: '', imageUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
+        products: { name: '', imageUrl: '', videoUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
         'social-links': { name: '', url: '', icon_svg: '' },
       };
       setFormData(defaults[type]);
@@ -154,6 +153,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                         </div>
                     </div>
                     {renderBasicField('imageUrl', 'Cover Image URL')}
+                    {renderBasicField('videoUrl', 'YouTube/Video URL', 'https://youtube.com/watch?v=...', false)}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="flex items-center gap-3 bg-gray-900 p-4 rounded-2xl border border-gray-700 cursor-pointer" onClick={()=>setIsFeatured(!isFeatured)}>
                             <div className={`w-5 h-5 rounded-md border-2 transition-colors ${isFeatured?'bg-purple-500 border-purple-500':'border-gray-600'}`} />
@@ -181,6 +181,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                 <>
                     <input type="text" value={formData.title} onChange={handleTitleChange} className="text-3xl font-black bg-transparent border-b border-gray-700 w-full outline-none focus:border-purple-500 uppercase tracking-tighter" placeholder="Article Title..." />
                     {renderBasicField('imageUrl', 'Banner URL')}
+                    {renderBasicField('videoUrl', 'Video URL (Optional)', '', false)}
                     <RichTextEditor id="cont" label="Article Content" value={formData.content} onChange={v=>setField('content', v)} />
                     <AIHelperPanel contextType="blog" onApplyLongDescription={v=>setField('content', v)} />
                 </>
@@ -192,7 +193,8 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                         {renderBasicField('price', 'Price ($)')}
                         {renderBasicField('category', 'Category')}
                     </div>
-                    {renderBasicField('imageUrl', 'Main Image')}
+                    {renderBasicField('imageUrl', 'Main Image URL')}
+                    {renderBasicField('videoUrl', 'YouTube/Video URL (Optional)', '', false)}
                     <RichTextEditor id="pdesc" label="Product Details" value={formData.description} onChange={v=>setField('description', v)} />
                 </>
             )}
