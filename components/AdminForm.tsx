@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { Game, BlogPost, Product, SocialLink } from '../types';
 import AdminPreview from './AdminPreview'; 
@@ -87,7 +86,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       if (type === 'games') setIsFeatured((item as Game).tags?.includes('Featured') || false);
     } else {
       const defaults = {
-        games: { title: '', imageUrl: '', iconUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [], platform: 'pc', requirements: { os: '', ram: '', storage: '' } },
+        games: { title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [], platform: 'pc', requirements: { os: '', ram: '', storage: '' } },
         blogs: { title: '', summary: '', imageUrl: '', author: 'Admin', content: '', category: '' },
         products: { name: '', imageUrl: '', videoUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
         'social-links': { name: '', url: '', icon_svg: '' },
@@ -145,7 +144,11 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                             <input list="cats" value={formData.category} onChange={e=>setField('category', e.target.value)} required className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm" /><datalist id="cats">{categories.map(c=><option key={c} value={c}/>)}</datalist>
                         </div>
                     </div>
-                    {renderBasicField('imageUrl', 'Cover Image URL')}
+                    {renderBasicField('imageUrl', 'Cover Image URL (Sidebar Icon)')}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {renderBasicField('iconUrl', 'Game Logo (PNG/Transparent)', 'Link to Logo Image', false)}
+                        {renderBasicField('backgroundUrl', 'Hero Background', 'Large landscape image', false)}
+                    </div>
                     {renderBasicField('videoUrl', 'YouTube/Video URL', 'https://youtube.com/watch?v=...', false)}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="flex items-center gap-3 bg-gray-900 p-4 rounded-2xl border border-gray-700 cursor-pointer" onClick={()=>setIsFeatured(!isFeatured)}>
