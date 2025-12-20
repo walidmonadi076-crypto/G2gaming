@@ -180,6 +180,22 @@ export default function AdminPanel() {
     else addToast('Configuration error.', 'error');
   };
 
+  const handleDeleteItem = async (id: number) => {
+    if (!window.confirm("⚠️ ATTENTION: Are you sure you want to permanently delete this item? This action cannot be undone.")) return;
+    
+    const csrf = getCookie('csrf_token');
+    const res = await fetch(`${API_BASE}/api/admin/${activeTab}?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': csrf || '' }
+    });
+    if (res.ok) {
+        addToast('Entity purged from system.', 'success');
+        refreshCurrentTab();
+    } else {
+        addToast('Failed to delete entity.', 'error');
+    }
+  };
+
   const handleUpdateCategory = async (cat: CategorySetting) => {
     const csrf = getCookie('csrf_token');
     const res = await fetch(`${API_BASE}/api/admin/categories`, {
@@ -443,23 +459,28 @@ export default function AdminPanel() {
                                             <td className="px-8 py-6 font-mono text-xs text-gray-600">#{item.id}</td>
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
-                                                    {item.imageUrl && (
+                                                    {(item.imageUrl || item.avatarUrl) && (
                                                         <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 relative shrink-0">
-                                                            <Image src={item.imageUrl} alt="" fill className="object-cover" unoptimized />
+                                                            <Image src={item.imageUrl || item.avatarUrl} alt="" fill className="object-cover" unoptimized />
                                                         </div>
                                                     )}
-                                                    <span className="font-bold text-gray-200 uppercase tracking-wide truncate max-w-xs">{item.title || item.name || item.text}</span>
+                                                    <span className="font-bold text-gray-200 uppercase tracking-wide truncate max-w-xs">{item.title || item.name || item.text || item.author}</span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className="px-3 py-1 bg-gray-800 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/5">{item.category || item.status || 'Active'}</span>
+                                                <span className={`px-3 py-1 bg-gray-800 text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/5 ${item.status === 'pending' ? 'text-yellow-500' : 'text-gray-500'}`}>
+                                                    {item.category || item.status || (activeTab === 'social-links' ? 'Live' : 'Active')}
+                                                </span>
                                             </td>
                                             <td className="px-8 py-6 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     {activeTab === 'comments' && item.status === 'pending' && (
-                                                        <button onClick={() => handleApproveComment(item.id)} className="p-3 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-xl transition-all border border-green-500/20"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg></button>
+                                                        <button onClick={() => handleApproveComment(item.id)} className="p-3 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-xl transition-all border border-green-500/20" title="Approve"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg></button>
                                                     )}
-                                                    <button onClick={() => { setEditingItem(item); setShowForm(true); }} className="p-3 bg-gray-800 hover:bg-purple-600 text-gray-400 hover:text-white rounded-xl transition-all border border-white/5"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                                                    {activeTab !== 'comments' && (
+                                                        <button onClick={() => { setEditingItem(item); setShowForm(true); }} className="p-3 bg-gray-800 hover:bg-purple-600 text-gray-400 hover:text-white rounded-xl transition-all border border-white/5" title="Edit"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                                                    )}
+                                                    <button onClick={() => handleDeleteItem(item.id)} className="p-3 bg-red-900/20 hover:bg-red-600 text-red-500 hover:text-white rounded-xl transition-all border border-red-500/20" title="Delete"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                                                 </div>
                                             </td>
                                         </tr>
