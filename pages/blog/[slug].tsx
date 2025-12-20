@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -76,9 +75,13 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
-                        <aside className="hidden lg:block lg:col-span-2"><div className="sticky top-24"><Ad placement="blog_skyscraper_left" /></div></aside>
+                        <aside className="hidden lg:block lg:col-span-2 relative z-20">
+                            <div className="sticky top-24">
+                                <Ad placement="blog_skyscraper_left" className="mx-auto" />
+                            </div>
+                        </aside>
                         
-                        <main className="col-span-12 lg:col-span-8 max-w-4xl mx-auto w-full">
+                        <main className="col-span-12 lg:col-span-8 max-w-4xl mx-auto w-full relative z-10">
                             <header className="mb-10 text-center md:text-left">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-900/30 border border-purple-500/30 text-purple-300 text-xs font-bold uppercase tracking-wider mb-6">{post.category}</div>
                                 <h1 className="text-4xl md:text-6xl font-black text-white mb-6 uppercase tracking-tighter leading-none drop-shadow-xl">{post.title}</h1>
@@ -124,7 +127,11 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ post, comments: initial
                             </div>
                         </main>
 
-                        <aside className="hidden lg:block lg:col-span-2 space-y-8"><div className="sticky top-24"><Ad placement="blog_skyscraper_right" /></div></aside>
+                        <aside className="hidden lg:block lg:col-span-2 relative z-20">
+                            <div className="sticky top-24 space-y-8">
+                                <Ad placement="blog_skyscraper_right" className="mx-auto" />
+                            </div>
+                        </aside>
                     </div>
                 </div>
             </div>
