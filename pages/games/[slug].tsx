@@ -1,229 +1,251 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GetStaticPaths, GetStaticProps } from 'next';
-import { getGameBySlug, getAllGames, getRelatedGames, getTrendingGames } from '../../lib/data';
+import { getGameBySlug, getAllGames, getRelatedGames } from '../../lib/data';
 import type { Game } from '../../types';
-import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
-import Lightbox from '../../components/Lightbox';
-import GameCard from '../../components/GameCard';
-import GameCarousel from '../../components/GameCarousel';
-import { getEmbedUrl } from '../../lib/utils';
 import HtmlContent from '../../components/HtmlContent';
 
 declare global {
     interface Window { 
-        // FIX: Made og_load optional to match declaration in _app.tsx to resolve TypeScript modifiers mismatch error.
         og_load?: () => void;
-        onLockerUnlock?: () => void;
     }
 }
 
 interface GameDetailPageProps { 
     game: Game; 
     similarGames: Game[]; 
-    trendingGames: Game[]; 
 }
 
-const RecommendedSection = ({ title, subtitle, items, accentColor = "bg-purple-600" }: { title: string, subtitle: string, items: Game[], accentColor?: string }) => {
-    if (!items || items.length === 0) return null;
-    return (
-        <section className="mt-20 border-t border-white/5 pt-12">
-            <div className="flex flex-col mb-10">
-                <div className="flex items-center gap-3">
-                    <div className={`w-1.5 h-8 ${accentColor} rounded-full shadow-[0_0_15px_rgba(168,85,247,0.4)]`}></div>
-                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">{title}</h3>
-                </div>
-                <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em] ml-5 mt-1">{subtitle}</p>
-            </div>
-            <GameCarousel games={items} xmbEffect={true} />
-        </section>
-    );
-};
-
-const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames, trendingGames }) => {
+const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) => {
     const router = useRouter();
-    const [isUnlocked, setIsUnlocked] = useState(false);
-    const [isOgadsReady, setIsOgadsReady] = useState(false);
-    const [lightboxOpen, setLightboxOpen] = useState(false);
-    const [lightboxIndex, setLightboxIndex] = useState(0);
-
-    const embedUrl = useMemo(() => getEmbedUrl(game.videoUrl), [game.videoUrl]);
-
-    // Check persistence on mount
-    useEffect(() => {
-        if (game.slug) {
-            const unlocked = sessionStorage.getItem(`unlocked_${game.slug}`);
-            if (unlocked === 'true') {
-                setIsUnlocked(true);
-            }
-        }
-    }, [game.slug]);
+    const [currentTime, setCurrentTime] = useState('');
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        // Global listener for OGAds unlock event
-        const handleUnlock = () => {
-            if (game.slug) {
-                sessionStorage.setItem(`unlocked_${game.slug}`, 'true');
-                // Force reload to bypass SPA state complexities and show download
-                window.location.reload(); 
-            }
+        const updateClock = () => {
+            const now = new Date();
+            setCurrentTime(now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
         };
+        updateClock();
+        const timer = setInterval(updateClock, 1000);
+        setIsLoaded(true);
+        return () => clearInterval(timer);
+    }, []);
 
-        window.addEventListener("ogads_unlocked", handleUnlock);
-        
-        // Handle standard locker callback if provided via window
-        window.onLockerUnlock = handleUnlock;
-
-        if (typeof window.og_load === 'function') {
-            setIsOgadsReady(true);
-        } else {
-            const int = setInterval(() => { 
-                if (typeof window.og_load === 'function') { 
-                    setIsOgadsReady(true); 
-                    clearInterval(int); 
-                } 
-            }, 200);
-            return () => clearInterval(int);
-        }
-
-        return () => { 
-            window.removeEventListener("ogads_unlocked", handleUnlock);
-            delete window.onLockerUnlock; 
-        };
-    }, [game.slug]);
-
-    const mediaItems = useMemo(() => {
-        const items = [];
-        if (game.videoUrl) items.push({ type: 'video' as const, src: game.videoUrl });
-        game.gallery.forEach(img => items.push({ type: 'image' as const, src: img }));
-        if (items.length === 0 && game.imageUrl) items.push({ type: 'image' as const, src: game.imageUrl });
-        return items;
-    }, [game]);
-    
-    const openLightbox = (index: number) => {
-        setLightboxIndex(index);
-        setLightboxOpen(true);
-    };
-
-    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading...</div>;
-
-    const handleVerificationClick = (e: React.MouseEvent) => {
+    const handlePlayClick = (e: React.MouseEvent) => {
         e.preventDefault();
-        // FIX: Safe access to og_load since it's now marked optional in global Window interface.
-        if (isOgadsReady && typeof window.og_load === 'function') {
+        if (typeof window.og_load === 'function') {
             window.og_load();
         } else {
-            alert("Verification service is initializing. Please wait a moment.");
+            window.open(game.downloadUrl, '_blank');
         }
     };
+
+    if (router.isFallback) return <div className="min-h-screen bg-black" />;
+
+    const hoursPlayed = Math.floor((game.view_count || 0) / 4) + 12;
+    const completionRate = game.rating || 98;
 
     return (
         <>
-            <SEO title={game.title} description={game.description.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} url={`/games/${game.slug}`} />
+            <SEO title={game.title} description={game.description.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-white font-sans selection:bg-purple-500 pb-20 relative">
-                {game.backgroundUrl && (
-                    <div className="fixed top-0 left-0 w-full h-[800px] z-0">
-                        <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-30" priority />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d]/80 to-transparent" />
-                    </div>
-                )}
+            <div className={`min-h-screen bg-black text-white font-sans selection:bg-purple-500 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                
+                {/* 1. FIXED BACKGROUND LAYER */}
+                <div className="fixed inset-0 z-0 scale-105 overflow-hidden">
+                    <Image 
+                        src={game.backgroundUrl || game.imageUrl} 
+                        alt="" 
+                        fill 
+                        className="object-cover opacity-50 brightness-[0.3] transition-transform duration-[20s] animate-slow-zoom"
+                        priority
+                        unoptimized
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60" />
+                </div>
 
-                <div className="relative z-10 max-w-[1400px] mx-auto px-4 pt-8">
-                    <div className="mb-8">
-                        <Link href={`/games?platform=${game.platform || 'pc'}`} className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
-                            <span className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500/20 transition-all">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
-                            </span>
-                            Back to Library
-                        </Link>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-                        <div className="lg:col-span-8 space-y-10">
-                            <div className="relative w-full aspect-video bg-gray-900 rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
-                                <button className="w-full h-full relative block cursor-zoom-in" onClick={() => openLightbox(0)}>
-                                    {game.videoUrl ? (
-                                        embedUrl ? <iframe src={embedUrl} className="w-full h-full pointer-events-none" title={game.title} allow="autoplay; encrypted-media" /> 
-                                        : <video src={game.videoUrl} autoPlay muted loop playsInline className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                    ) : <Image src={game.gallery[0] || game.imageUrl} alt={game.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" priority unoptimized />}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-transparent to-transparent opacity-80" />
-                                </button>
+                {/* 2. DYNAMIC CONTENT WRAPPER */}
+                <div className="relative z-10">
+                    
+                    {/* TOP NAVIGATION */}
+                    <header className="flex items-center justify-between px-8 md:px-16 pt-10">
+                        <div className="flex items-center gap-14">
+                            <button onClick={() => router.push('/games')} className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center border border-white/20 backdrop-blur-xl hover:bg-white/20 transition-all group">
+                                 <svg className="w-6 h-6 text-white group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <nav className="hidden md:flex items-center gap-12">
+                                <Link href="/games" className="text-2xl font-black tracking-tighter border-b-[5px] border-white pb-1.5 px-1">Games</Link>
+                                <Link href="/blog" className="text-2xl font-bold tracking-tighter text-white/40 hover:text-white transition-all">Media</Link>
+                            </nav>
+                        </div>
+                        <div className="flex items-center gap-6 md:gap-8 text-white/80">
+                            <button className="p-2 rounded-full hover:bg-white/10 transition-all"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+                            <div className="w-11 h-11 rounded-full border-2 border-green-500 overflow-hidden relative shadow-lg">
+                                 <Image src="https://i.pravatar.cc/100?u=g2gaming" alt="User" fill className="object-cover" />
                             </div>
+                            <span className="text-2xl font-black tracking-tighter tabular-nums">{currentTime}</span>
+                        </div>
+                    </header>
 
-                            <div className="space-y-6">
-                                <div className="flex flex-wrap gap-2">
-                                    <span className="px-3 py-1 rounded-full bg-purple-900/30 text-purple-400 text-[10px] font-black uppercase tracking-widest border border-purple-500/30">{game.category}</span>
-                                    {game.tags?.map(tag => <span key={tag} className="px-3 py-1 rounded-full bg-gray-800 text-gray-300 text-[10px] font-black uppercase tracking-widest border border-gray-700">{tag}</span>)}
+                    {/* HERO AREA (Dashboard View) */}
+                    <div className="px-8 md:px-16 mt-12 flex flex-col min-h-[85vh] justify-between pb-12">
+                        
+                        {/* Game Strips (Icons) */}
+                        <div className="flex items-center gap-5 overflow-visible">
+                            <div className="relative group flex-shrink-0">
+                                <div className="w-28 h-28 md:w-32 md:h-32 rounded-[2rem] overflow-hidden border-[5px] border-white shadow-[0_0_60px_rgba(255,255,255,0.4)] transform scale-110 z-10 relative bg-gray-900">
+                                    <Image src={game.imageUrl} alt="" fill className="object-cover" unoptimized />
                                 </div>
-
-                                <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none">{game.title}</h1>
-                                
-                                <div className="bg-gray-900/50 rounded-3xl p-8 border border-white/5 shadow-xl">
-                                    <h3 className="text-xl font-bold text-white mb-6 uppercase tracking-tight flex items-center gap-3">
-                                        <div className={`w-2 h-2 rounded-full animate-pulse ${isUnlocked ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                                        {isUnlocked ? 'Servers Ready' : 'Download Access'}
-                                    </h3>
-                                    <div className="flex flex-col sm:flex-row gap-4">
-                                        <a href={isUnlocked ? game.downloadUrl : '#'} onClick={!isUnlocked ? handleVerificationClick : undefined} className={`flex-1 group relative rounded-2xl p-[2px] bg-gradient-to-r from-purple-500 to-blue-500 transition-all active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 grayscale' : ''}`}>
-                                            <div className="bg-gray-900 rounded-[14px] py-4 text-center font-black uppercase tracking-widest text-sm group-hover:bg-transparent transition-colors">
-                                                {isUnlocked ? (game.platform === 'mobile' ? 'Download APK' : 'Download Now') : 'Unlock High Speed Link'}
-                                            </div>
-                                        </a>
-                                        {game.platform === 'mobile' && (
-                                            <a href={isUnlocked ? game.downloadUrlIos : '#'} onClick={!isUnlocked ? handleVerificationClick : undefined} className={`flex-1 group relative rounded-2xl p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 transition-all active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 grayscale' : ''}`}>
-                                                <div className="bg-gray-900 rounded-[14px] py-4 text-center font-black uppercase tracking-widest text-sm group-hover:bg-transparent transition-colors">
-                                                    {isUnlocked ? 'Download iOS' : 'Unlock iOS Link'}
-                                                </div>
-                                            </a>
-                                        )}
-                                    </div>
-                                    {!isUnlocked && <p className="text-center text-[10px] text-gray-500 mt-4 uppercase tracking-widest font-bold">Complete verification to reveal high-speed servers</p>}
+                                <div className="absolute top-[125%] left-0 whitespace-nowrap">
+                                    <p className="text-[10px] font-black uppercase text-white/50 tracking-[0.25em] mb-1">Playing</p>
+                                    <h2 className="text-xl font-black tracking-tighter">{game.title}</h2>
                                 </div>
-
-                                {game.requirements && (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-y border-white/5 py-8">
-                                        <div className="bg-gray-900/30 p-4 rounded-xl border border-white/5"><span className="block text-[10px] font-black text-gray-500 uppercase mb-1">OS</span><span className="text-sm font-bold">{game.requirements.os}</span></div>
-                                        <div className="bg-gray-900/30 p-4 rounded-xl border border-white/5"><span className="block text-[10px] font-black text-gray-500 uppercase mb-1">Memory</span><span className="text-sm font-bold">{game.requirements.ram}</span></div>
-                                        <div className="bg-gray-900/30 p-4 rounded-xl border border-white/5"><span className="block text-[10px] font-black text-gray-500 uppercase mb-1">Storage</span><span className="text-sm font-bold">{game.requirements.storage}</span></div>
-                                    </div>
-                                )}
-
-                                <section>
-                                    <h2 className="text-2xl font-black text-white uppercase mb-6 flex items-center gap-3">
-                                        <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
-                                        About This Game
-                                    </h2>
-                                    <HtmlContent html={game.description} />
-                                </section>
                             </div>
+                            {similarGames.slice(0, 6).map((sg) => (
+                                <Link key={sg.id} href={`/games/${sg.slug}`} className="hidden sm:block flex-shrink-0 w-24 h-24 md:w-28 md:h-28 rounded-[1.8rem] overflow-hidden opacity-30 hover:opacity-100 hover:scale-110 transition-all duration-500 border-2 border-white/5 bg-gray-900">
+                                     <Image src={sg.imageUrl} alt="" fill className="object-cover" unoptimized />
+                                </Link>
+                            ))}
                         </div>
 
-                        <aside className="lg:col-span-4 relative space-y-8">
-                            <div className="sticky top-24 space-y-8">
-                                <div className="bg-gray-900/80 backdrop-blur-md rounded-3xl p-6 border border-white/5 shadow-2xl">
-                                    <h3 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-4">Screenshots</h3>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {game.gallery.slice(0, 4).map((img, index) => (
-                                            <button key={index} onClick={() => openLightbox(game.videoUrl ? index + 1 : index)} className="relative aspect-video rounded-xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-colors group bg-black">
-                                                <Image src={img} alt="" fill className="object-cover transition-transform group-hover:scale-110" unoptimized />
-                                            </button>
-                                        ))}
+                        {/* Middle Action & Info */}
+                        <div className="flex flex-col lg:flex-row items-end lg:items-center justify-between gap-12 mt-20">
+                            {/* Left Side: Game Logo & CTA */}
+                            <div className="w-full lg:max-w-2xl space-y-10">
+                                <div className="h-48 md:h-64 relative w-full transform -translate-x-4">
+                                    {game.iconUrl ? (
+                                        <Image src={game.iconUrl} alt={game.title} fill className="object-contain object-left drop-shadow-[0_20px_40px_rgba(0,0,0,0.95)]" unoptimized />
+                                    ) : (
+                                        <h1 className="text-7xl md:text-9xl font-black italic uppercase tracking-tighter drop-shadow-[0_20px_40px_rgba(0,0,0,0.95)] leading-none">{game.title}</h1>
+                                    )}
+                                </div>
+
+                                <div className="max-w-xl">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <span className="px-3 py-1 bg-white text-black text-[11px] font-black uppercase rounded shadow-lg">Full Game</span>
+                                        <span className="text-white/60 text-lg font-bold uppercase tracking-widest">{game.category} • Online</span>
+                                    </div>
+                                    {/* Brief Summary (First 180 chars) */}
+                                    <div className="text-xl md:text-2xl text-white/80 line-clamp-2 italic font-medium leading-relaxed mb-8">
+                                        {game.description.replace(/<[^>]*>/g, '').slice(0, 180)}...
+                                    </div>
+
+                                    <div className="flex items-center gap-6">
+                                        <button onClick={handlePlayClick} className="group relative px-16 py-5 bg-white text-black font-black text-2xl rounded-full transition-all shadow-2xl flex items-center gap-5 hover:scale-105 active:scale-95 overflow-hidden">
+                                            <span className="relative z-10 flex items-center gap-3">
+                                                <svg className="w-10 h-10 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                                Play Game
+                                            </span>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.2s_infinite]" />
+                                        </button>
+                                        <button className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/10 backdrop-blur-2xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/10 shadow-2xl">
+                                            <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /></svg>
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex justify-center"><Ad placement="game_vertical" className="w-full" /></div>
                             </div>
-                        </aside>
+
+                            {/* Right Side: Stats Panel */}
+                            <div className="hidden lg:flex flex-col gap-8 items-end w-[420px]">
+                                <div className="bg-black/70 backdrop-blur-3xl px-10 py-4 rounded-3xl border border-white/10 flex items-center gap-5 shadow-2xl self-end">
+                                    <svg className="w-8 h-8 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">Game Time</span>
+                                        <span className="text-3xl font-black tracking-tighter tabular-nums">{hoursPlayed}h</span>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-white/5 backdrop-blur-[60px] rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl group hover:bg-white/10 transition-all duration-700">
+                                    <div className="relative aspect-square">
+                                        <Image src={game.imageUrl} alt="" fill className="object-cover opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" unoptimized />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                                        <div className="absolute bottom-10 left-10 right-10">
+                                            <span className="inline-block px-4 py-1.5 bg-purple-600 text-white text-[12px] font-black uppercase rounded shadow-2xl mb-4">Official Stats</span>
+                                            <h4 className="text-2xl font-black tracking-tighter line-clamp-1 mb-6">{game.title}</h4>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[11px] text-white/40 font-bold uppercase tracking-[0.25em]">Downloads</span>
+                                                    <span className="text-3xl font-black">{(game.downloadsCount || 12400).toLocaleString()}</span>
+                                                </div>
+                                                <div className="px-6 py-2 bg-green-500/20 text-green-400 border-2 border-green-500/30 rounded-2xl text-sm font-black shadow-inner">
+                                                    {completionRate}% RATING
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <RecommendedSection title="Similar Games" subtitle="Explore more in this genre" items={similarGames} />
-                    <RecommendedSection title="Trending Now" subtitle="What everyone is playing" items={trendingGames} accentColor="bg-blue-500" />
+                    {/* DETAILED DESCRIPTION SECTION (The "Describe" you asked for) */}
+                    <section className="relative px-8 md:px-16 py-24 bg-gradient-to-b from-transparent to-black/90">
+                        <div className="max-w-6xl mx-auto">
+                            <div className="flex items-center gap-6 mb-12 group cursor-default">
+                                <div className="w-16 h-16 rounded-[1.25rem] bg-white/10 flex items-center justify-center border border-white/20 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xl">
+                                     <svg className="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <div>
+                                    <p className="text-[12px] font-black uppercase text-white/40 tracking-[0.3em] leading-none mb-1.5">Overview</p>
+                                    <h3 className="text-4xl font-black uppercase tracking-widest italic">Game Information</h3>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 md:p-16 shadow-[0_40px_80px_rgba(0,0,0,0.5)]">
+                                {/* RENDERING THE FULL HTML DESCRIPTION FROM DB */}
+                                <HtmlContent html={game.description} />
+
+                                {game.requirements && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 pt-16 border-t border-white/10">
+                                        <div className="bg-white/5 p-8 rounded-3xl border border-white/5">
+                                            <span className="block text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Platform / OS</span>
+                                            <span className="text-xl font-bold italic">{game.requirements.os}</span>
+                                        </div>
+                                        <div className="bg-white/5 p-8 rounded-3xl border border-white/5">
+                                            <span className="block text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Memory Spec</span>
+                                            <span className="text-xl font-bold italic">{game.requirements.ram}</span>
+                                        </div>
+                                        <div className="bg-white/5 p-8 rounded-3xl border border-white/5">
+                                            <span className="block text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Storage req.</span>
+                                            <span className="text-xl font-bold italic">{game.requirements.storage}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* TROPHY/ACHIEVEMENT BAR (BOTTOM) */}
+                    <div className="w-full bg-gradient-to-t from-black to-transparent pt-24 pb-12 px-16 flex gap-14 border-t border-white/5">
+                        <div className="flex items-center gap-6 group cursor-pointer">
+                            <div className="w-16 h-16 rounded-[1.25rem] bg-white/10 flex items-center justify-center border border-white/20 group-hover:bg-yellow-500 group-hover:text-black transition-all group-hover:scale-110 shadow-2xl">
+                                 <svg className="w-9 h-9" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2H6v7a6 6 0 0 0 12 0V2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                            </div>
+                            <div>
+                                <p className="text-[12px] font-black uppercase text-white/40 tracking-[0.3em] leading-none mb-1.5">Achievement</p>
+                                <p className="text-lg font-black uppercase tracking-widest">Master Level Unlocked</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
-            {lightboxOpen && <Lightbox items={mediaItems} startIndex={lightboxIndex} onClose={() => setLightboxOpen(false)} />}
+
+            <style jsx global>{`
+                body { background-color: black; }
+                main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+                header:not(.relative) { display: none !important; }
+                nav.fixed { display: none !important; }
+                
+                @keyframes shimmer { 100% { transform: translateX(100%); } }
+                @keyframes slow-zoom { 0% { transform: scale(1.0); } 100% { transform: scale(1.15); } }
+                .animate-slow-zoom { animation: slow-zoom 60s infinite alternate ease-in-out; }
+            `}</style>
         </>
     );
 };
@@ -236,11 +258,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
     const game = await getGameBySlug(params?.slug as string);
     if (!game) return { notFound: true };
-    
-    const similar = await getRelatedGames(game.id, game.category);
-    const trending = await getTrendingGames(game.id);
-    
-    return { props: { game, similarGames: similar, trendingGames: trending }, revalidate: 60 };
+    const similar = await getRelatedGames(game.id, game.category, 10);
+    return { props: { game, similarGames: similar }, revalidate: 60 };
 };
 
 export default GameDetailPage;
