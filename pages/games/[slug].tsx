@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -10,12 +9,14 @@ import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
 import GameCard from '../../components/GameCard';
+import GameCarousel from '../../components/GameCarousel';
 import { getEmbedUrl } from '../../lib/utils';
 import HtmlContent from '../../components/HtmlContent';
 
 declare global {
     interface Window { 
-        og_load: () => void;
+        // FIX: Made og_load optional to match declaration in _app.tsx to resolve TypeScript modifiers mismatch error.
+        og_load?: () => void;
         onLockerUnlock?: () => void;
     }
 }
@@ -37,11 +38,7 @@ const RecommendedSection = ({ title, subtitle, items, accentColor = "bg-purple-6
                 </div>
                 <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em] ml-5 mt-1">{subtitle}</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {items.map(item => (
-                    <GameCard key={item.id} game={item} />
-                ))}
-            </div>
+            <GameCarousel games={items} xmbEffect={true} />
         </section>
     );
 };
@@ -54,6 +51,49 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames, tre
     const [lightboxIndex, setLightboxIndex] = useState(0);
 
     const embedUrl = useMemo(() => getEmbedUrl(game.videoUrl), [game.videoUrl]);
+
+    // Check persistence on mount
+    useEffect(() => {
+        if (game.slug) {
+            const unlocked = sessionStorage.getItem(`unlocked_${game.slug}`);
+            if (unlocked === 'true') {
+                setIsUnlocked(true);
+            }
+        }
+    }, [game.slug]);
+
+    useEffect(() => {
+        // Global listener for OGAds unlock event
+        const handleUnlock = () => {
+            if (game.slug) {
+                sessionStorage.setItem(`unlocked_${game.slug}`, 'true');
+                // Force reload to bypass SPA state complexities and show download
+                window.location.reload(); 
+            }
+        };
+
+        window.addEventListener("ogads_unlocked", handleUnlock);
+        
+        // Handle standard locker callback if provided via window
+        window.onLockerUnlock = handleUnlock;
+
+        if (typeof window.og_load === 'function') {
+            setIsOgadsReady(true);
+        } else {
+            const int = setInterval(() => { 
+                if (typeof window.og_load === 'function') { 
+                    setIsOgadsReady(true); 
+                    clearInterval(int); 
+                } 
+            }, 200);
+            return () => clearInterval(int);
+        }
+
+        return () => { 
+            window.removeEventListener("ogads_unlocked", handleUnlock);
+            delete window.onLockerUnlock; 
+        };
+    }, [game.slug]);
 
     const mediaItems = useMemo(() => {
         const items = [];
@@ -68,33 +108,16 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames, tre
         setLightboxOpen(true);
     };
 
-    useEffect(() => {
-        if (router.isReady && game.slug && process.env.NODE_ENV === 'production') {
-            fetch('/api/views/track', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'games', slug: game.slug }),
-            }).catch(console.error);
-        }
-    }, [router.isReady, game.slug]);
-
-    useEffect(() => {
-        window.onLockerUnlock = () => setIsUnlocked(true);
-        if (typeof window.og_load === 'function') {
-            setIsOgadsReady(true);
-        } else {
-            const int = setInterval(() => { if (typeof window.og_load === 'function') { setIsOgadsReady(true); clearInterval(int); } }, 200);
-            return () => clearInterval(int);
-        }
-        return () => { delete window.onLockerUnlock; };
-    }, []);
-
     if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading...</div>;
 
     const handleVerificationClick = (e: React.MouseEvent) => {
         e.preventDefault();
-        if (isOgadsReady) window.og_load();
-        else alert("Verification service unavailable.");
+        // FIX: Safe access to og_load since it's now marked optional in global Window interface.
+        if (isOgadsReady && typeof window.og_load === 'function') {
+            window.og_load();
+        } else {
+            alert("Verification service is initializing. Please wait a moment.");
+        }
     };
 
     return (
@@ -141,13 +164,13 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames, tre
                                 
                                 <div className="bg-gray-900/50 rounded-3xl p-8 border border-white/5 shadow-xl">
                                     <h3 className="text-xl font-bold text-white mb-6 uppercase tracking-tight flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                        Download Links
+                                        <div className={`w-2 h-2 rounded-full animate-pulse ${isUnlocked ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                                        {isUnlocked ? 'Servers Ready' : 'Download Access'}
                                     </h3>
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         <a href={isUnlocked ? game.downloadUrl : '#'} onClick={!isUnlocked ? handleVerificationClick : undefined} className={`flex-1 group relative rounded-2xl p-[2px] bg-gradient-to-r from-purple-500 to-blue-500 transition-all active:scale-95 ${!isOgadsReady && !isUnlocked ? 'opacity-50 grayscale' : ''}`}>
                                             <div className="bg-gray-900 rounded-[14px] py-4 text-center font-black uppercase tracking-widest text-sm group-hover:bg-transparent transition-colors">
-                                                {isUnlocked ? (game.platform === 'mobile' ? 'Download APK' : 'Download Now') : 'Unlock Link'}
+                                                {isUnlocked ? (game.platform === 'mobile' ? 'Download APK' : 'Download Now') : 'Unlock High Speed Link'}
                                             </div>
                                         </a>
                                         {game.platform === 'mobile' && (
