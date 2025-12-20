@@ -1,5 +1,6 @@
 
-import { useEffect, useState } from 'react';
+// FIX: Added React import to resolve "Cannot find namespace 'React'" error when using React.ReactNode.
+import React, { useEffect, useState } from 'react';
 
 interface AdminStats {
   totalGames: number;
