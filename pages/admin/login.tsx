@@ -1,14 +1,14 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
-import type { Game, BlogPost, Product, SocialLink, Ad, Comment, SiteSettings, CategorySetting } from '../../types';
+import type { Game, BlogPost, Product, SocialLink, Ad as AdType, Comment, SiteSettings, CategorySetting } from '../../types';
 import AdminDashboard from '../../components/AdminDashboard';
 import AdminForm from '../../components/AdminForm';
 import ToastContainer from '../../components/ToastContainer';
 import type { ToastData, ToastType } from '../../components/Toast';
 import { useDebounce } from '../../hooks/useDebounce';
 import { ICON_MAP } from '../../constants';
+import Ad from '../../components/Ad';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : '');
 
@@ -24,15 +24,15 @@ interface AdminStats { totalGames: number; totalBlogs: number; totalProducts: nu
 interface TopItem { name: string; slug: string; view_count: number; }
 interface AnalyticsData { topGames: TopItem[]; topBlogs: TopItem[]; topProducts: TopItem[]; }
 
-const AD_CONFIG: Record<string, { label: string; size: string; role: string }> = {
-  home_quest_banner: { label: 'Home Quest Banner', size: '728x90', role: 'Main Promotion' },
-  home_native_game: { label: 'Native In-Grid Ad', size: '300x250', role: 'Contextual Feed' },
-  game_vertical: { label: 'Game Sidebar', size: '300x600', role: 'Sticky Visibility' },
-  game_horizontal: { label: 'Game Bottom Mobile', size: '300x250', role: 'Action Trigger' },
-  blog_skyscraper_left: { label: 'Blog Left', size: '160x600', role: 'Desktop Filler' },
-  blog_skyscraper_right: { label: 'Blog Right', size: '160x600', role: 'Desktop Filler' },
-  shop_square: { label: 'Shop Product Square', size: '300x250', role: 'Store Monetization' },
-  footer_partner: { label: 'Footer Partner', size: '728x90', role: 'Exit Catch' }
+const AD_CONFIG: Record<string, { label: string; size: string; role: string; placement: any }> = {
+  home_quest_banner: { label: 'Home Quest Banner', size: '728x90', role: 'Main Promotion', placement: 'home_quest_banner' },
+  home_native_game: { label: 'Native In-Grid Ad', size: '300x250', role: 'Contextual Feed', placement: 'home_native_game' },
+  game_vertical: { label: 'Game Sidebar', size: '300x600', role: 'Sticky Visibility', placement: 'game_vertical' },
+  game_horizontal: { label: 'Game Bottom Mobile', size: '300x250', role: 'Action Trigger', placement: 'game_horizontal' },
+  blog_skyscraper_left: { label: 'Blog Left', size: '160x600', role: 'Desktop Filler', placement: 'blog_skyscraper_left' },
+  blog_skyscraper_right: { label: 'Blog Right', size: '160x600', role: 'Desktop Filler', placement: 'blog_skyscraper_right' },
+  shop_square: { label: 'Shop Product Square', size: '300x250', role: 'Store Monetization', placement: 'shop_square' },
+  footer_partner: { label: 'Footer Partner', size: '728x90', role: 'Exit Catch', placement: 'footer_partner' }
 };
 
 const TopContentList = ({title, items, type}: {title: string, items: TopItem[], type: 'games' | 'blogs' | 'products'}) => {
@@ -86,6 +86,9 @@ export default function AdminPanel() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
   const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  // Ad Preview States
+  const [previewingAdPlacement, setPreviewingAdPlacement] = useState<string | null>(null);
 
   const addToast = useCallback((message: string, type: ToastType) => {
     const id = Date.now();
@@ -243,10 +246,36 @@ export default function AdminPanel() {
     );
   }
 
+  const renderAdPreviewModal = () => {
+    if (!previewingAdPlacement) return null;
+    const code = ads[previewingAdPlacement];
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
+            <div className="bg-gray-900 border border-white/10 rounded-[2.5rem] w-full max-w-4xl overflow-hidden shadow-2xl">
+                <div className="px-8 py-4 border-b border-white/5 flex justify-between items-center bg-gray-800/50">
+                    <h3 className="text-lg font-black uppercase tracking-widest text-white">Ad Live Preview: {AD_CONFIG[previewingAdPlacement].label}</h3>
+                    <button onClick={() => setPreviewingAdPlacement(null)} className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div className="p-12 flex items-center justify-center bg-black/40 min-h-[400px]">
+                    <div className="relative">
+                        <Ad placement={previewingAdPlacement as any} overrideCode={code} />
+                    </div>
+                </div>
+                <div className="px-8 py-4 bg-gray-800/50 border-t border-white/5 text-center">
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Preview reflects the actual code rendering in its dedicated container.</p>
+                </div>
+            </div>
+        </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-gray-200 font-sans selection:bg-purple-500">
         <Head children={<title>Control Center | {settings.site_name}</title>} />
         <ToastContainer toasts={toasts} onClose={removeToast} />
+        {renderAdPreviewModal()}
         
         {showForm && ['games', 'blogs', 'products', 'social-links'].includes(activeTab) && (
             <AdminForm item={editingItem} type={activeTab as any} onClose={() => setShowForm(false)} onSubmit={async (d) => {
@@ -261,230 +290,213 @@ export default function AdminPanel() {
         <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-8">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-white/5 pb-8">
                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-blue-600 rounded-[1.2rem] flex items-center justify-center shadow-2xl shadow-purple-900/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 11-4m0 4v2m0-6V4" /></svg>
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Control Center</h1>
-                        <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Management Hub v2.5 Stable</p>
+                        <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Control Panel</h1>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">G2Gaming Infrastructure v3.1</p>
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <button onClick={async () => { await fetch('/api/auth/logout'); setIsAuthenticated(false); }} className="px-6 py-3 bg-red-900/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-500/20 transition-all">Emergency Logout</button>
+                    <button onClick={async () => { await fetch(`${API_BASE}/api/auth/logout`); window.location.reload(); }} className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Terminate Session</button>
+                    <a href="/" target="_blank" className="px-6 py-3 bg-white hover:bg-gray-100 text-black rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl">Live Site</a>
                 </div>
             </header>
 
             <AdminDashboard stats={stats} />
-            
-            <div className="flex gap-2 mb-10 overflow-x-auto no-scrollbar pb-2">
-              {['analytics', 'games', 'blogs', 'products', 'categories', 'social-links', 'comments', 'ads', 'settings'].map((tab) => (
-                <button key={tab} onClick={() => setActiveTab(tab as TabType)} className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap border ${activeTab === tab ? 'bg-purple-600 border-purple-500 text-white shadow-xl shadow-purple-900/40' : 'bg-gray-800/50 border-white/5 text-gray-500 hover:text-white hover:bg-gray-800'}`}>
-                  {tab.replace('-', ' ')}
-                </button>
-              ))}
+
+            <div className="flex flex-wrap gap-2 mb-10 bg-gray-900/50 p-2 rounded-3xl border border-white/5">
+                {[
+                    { id: 'analytics', label: 'Real-time Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+                    { id: 'games', label: 'Game Library', icon: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z' },
+                    { id: 'blogs', label: 'Journal', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m-1 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 12h6m-1-5h.01' },
+                    { id: 'products', label: 'Storefront', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
+                    { id: 'categories', label: 'Navigation', icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' },
+                    { id: 'comments', label: 'Feedback', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
+                    { id: 'ads', label: 'Ad Engine', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.407 2.67 1a2.4 2.4 0 01.33 1.39m-3 0h.01m-3 0c0-.528.147-1.02.407-1.437M12 17.5c-1.11 0-2.08-.407-2.67-1a2.4 2.4 0 01-.33-1.39m3 0h.01m-3 0c0 .528-.147 1.02.407 1.437M12 17.5v1m0-11V6m0 12h.01' },
+                    { id: 'social-links', label: 'Social Matrix', icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
+                    { id: 'settings', label: 'Core Prefs', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
+                ].map(tab => (
+                    <button key={tab.id} onClick={() => { setActiveTab(tab.id as TabType); setCurrentPage(1); setSearchQuery(''); }} className={`px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-3 border ${activeTab === tab.id ? 'bg-purple-600 text-white border-purple-500 shadow-xl shadow-purple-900/30' : 'bg-gray-800 text-gray-400 border-white/5 hover:border-purple-500/20 hover:bg-gray-800/80'}`}>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={tab.icon} /></svg>
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            <main className="animate-fade-in">
+            <main className="bg-gray-900/30 rounded-[3rem] p-4 lg:p-10 border border-white/5 shadow-inner">
                 {activeTab === 'analytics' && analyticsData && (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <TopContentList title="Top Games" items={analyticsData.topGames} type="games" />
-                        <TopContentList title="Top Blogs" items={analyticsData.topBlogs} type="blogs" />
-                        <TopContentList title="Top Products" items={analyticsData.topProducts} type="products" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
+                        <TopContentList title="Top Played Games" items={analyticsData.topGames} type="games" />
+                        <TopContentList title="Most Read Articles" items={analyticsData.topBlogs} type="blogs" />
+                        <TopContentList title="Trending Products" items={analyticsData.topProducts} type="products" />
                     </div>
                 )}
 
                 {activeTab === 'ads' && (
-                    <form onSubmit={handleSaveAds} className="space-y-8 bg-gray-800/50 p-8 rounded-[2.5rem] border border-white/5">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {Object.entries(AD_CONFIG).map(([key, cfg]) => (
-                                <div key={key} className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex justify-between">
-                                        <span>{cfg.label} <span className="text-gray-600 ml-2">({cfg.size})</span></span>
-                                        <span className="text-purple-500">{cfg.role}</span>
-                                    </label>
-                                    <textarea value={ads[key] || ''} onChange={e => setAds({...ads, [key]: e.target.value})} className="w-full h-32 bg-gray-900 border border-gray-700 rounded-2xl p-4 font-mono text-[11px] text-green-400 focus:border-purple-500 outline-none resize-none" placeholder="<!-- Paste Ad Code Here -->" />
+                    <div className="space-y-8 animate-fade-in">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Monetization Engine</h2>
+                            <button onClick={handleSaveAds} className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-green-900/40">Deploy Ad Logic</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {Object.entries(AD_CONFIG).map(([key, config]) => (
+                                <div key={key} className="bg-gray-800/50 border border-white/5 rounded-[2rem] p-6 space-y-4 group">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-black text-white uppercase tracking-tight">{config.label}</h3>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase">{config.size} • {config.role}</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => setPreviewingAdPlacement(key)}
+                                            className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600 text-purple-400 hover:text-white rounded-xl font-black text-[9px] uppercase tracking-widest transition-all border border-purple-500/20"
+                                        >
+                                            Test Output
+                                        </button>
+                                    </div>
+                                    <div className="relative">
+                                        <textarea 
+                                            value={ads[key] || ''} 
+                                            onChange={(e) => setAds(prev => ({ ...prev, [key]: e.target.value }))}
+                                            className="w-full h-40 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-blue-300 outline-none focus:border-purple-500 transition-all resize-none shadow-inner"
+                                            placeholder="Paste Ad HTML/Script code here..."
+                                        />
+                                        <div className="absolute bottom-4 right-4 pointer-events-none opacity-20 text-white uppercase font-black text-[8px] tracking-widest">
+                                            placement_id: {config.placement}
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
-                        <div className="pt-6 border-t border-white/5 flex justify-end">
-                            <button type="submit" className="px-10 py-4 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">Save Ad Ecosystem</button>
-                        </div>
-                    </form>
-                )}
-
-                {activeTab === 'settings' && (
-                    <form onSubmit={handleSaveSettings} className="space-y-10 bg-gray-800/50 p-8 rounded-[2.5rem] border border-white/5">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            <div className="space-y-6">
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b border-white/5 pb-2">Identity</h3>
-                                <div className="space-y-4">
-                                    <input type="text" value={settings.site_name} onChange={e=>setSettings({...settings, site_name:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Site Name" />
-                                    <input type="text" value={settings.site_icon_url} onChange={e=>setSettings({...settings, site_icon_url:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Favicon URL" />
-                                    <input type="text" value={settings.ogads_script_src} onChange={e=>setSettings({...settings, ogads_script_src:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="OGAds Full Script Tag" />
-                                </div>
-                            </div>
-                            <div className="space-y-6">
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b border-white/5 pb-2">Promo Banner</h3>
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-4 bg-gray-900 p-4 rounded-xl border border-gray-700">
-                                        <span className="text-xs font-bold uppercase tracking-widest">Enable Promo?</span>
-                                        <button type="button" onClick={()=>setSettings({...settings, promo_enabled: !settings.promo_enabled})} className={`w-12 h-6 rounded-full transition-all relative ${settings.promo_enabled ? 'bg-green-600':'bg-gray-700'}`}>
-                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.promo_enabled ? 'left-7':'left-1'}`} />
-                                        </button>
-                                    </div>
-                                    <input type="text" value={settings.promo_text} onChange={e=>setSettings({...settings, promo_text:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Promo Text" />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input type="text" value={settings.promo_button_text} onChange={e=>setSettings({...settings, promo_button_text:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Button Text" />
-                                        <input type="text" value={settings.promo_button_url} onChange={e=>setSettings({...settings, promo_button_url:e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm" placeholder="Button URL" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="pt-6 border-t border-white/5 flex justify-end">
-                            <button type="submit" className="px-10 py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">Apply Site Changes</button>
-                        </div>
-                    </form>
+                    </div>
                 )}
 
                 {activeTab === 'categories' && (
-                    <div className="bg-gray-800/50 rounded-[2.5rem] border border-white/5 overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-900/50 border-b border-white/5">
-                                <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                                    <th className="p-6">Section</th>
-                                    <th className="p-6">Name</th>
-                                    <th className="p-6">Icon</th>
-                                    <th className="p-6">Show</th>
-                                    <th className="p-6">Order</th>
-                                    <th className="p-6 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {categories.map(cat => (
-                                    <tr key={`${cat.section}-${cat.name}`} className="hover:bg-white/[0.02]">
-                                        <td className="p-6 uppercase font-black text-[10px] text-purple-400">{cat.section}</td>
-                                        <td className="p-6 font-bold">{cat.name} <span className="text-[10px] text-gray-600 font-bold ml-2">({cat.count} items)</span></td>
-                                        <td className="p-6">
-                                            <div className="flex items-center gap-2">
-                                                <select value={cat.icon_name} onChange={e=>handleUpdateCategory({...cat, icon_name:e.target.value})} className="bg-gray-900 border border-gray-700 rounded-lg p-1 text-xs">
-                                                    {Object.keys(ICON_MAP).map(i=><option key={i} value={i}>{i}</option>)}
-                                                </select>
-                                                <button onClick={()=>handleSuggestIcon(cat)} className="p-1.5 bg-purple-900/30 text-purple-400 rounded-lg hover:bg-purple-600 hover:text-white transition-all shadow-sm border border-purple-500/20" title="AI Suggest Icon">✨</button>
+                    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Taxonomy Manager</h2>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4">
+                            {categories.map(cat => {
+                                const sectionColor = cat.section === 'games' ? 'purple' : cat.section === 'blogs' ? 'blue' : 'green';
+                                const badgeClasses = {
+                                    purple: 'bg-purple-400/10 text-purple-400 border-purple-500/20',
+                                    blue: 'bg-blue-400/10 text-blue-400 border-blue-500/20',
+                                    green: 'bg-green-400/10 text-green-400 border-green-500/20'
+                                };
+                                
+                                return (
+                                    <div key={`${cat.section}-${cat.name}`} className="flex items-center justify-between p-5 bg-gray-800/80 rounded-[2rem] border border-white/5 hover:border-white/10 transition-all group">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center text-gray-500 border border-white/5">
+                                                {ICON_MAP[cat.icon_name] || ICON_MAP['Gamepad2']}
                                             </div>
-                                        </td>
-                                        <td className="p-6">
-                                            <button onClick={()=>handleUpdateCategory({...cat, show_in_sidebar: !cat.show_in_sidebar})} className={`w-10 h-5 rounded-full transition-all relative ${cat.show_in_sidebar?'bg-green-600':'bg-gray-700'}`}>
-                                                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${cat.show_in_sidebar?'left-6':'left-1'}`} />
+                                            <div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-lg font-black text-white uppercase tracking-tight">{cat.name}</span>
+                                                    <span className={`px-2.5 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-widest ${badgeClasses[sectionColor]}`}>
+                                                        {cat.count || 0} {cat.section}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Section: {cat.section}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => handleSuggestIcon(cat)} className="p-3 bg-gray-900 hover:bg-purple-600 text-gray-400 hover:text-white rounded-xl transition-all border border-white/5" title="AI Icon Optimization">
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                                             </button>
-                                        </td>
-                                        <td className="p-6"><input type="number" value={cat.sort_order} onChange={e=>handleUpdateCategory({...cat, sort_order: parseInt(e.target.value)})} className="bg-gray-900 border border-gray-700 w-16 p-1 rounded text-xs" /></td>
-                                        <td className="p-6 text-right text-xs text-gray-600">Autosave Active</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                            <div className="flex items-center bg-gray-900 rounded-xl border border-white/5 p-1">
+                                                <button onClick={() => handleUpdateCategory({ ...cat, show_in_sidebar: !cat.show_in_sidebar })} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${cat.show_in_sidebar ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>Visible</button>
+                                                <button onClick={() => handleUpdateCategory({ ...cat, show_in_sidebar: !cat.show_in_sidebar })} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!cat.show_in_sidebar ? 'bg-red-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>Hidden</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
 
                 {['games', 'blogs', 'products', 'social-links', 'comments'].includes(activeTab) && (
-                    <div className="space-y-6">
-                        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-                            <div className="relative flex-1 max-w-xl">
-                                <span className="absolute inset-y-0 left-0 pl-6 flex items-center text-gray-600">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                </span>
-                                <input type="text" placeholder={`Secure filter: ${activeTab}...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-14 pr-6 py-4 bg-gray-800/80 rounded-2xl border border-white/5 outline-none focus:border-purple-500/50 text-sm transition-all" />
-                            </div>
+                    <div className="animate-fade-in">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">{activeTab.replace('-', ' ')} Matrix</h2>
                             {activeTab !== 'comments' && (
-                                <button onClick={() => { setEditingItem(null); setShowForm(true); }} className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl shadow-green-900/40">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
-                                    Add New Record
-                                </button>
+                                <button onClick={() => { setEditingItem(null); setShowForm(true); }} className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/40">Initialize New Entity</button>
                             )}
                         </div>
 
-                        <div className="bg-gray-800/50 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
-                            {loading ? (
-                                <div className="flex flex-col items-center justify-center py-32 gap-6">
-                                    <div className="w-16 h-16 border-[6px] border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-600">Fetching Data Stream...</span>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-gray-900/50 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                            <tr>
-                                                <th className="p-6 w-20">ID</th>
-                                                <th className="p-6">Content / Entity</th>
-                                                <th className="p-6">Meta</th>
-                                                <th className="p-6">State</th>
-                                                <th className="p-6 text-right">Ops</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {items.map((item: any) => (
-                                                <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
-                                                    <td className="p-6 text-xs font-mono text-gray-600">#{item.id}</td>
-                                                    <td className="p-6">
-                                                        <div className="flex items-center gap-5">
-                                                            <div className="w-12 h-12 rounded-xl bg-gray-900 border border-white/10 flex-shrink-0 overflow-hidden relative shadow-lg">
-                                                                {item.imageUrl ? <Image src={item.imageUrl} alt="" fill className="object-cover" unoptimized /> : item.icon_svg ? <div className="w-full h-full flex items-center justify-center p-2 text-purple-500" dangerouslySetInnerHTML={{ __html: item.icon_svg }} /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase text-gray-700">NA</div>}
-                                                            </div>
-                                                            <div className="flex flex-col">
-                                                                <span className="font-bold text-white group-hover:text-purple-400 transition-colors uppercase tracking-tight text-sm line-clamp-1">{item.title || item.name || (item.text?.slice(0, 30) + '...')}</span>
-                                                                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">{item.author || item.category || 'System'}</span>
-                                                            </div>
+                        <div className="bg-gray-900/50 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-800/50 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                    <tr>
+                                        <th className="px-8 py-6">ID</th>
+                                        <th className="px-8 py-6">Identity</th>
+                                        <th className="px-8 py-6">Classification</th>
+                                        <th className="px-8 py-6 text-right">Ops</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {items.map(item => (
+                                        <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
+                                            <td className="px-8 py-6 font-mono text-xs text-gray-600">#{item.id}</td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-4">
+                                                    {item.imageUrl && (
+                                                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 relative shrink-0">
+                                                            <Image src={item.imageUrl} alt="" fill className="object-cover" unoptimized />
                                                         </div>
-                                                    </td>
-                                                    <td className="p-6">
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">Views: {item.view_count || 0}</span>
-                                                            <span className="text-[10px] font-black text-purple-600/60 uppercase tracking-tighter">{item.category || 'Global'}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-6">
-                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${item.status === 'pending' ? 'bg-yellow-900/20 text-yellow-500 border-yellow-500/20' : 'bg-green-900/20 text-green-500 border-green-500/20'}`}>
-                                                            {item.status || (item.isPinned ? 'PINNED' : 'ACTIVE')}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-6">
-                                                        <div className="flex justify-end gap-3">
-                                                            {activeTab === 'comments' && item.status === 'pending' && (
-                                                                <button onClick={() => handleApproveComment(item.id)} className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition-all shadow-lg border border-green-500/20">
-                                                                    Approve
-                                                                </button>
-                                                            )}
-                                                            {activeTab !== 'comments' && (
-                                                                <button onClick={() => { setEditingItem(item); setShowForm(true); }} className="p-3 bg-gray-700/50 hover:bg-purple-600 text-white rounded-xl transition-all shadow-lg border border-white/5">
-                                                                    Edit
-                                                                </button>
-                                                            )}
-                                                            <button onClick={async () => {
-                                                                if(!confirm('Destroy database record?')) return;
-                                                                const csrf = getCookie('csrf_token');
-                                                                await fetch(`${API_BASE}/api/admin/${activeTab}?id=${item.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': csrf || '' } });
-                                                                refreshCurrentTab();
-                                                            }} className="p-3 bg-gray-700/50 hover:bg-red-600 text-white rounded-xl transition-all shadow-lg border border-white/5">
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                    {items.length === 0 && (
-                                        <div className="py-32 text-center flex flex-col items-center">
-                                            <div className="w-20 h-20 rounded-full bg-gray-900 flex items-center justify-center mb-6 text-gray-800 border border-white/5">
-                                                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-                                            </div>
-                                            <p className="text-gray-600 text-[10px] font-black uppercase tracking-[0.5em]">No Data Found in Terminal</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                                                    )}
+                                                    <span className="font-bold text-gray-200 uppercase tracking-wide truncate max-w-xs">{item.title || item.name || item.text}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className="px-3 py-1 bg-gray-800 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/5">{item.category || item.status || 'Active'}</span>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    {activeTab === 'comments' && item.status === 'pending' && (
+                                                        <button onClick={() => handleApproveComment(item.id)} className="p-3 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-xl transition-all border border-green-500/20"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg></button>
+                                                    )}
+                                                    <button onClick={() => { setEditingItem(item); setShowForm(true); }} className="p-3 bg-gray-800 hover:bg-purple-600 text-gray-400 hover:text-white rounded-xl transition-all border border-white/5"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+                )}
+                
+                {activeTab === 'settings' && (
+                    <form onSubmit={handleSaveSettings} className="animate-fade-in max-w-3xl mx-auto space-y-10">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Global Parameters</h2>
+                            <button type="submit" className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-900/40">Commit System Config</button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-8">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] ml-1">Site Identity</label>
+                                <input type="text" value={settings.site_name || ''} onChange={e=>setSettings({...settings, site_name: e.target.value})} className="w-full px-6 py-4 bg-gray-800 border border-white/5 rounded-2xl focus:border-blue-500 outline-none transition-all font-bold text-lg" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] ml-1">Hero Title</label>
+                                    <input type="text" value={settings.hero_title || ''} onChange={e=>setSettings({...settings, hero_title: e.target.value})} className="w-full px-6 py-4 bg-gray-800 border border-white/5 rounded-2xl focus:border-blue-500 outline-none transition-all" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] ml-1">Hero Subtitle</label>
+                                    <input type="text" value={settings.hero_subtitle || ''} onChange={e=>setSettings({...settings, hero_subtitle: e.target.value})} className="w-full px-6 py-4 bg-gray-800 border border-white/5 rounded-2xl focus:border-blue-500 outline-none transition-all" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] ml-1">Infrastructure Script (OGAds)</label>
+                                <textarea value={settings.ogads_script_src || ''} onChange={e=>setSettings({...settings, ogads_script_src: e.target.value})} className="w-full h-32 bg-gray-900 border border-white/5 rounded-2xl p-5 font-mono text-xs text-blue-300 outline-none focus:border-blue-500 resize-none" placeholder="Paste full <script> tag here..." />
+                            </div>
+                        </div>
+                    </form>
                 )}
             </main>
         </div>
