@@ -58,7 +58,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
     <Link 
       href={`/games/${game.slug}`}
       className={`group flex flex-col w-full h-full bg-[#0e0e12] p-3 rounded-[32px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] 
-                 ${active ? 'bg-[#13131a] scale-110 z-30 border-purple-500/60 shadow-[0_0_60px_rgba(168,85,247,0.25)]' : 'opacity-40 grayscale-[0.6] scale-90 border-white/5'} 
+                 ${active ? 'bg-[#13131a] scale-110 z-30 border-purple-500/60 shadow-[0_0_60px_rgba(168,85,247,0.3)] opacity-100' : 'opacity-80 scale-95 border-white/5'} 
                  border relative`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setVideoLoaded(false); }}
