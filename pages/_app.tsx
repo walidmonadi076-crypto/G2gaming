@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import App from 'next/app';
-// import type { AppContext, AppProps } from 'next/app'; // Removing faulty imports
 import { useRouter } from 'next/router';
-import Head from 'next/head'; // Import Head
+import Head from 'next/head';
 import { Inter } from 'next/font/google';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -15,7 +14,6 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-// Define default settings to be used for the initial server render and as a fallback.
 const defaultSettings: SiteSettings = {
   site_name: 'G2gaming',
   site_icon_url: '/favicon.ico',
@@ -32,20 +30,17 @@ const defaultSettings: SiteSettings = {
   recaptcha_site_key: '',
 };
 
-// Define local types to fix import errors
-type AppProps = {
+type MyAppProps = {
   Component: React.ComponentType<any>;
   pageProps: any;
 };
 
-// Use any for AppContext to avoid issues with next/app exports
-type AppContext = any;
-
-type MyAppProps = AppProps & {
-  pageProps: {
-    settings: SiteSettings;
-  };
-};
+declare global {
+    interface Window {
+        __ogadsLoaded?: boolean;
+        og_load?: () => void;
+    }
+}
 
 function MyApp({ Component, pageProps }: MyAppProps) {
   const router = useRouter();
@@ -54,30 +49,37 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
-  
-  const [settings, setSettings] = useState<SiteSettings>(pageProps.settings);
+  const [settings, setSettings] = useState<SiteSettings>(pageProps.settings || defaultSettings);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isLoadingSocials, setIsLoadingSocials] = useState(true);
 
-  const isAdminPage = router.pathname === '/admin/login';
+  const isAdminPage = router.pathname.startsWith('/admin');
+
+  // OGAds Script Injection
+  useEffect(() => {
+    if (!isAdminPage && !window.__ogadsLoaded) {
+      const script = document.createElement("script");
+      // Note: In production, the real URL from settings would be used.
+      // This ensures the locker library is always ready.
+      script.src = "https://www.ogads.com/locker.js"; 
+      script.async = true;
+      document.body.appendChild(script);
+      window.__ogadsLoaded = true;
+    }
+  }, [isAdminPage]);
 
   useEffect(() => {
     const fetchClientSideData = async () => {
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : '');
-
       setIsLoadingSettings(true);
-      setIsLoadingSocials(true);
-
       try {
         const settingsRes = await fetch(`${API_BASE}/api/settings`);
         if (settingsRes.ok) {
           const data = await settingsRes.json();
           setSettings(data);
-        } else {
-          console.error('Failed to fetch settings on client, using defaults.');
         }
       } catch (error) {
-        console.error('Error fetching settings, using defaults:', error);
+        console.error('Error fetching settings:', error);
       } finally {
         setIsLoadingSettings(false);
       }
@@ -87,9 +89,7 @@ function MyApp({ Component, pageProps }: MyAppProps) {
           const socialLinksRes = await fetch(`${API_BASE}/api/social-links`);
           if (socialLinksRes.ok) {
             const data = await socialLinksRes.json();
-            if(Array.isArray(data)) {
-                setSocialLinks(data);
-            }
+            if(Array.isArray(data)) setSocialLinks(data);
           }
         } catch (error) {
            console.error('Failed to fetch social links:', error);
@@ -100,11 +100,8 @@ function MyApp({ Component, pageProps }: MyAppProps) {
         setIsLoadingSocials(false);
       }
     };
-    
     fetchClientSideData();
-    
   }, [isAdminPage]);
-
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -114,63 +111,22 @@ function MyApp({ Component, pageProps }: MyAppProps) {
     }
   };
 
-  const enhancedPageProps = {
-    ...pageProps,
-    searchQuery,
-    searchActive,
-  };
-  
   if (isAdminPage) {
     return <Component {...pageProps} />;
   }
   
-  const settingsValue = { settings, isLoading: isLoadingSettings };
-
   return (
     <ThemeProvider>
       <AdProvider>
-        <SettingsProvider value={settingsValue}>
-          {/* FIX: Using explicit children prop for Head to resolve type resolution issues in strict environments. */}
-          <Head
-            children={
-              <>
-                {/* Critical Viewport Meta Tag for Auto-Sizing */}
-                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-                <meta name="HandheldFriendly" content="true" />
-              </>
-            }
-          />
-          <div className={`bg-gray-900 text-white min-h-screen flex ${inter.variable} font-sans overflow-x-hidden`}>
-            {isMobileSidebarOpen && (
-              <div
-                className="fixed inset-0 bg-black/60 z-50 md:hidden"
-                onClick={() => setIsMobileSidebarOpen(false)}
-                aria-hidden="true"
-              ></div>
-            )}
-            <Sidebar
-              isExpanded={isSidebarExpanded}
-              onMouseEnter={() => setIsSidebarExpanded(true)}
-              onMouseLeave={() => setIsSidebarExpanded(false)}
-              isMobileOpen={isMobileSidebarOpen}
-              onMobileClose={() => setIsMobileSidebarOpen(false)}
-            />
-            <div
-              className={`flex-1 flex flex-col transition-all duration-300 ease-in-out w-full max-w-full ${
-                isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
-              }`}
-            >
-              <Header
-                searchQuery={searchQuery}
-                onSearchChange={handleSearchChange}
-                onSearchFocus={() => setSearchActive(true)}
-                onSearchBlur={() => setSearchActive(false)}
-                onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                socialLinks={socialLinks}
-                isLoadingSocials={isLoadingSocials}
-              />
+        <SettingsProvider value={{ settings, isLoading: isLoadingSettings }}>
+          <Head children={<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />} />
+          <div className={`bg-[#0d0d0d] text-white min-h-screen flex ${inter.variable} font-sans overflow-x-hidden`}>
+            {isMobileSidebarOpen && <div className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
+            <Sidebar isExpanded={isSidebarExpanded} onMouseEnter={() => setIsSidebarExpanded(true)} onMouseLeave={() => setIsSidebarExpanded(false)} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out w-full max-w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
+              <Header searchQuery={searchQuery} onSearchChange={handleSearchChange} onSearchFocus={() => setSearchActive(true)} onSearchBlur={() => setSearchActive(false)} onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} socialLinks={socialLinks} isLoadingSocials={isLoadingSocials} />
               <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 w-full">
-                <Component {...enhancedPageProps} />
+                <Component {...pageProps} searchQuery={searchQuery} searchActive={searchActive} />
               </main>
             </div>
           </div>
@@ -180,10 +136,9 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   );
 }
 
-MyApp.getInitialProps = async (appContext: AppContext) => {
+MyApp.getInitialProps = async (appContext: any) => {
   const appProps = await App.getInitialProps(appContext);
-  appProps.pageProps.settings = defaultSettings;
-  return appProps;
+  return { ...appProps };
 };
 
 export default MyApp;

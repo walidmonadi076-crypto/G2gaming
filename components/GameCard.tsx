@@ -18,9 +18,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
 
   const active = isHovered || isFocused;
 
-  // Fallback image
   const PLACEHOLDER_IMAGE = "https://picsum.photos/seed/gaming/800/600";
-  
   const embedUrl = getEmbedUrl(game.videoUrl);
 
   useEffect(() => {
@@ -63,7 +61,6 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setVideoLoaded(false); }}
     >
-      {/* 1. Cover Media (Top) */}
       <div className="relative w-full aspect-[16/9] rounded-[24px] overflow-hidden bg-gray-900 shadow-inner mb-4">
         <div className="absolute inset-0 w-full h-full bg-black z-0">
             {game.videoUrl && active && (
@@ -114,7 +111,6 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
         </div>
       </div>
 
-      {/* 2. Info */}
       <div className="flex justify-between items-start mb-5 px-1 gap-2">
          <div className="flex flex-col gap-2 min-w-0 flex-1">
             <h3 className={`font-black text-lg leading-none truncate transition-colors ${active ? 'text-purple-400' : 'text-white'}`}>
@@ -138,7 +134,6 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
          </div>
       </div>
 
-      {/* 3. Bottom HUD */}
       <div className={`flex items-center gap-3 mt-auto transition-all duration-500 ${active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
          <div className="flex items-center gap-2 bg-[#1c1c24] rounded-2xl px-4 py-3 border border-white/5 shrink-0">
             <div className={`w-5 h-5 rounded-full flex items-center justify-center text-black shadow-lg transition-colors ${active ? 'bg-[#a3e635]' : 'bg-gray-600'}`}>
