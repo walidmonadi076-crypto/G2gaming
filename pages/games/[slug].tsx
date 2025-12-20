@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -10,6 +9,7 @@ import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
 import Lightbox from '../../components/Lightbox';
 import GameCard from '../../components/GameCard';
+import GameCarousel from '../../components/GameCarousel';
 import { getEmbedUrl } from '../../lib/utils';
 import HtmlContent from '../../components/HtmlContent';
 
@@ -37,11 +37,8 @@ const RecommendedSection = ({ title, subtitle, items, accentColor = "bg-purple-6
                 </div>
                 <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em] ml-5 mt-1">{subtitle}</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {items.map(item => (
-                    <GameCard key={item.id} game={item} />
-                ))}
-            </div>
+            {/* Using enhanced XMB Carousel for these sections */}
+            <GameCarousel games={items} xmbEffect={true} />
         </section>
     );
 };
