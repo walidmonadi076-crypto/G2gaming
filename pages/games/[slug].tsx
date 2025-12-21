@@ -21,7 +21,7 @@ interface GameDetailPageProps {
 const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) => {
     const router = useRouter();
     const [isUnlocked, setIsUnlocked] = useState(false);
-    const [isMounted, setIsMounted] = useState(false); // Fix for hydration errors
+    const [isMounted, setIsMounted] = useState(false); 
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -35,7 +35,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         return items;
     }, [game]);
 
-    // Check for unlock state and handle mounting
+    // PREVENT HYDRATION ERROR: Sync server and client initial render
     useEffect(() => {
         setIsMounted(true);
         if (game.slug && typeof window !== 'undefined') {
@@ -60,20 +60,13 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
 
     const handleActionClick = (e: React.MouseEvent, targetUrl: string) => {
         if (!isUnlocked) {
-            // 1. Always stop the default navigation
+            // Natural Interception: Prevent React/Browser navigation 
+            // but let the click bubble so OGAds script can catch it via DOM binding.
             e.preventDefault();
-
-            // 2. Safely trigger the OGAds locker
-            // Using setTimeout(..., 0) avoids conflicts with React's event loop
-            if (typeof window !== 'undefined' && (window as any).og_load) {
-                setTimeout(() => {
-                    (window as any).og_load();
-                }, 0);
-            }
             return;
         }
         
-        // If already unlocked, proceed normally
+        // If already unlocked (state recovered from sessionStorage), proceed to download
         window.open(targetUrl, '_blank');
     };
 
@@ -123,7 +116,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                         
                         {/* LEFT: MAIN CONTENT AREA */}
                         <div className="col-span-12 lg:col-span-8">
-                            {/* 1. Main Media Player */}
                             <div className="group relative w-full aspect-video bg-gray-900 rounded-[2.5rem] overflow-hidden mb-6 shadow-[0_40px_80px_rgba(0,0,0,0.7)] border border-white/5">
                                 {game.videoUrl ? (
                                     embedUrl ? (
@@ -141,7 +133,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 )}
                             </div>
 
-                            {/* 2. Compact Gallery */}
                             {game.gallery && game.gallery.length > 0 && (
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
                                     {game.gallery.slice(0, 4).map((img, idx) => (
@@ -161,7 +152,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 </div>
                             )}
 
-                            {/* 3. Description Section */}
                             <section className="mb-20">
                                 <div className="flex items-center gap-4 mb-10">
                                     <div className="w-1.5 h-8 bg-purple-600 rounded-full"></div>
@@ -189,8 +179,9 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         </div>
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
+                                            {/* Hydration-safe text rendering */}
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                                System Status: {isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : 'INITIALIZING...'}
+                                                System Status: {!isMounted ? 'INITIALIZING...' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}
                                             </p>
                                         </div>
                                     </div>
@@ -199,7 +190,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <div className="flex justify-between py-2 border-b border-white/5">
                                             <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
                                             <span className={`text-[10px] font-black uppercase ${isUnlocked ? 'text-green-400' : 'text-blue-400'}`}>
-                                                {isUnlocked ? 'Verified' : 'Validation Required'}
+                                                {!isMounted ? '...' : (isUnlocked ? 'Verified' : 'Validation Required')}
                                             </span>
                                         </div>
                                         <div className="flex justify-between py-2 border-b border-white/5">
@@ -209,23 +200,36 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     </div>
 
                                     <div className="space-y-3">
+                                        {/* Render UI only after mounting to ensure 100% hydration matching */}
                                         {isMounted && (
                                             isMobileGame ? (
                                                 <div className="grid grid-cols-1 gap-3">
-                                                    <button onClick={(e) => handleActionClick(e, game.downloadUrl)} className={`w-full py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3 group`}>
+                                                    <a 
+                                                        href={game.downloadUrl}
+                                                        onClick={(e) => handleActionClick(e, game.downloadUrl)} 
+                                                        className="w-full py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3"
+                                                    >
                                                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414L20.355 18.1734L18.1734 20.355L15.3414 17.523C14.1565 18.4554 12.6044 19.0026 11 19.0026C6.58172 19.0026 3 15.4209 3 11.0026C3 6.58432 6.58172 3.0026 11 3.0026C15.4183 3.0026 19 6.58432 19 11.0026C19 12.607 18.4528 14.1591 17.5204 15.344L17.523 15.3414ZM11 17.0026C14.3137 17.0026 17 14.3163 17 11.0026C17 7.68889 14.3137 5.0026 11 5.0026C7.68629 5.0026 5 7.68889 5 11.0026C5 14.3163 7.68629 17.0026 11 17.0026Z"/></svg>
                                                         {isUnlocked ? 'Get on Google Play' : 'Unlock for Android'}
-                                                    </button>
-                                                    <button onClick={(e) => handleActionClick(e, game.downloadUrlIos || '#')} className={`w-full py-4 bg-gray-700 hover:bg-gray-600 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3`}>
+                                                    </a>
+                                                    <a 
+                                                        href={game.downloadUrlIos || '#'}
+                                                        onClick={(e) => handleActionClick(e, game.downloadUrlIos || '#')} 
+                                                        className="w-full py-4 bg-gray-700 hover:bg-gray-600 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3"
+                                                    >
                                                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.05 20.28c-.96.95-2.04 1.84-3.32 1.84-1.25 0-1.63-.77-3.1-.77-1.45 0-1.92.74-3.11.77-1.28.03-2.45-1.02-3.41-2.41-1.97-2.82-3.41-7.98-1.37-11.53.99-1.74 2.82-2.86 4.82-2.86 1.54 0 2.45.83 3.4 1.25.96.42 1.87 1.25 3.4 1.25s2.44-.83 3.4-1.25c.95-.42 1.86-1.25 3.4-1.25 1.54 0 2.45.83 3.4 1.25 2.01 0 3.84 1.12 4.83 2.86 2.03 3.55.6 8.71-1.37 11.53M12.03 7.25c0-1.89 1.53-3.42 3.43-3.42.06 0 .11 0 .17.01-.02-1.91-1.58-3.44-3.47-3.44-1.89 0-3.42 1.53-3.42 3.42 0 1.89 1.53 3.42 3.42 3.42.06 0 .11 0 .17-.01-.02-1.91-1.58-3.44-3.47-3.44"/></svg>
                                                         {isUnlocked ? 'Get on App Store' : 'Unlock for iOS'}
-                                                    </button>
+                                                    </a>
                                                 </div>
                                             ) : (
-                                                <button onClick={(e) => handleActionClick(e, game.downloadUrl)} className={`w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(147,51,234,0.4)] active:scale-95 group flex items-center justify-center gap-3`}>
+                                                <a 
+                                                    href={game.downloadUrl}
+                                                    onClick={(e) => handleActionClick(e, game.downloadUrl)} 
+                                                    className="w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(147,51,234,0.4)] active:scale-95 group flex items-center justify-center gap-3"
+                                                >
                                                     {isUnlocked ? 'Execute Deployment' : 'Initiate Verification'}
-                                                    <svg xmlns="http://www.w3.org/2000/exports" className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                                                </button>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                </a>
                                             )
                                         )}
                                     </div>
