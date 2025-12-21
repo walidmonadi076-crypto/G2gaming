@@ -35,10 +35,10 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         return items;
     }, [game]);
 
-    // PREVENT HYDRATION ERROR: Sync server and client initial render
+    // HYDRATION SHIELD: Sync initial state with server to prevent errors 425/418
     useEffect(() => {
         setIsMounted(true);
-        if (game.slug && typeof window !== 'undefined') {
+        if (typeof window !== 'undefined') {
             const key = `unlocked_${window.location.pathname}`;
             const unlocked = sessionStorage.getItem(key);
             if (unlocked === 'true') {
@@ -60,13 +60,24 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
 
     const handleActionClick = (e: React.MouseEvent, targetUrl: string) => {
         if (!isUnlocked) {
-            // Natural Interception: Prevent React/Browser navigation 
-            // but let the click bubble so OGAds script can catch it via DOM binding.
+            // 1. Prevent default navigation
             e.preventDefault();
+
+            // 2. SAFE TRIGGER: Call og_load using setTimeout(0) to avoid React conflict
+            // This satisfies the "Professional Fix" for minified errors.
+            if (typeof window !== 'undefined' && (window as any).og_load) {
+                setTimeout(() => {
+                    try {
+                        (window as any).og_load();
+                    } catch (err) {
+                        console.error("OGAds Trigger failed:", err);
+                    }
+                }, 0);
+            }
             return;
         }
         
-        // If already unlocked (state recovered from sessionStorage), proceed to download
+        // If already unlocked, proceed normally
         window.open(targetUrl, '_blank');
     };
 
@@ -133,11 +144,12 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 )}
                             </div>
 
+                            {/* 2. STABLE KEYS GALLERY: Avoid Error 423 by using image URL as key instead of index */}
                             {game.gallery && game.gallery.length > 0 && (
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
                                     {game.gallery.slice(0, 4).map((img, idx) => (
                                         <button 
-                                            key={idx} 
+                                            key={img} 
                                             onClick={() => { setLightboxIndex(game.videoUrl ? idx + 1 : idx); setLightboxOpen(true); }}
                                             className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all group shadow-xl"
                                         >
@@ -158,7 +170,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     <h2 className="text-3xl font-black text-white uppercase tracking-tight">Intelligence Briefing</h2>
                                 </div>
                                 <div className="bg-gray-900/30 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/5">
-                                    <HtmlContent html={game.description} />
+                                    {game.description && <HtmlContent html={game.description.trim()} />}
                                     <div className="mt-12 pt-10 border-t border-white/5 flex justify-center">
                                         <Ad placement="home_quest_banner" className="opacity-50 hover:opacity-100 transition-opacity" />
                                     </div>
@@ -166,7 +178,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             </section>
                         </div>
 
-                        {/* RIGHT SIDEBAR: PROFESSIONAL ACTION ZONE */}
+                        {/* RIGHT SIDEBAR: ACTION ZONE */}
                         <aside className="col-span-12 lg:col-span-4 space-y-8">
                             <div className="lg:sticky lg:top-24 space-y-8">
                                 
@@ -179,7 +191,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         </div>
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
-                                            {/* Hydration-safe text rendering */}
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
                                                 System Status: {!isMounted ? 'INITIALIZING...' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}
                                             </p>
@@ -200,7 +211,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     </div>
 
                                     <div className="space-y-3">
-                                        {/* Render UI only after mounting to ensure 100% hydration matching */}
+                                        {/* Defer buttons until mount to match hydration tree */}
                                         {isMounted && (
                                             isMobileGame ? (
                                                 <div className="grid grid-cols-1 gap-3">
@@ -209,7 +220,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                                         onClick={(e) => handleActionClick(e, game.downloadUrl)} 
                                                         className="w-full py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3"
                                                     >
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414L20.355 18.1734L18.1734 20.355L15.3414 17.523C14.1565 18.4554 12.6044 19.0026 11 19.0026C6.58172 19.0026 3 15.4209 3 11.0026C3 6.58432 6.58172 3.0026 11 3.0026C15.4183 3.0026 19 6.58432 19 11.0026C19 12.607 18.4528 14.1591 17.5204 15.344L17.523 15.3414ZM11 17.0026C14.3137 17.0026 17 14.3163 17 11.0026C17 7.68889 14.3137 5.0026 11 5.0026C7.68629 5.0026 5 7.68889 5 11.0026C5 14.3163 7.68629 17.0026 11 17.0026Z"/></svg>
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.523 15.3414L20.355 18.1734L18.1734 20.355L15.3414 17.523C14.1565 18.4554 12.6044 19.0026 11 19.0026C6.58172 19.0026 3 15.4209 3 11.0026C3 6.58432 6.58172 3.0026 11 3.0026C15.4183 3.0026 19 6.58432 19 11.0026C19 12.607 18.4528 14.1591 17.5204 15.344L17.523 15.3414ZM11 17.0026C14.3137 17.0026 17 14.3163 17 11.0026C17 7.68889 14.3137 5.0026 11 5.0026C7.68629 5.0026 5 7.68889 5 11.0026C5 14.3163 7.68629 17.0026 11 17.0026Z"/></svg>
                                                         {isUnlocked ? 'Get on Google Play' : 'Unlock for Android'}
                                                     </a>
                                                     <a 
@@ -217,7 +228,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                                         onClick={(e) => handleActionClick(e, game.downloadUrlIos || '#')} 
                                                         className="w-full py-4 bg-gray-700 hover:bg-gray-600 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3"
                                                     >
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.05 20.28c-.96.95-2.04 1.84-3.32 1.84-1.25 0-1.63-.77-3.1-.77-1.45 0-1.92.74-3.11.77-1.28.03-2.45-1.02-3.41-2.41-1.97-2.82-3.41-7.98-1.37-11.53.99-1.74 2.82-2.86 4.82-2.86 1.54 0 2.45.83 3.4 1.25.96.42 1.87 1.25 3.4 1.25s2.44-.83 3.4-1.25c.95-.42 1.86-1.25 3.4-1.25 1.54 0 2.45.83 3.4 1.25 2.01 0 3.84 1.12 4.83 2.86 2.03 3.55.6 8.71-1.37 11.53M12.03 7.25c0-1.89 1.53-3.42 3.43-3.42.06 0 .11 0 .17.01-.02-1.91-1.58-3.44-3.47-3.44-1.89 0-3.42 1.53-3.42 3.42 0 1.89 1.53 3.42 3.42 3.42.06 0 .11 0 .17-.01-.02-1.91-1.58-3.44-3.47-3.44"/></svg>
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.05 20.28c-.96.95-2.04 1.84-3.32 1.84-1.25 0-1.63-.77-3.1-.77-1.45 0-1.92.74-3.11.77-1.28.03-2.45-1.02-3.41-2.41-1.97-2.82-3.41-7.98-1.37-11.53.99-1.74 2.82-2.86 4.82-2.86 1.54 0 2.45.83 3.4 1.25.96.42 1.87 1.25 3.4 1.25s2.44-.83 3.4-1.25c.95-.42 1.86-1.25 3.4-1.25 1.54 0 2.45.83 3.4 1.25 2.01 0 3.84 1.12 4.83 2.86 2.03 3.55.6 8.71-1.37 11.53M12.03 7.25c0-1.89 1.53-3.42 3.43-3.42.06 0 .11 0 .17.01-.02-1.91-1.58-3.44-3.47-3.44-1.89 0-3.42 1.53-3.42 3.42 0 1.89 1.53 3.42 3.42 3.42.06 0 .11 0 .17-.01-.02-1.91-1.58-3.44-3.47-3.44"/></svg>
                                                         {isUnlocked ? 'Get on App Store' : 'Unlock for iOS'}
                                                     </a>
                                                 </div>
@@ -265,13 +276,13 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter italic">Similar Expeditions</h3>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {similarGames.map(sg => <GameCard key={sg.id} game={sg} />)}
+                            {similarGames?.length > 0 && similarGames.map(sg => <GameCard key={sg.id} game={sg} />)}
                         </div>
                     </section>
                 </div>
             </div>
 
-            {lightboxOpen && <Lightbox items={mediaItems} startIndex={lightboxIndex} onClose={() => setLightboxOpen(false)} />}
+            {mediaItems.length > 0 && lightboxOpen && <Lightbox items={mediaItems} startIndex={lightboxIndex} onClose={() => setLightboxOpen(false)} />}
         </>
     );
 };
@@ -285,7 +296,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     const game = await getGameBySlug(params?.slug as string);
     if (!game) return { notFound: true };
     const similar = await getRelatedGames(game.id, game.category, 8);
-    return { props: { game, similarGames: similar }, revalidate: 60 };
+    return { props: { game, similarGames: similar || [] }, revalidate: 60 };
 };
 
 export default GameDetailPage;
