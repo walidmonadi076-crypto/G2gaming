@@ -85,82 +85,45 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         <>
             <SEO title={game.title} description={game.description?.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 pb-20 relative overflow-hidden">
-                {/* Immersive Background Image from DB */}
+            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 pb-20 relative overflow-x-hidden">
+                {/* Immersive Background */}
                 {game.backgroundUrl && (
                     <div className="fixed inset-0 z-0">
-                        <Image 
-                            src={game.backgroundUrl} 
-                            alt="" 
-                            fill 
-                            className="object-cover opacity-20 blur-[3px]" 
-                            priority 
-                            unoptimized 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/80 via-[#0d0d0d]/95 to-[#0d0d0d]" />
+                        <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-20 blur-[3px]" priority unoptimized />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/70 via-[#0d0d0d]/95 to-[#0d0d0d]" />
                     </div>
-                )}
-                
-                {/* Fallback Decor if no backgroundUrl */}
-                {!game.backgroundUrl && (
-                    <div className="fixed top-0 left-0 w-full h-[800px] bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none z-0" />
                 )}
 
                 <div className="relative z-10 max-w-[1700px] mx-auto px-4 pt-8">
-                    <div className="mb-8">
+                    <div className="mb-10">
                         <Link href="/games" className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
                             <span className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500/20 transition-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
                             </span>
-                            Back to Library
+                            Library
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-10">
+                    <header className="mb-12 max-w-4xl">
+                        <div className="flex items-center gap-3 mb-6">
+                            <span className="px-3 py-1 rounded-md bg-purple-900/40 border border-purple-500/30 text-purple-300 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-sm">{game.category}</span>
+                            <span className="px-3 py-1 rounded-md bg-blue-900/40 border border-blue-500/30 text-blue-300 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-sm">{game.platform || 'PC'}</span>
+                        </div>
+                        <h1 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-[0.85] drop-shadow-2xl mb-6">{game.title}</h1>
+                        <div className="flex items-center gap-6">
+                            <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
+                            <div className="h-4 w-px bg-gray-800"></div>
+                            <span className="text-gray-400 text-xs font-black uppercase tracking-[0.1em]">
+                                {game.downloadsCount ? game.downloadsCount.toLocaleString() : 0} Players joined the expedition
+                            </span>
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12">
                         
-                        {/* LEFT AD COLUMN - STICKY SKYSCRAPER */}
-                        <aside className="hidden xl:block xl:col-span-2">
-                            <div className="sticky top-24">
-                                <Ad placement="game_vertical" showLabel={true} />
-                                <div className="mt-8">
-                                    <Ad placement="deals_strip" showLabel={false} className="opacity-60 hover:opacity-100 transition-opacity" />
-                                </div>
-                            </div>
-                        </aside>
-
-                        {/* MAIN CONTENT AREA */}
-                        <main className="col-span-12 xl:col-span-8 lg:col-span-9">
-                            <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
-                                <div className="space-y-4 max-w-2xl">
-                                    <div className="flex items-center gap-3">
-                                        <span className="px-3 py-1 rounded-full bg-purple-900/40 border border-purple-500/40 text-purple-300 text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">{game.category}</span>
-                                        <span className="px-3 py-1 rounded-full bg-blue-900/40 border border-blue-500/40 text-blue-300 text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">{game.platform || 'PC'}</span>
-                                    </div>
-                                    <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-2xl">{game.title}</h1>
-                                    <div className="flex items-center gap-4">
-                                        <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
-                                        <span className="text-gray-700 text-xs font-bold uppercase tracking-widest">|</span>
-                                        <span className="text-gray-400 text-xs font-black uppercase tracking-widest">
-                                            {game.downloadsCount ? game.downloadsCount.toLocaleString() : 0} Active Players
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                {/* PRIMARY ACTION BOX (HIGH CONVERSION AREA) */}
-                                <div className="flex flex-col gap-4 min-w-[280px]">
-                                    <button 
-                                        onClick={handleActionClick}
-                                        className="w-full px-8 py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest text-sm rounded-2xl transition-all hover:scale-105 shadow-[0_15px_40px_rgba(147,51,234,0.5)] active:scale-95 whitespace-nowrap text-center"
-                                    >
-                                        {isUnlocked ? 'Download Full Game' : 'Access Content Now'}
-                                    </button>
-                                    {/* Mapped Ad below button for maximum clicks */}
-                                    <Ad placement="game_horizontal" showLabel={false} className="w-full scale-90 -mt-2" />
-                                </div>
-                            </header>
-
-                            {/* MAIN MEDIA VISUAL */}
-                            <div className="group relative w-full aspect-video bg-gray-900 rounded-[2.5rem] overflow-hidden mb-12 shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-white/10">
+                        {/* LEFT: MAIN MEDIA & DESCRIPTION */}
+                        <div className="col-span-12 lg:col-span-8">
+                            <div className="group relative w-full aspect-video bg-gray-900 rounded-[2rem] overflow-hidden mb-16 shadow-[0_40px_80px_rgba(0,0,0,0.7)] border border-white/5">
                                 {game.videoUrl ? (
                                     embedUrl ? (
                                         <iframe src={embedUrl} className="w-full h-full" title={game.title} allow="autoplay; encrypted-media; fullscreen" allowFullScreen />
@@ -172,113 +135,120 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                                {/* LEFT PART: CONTENT */}
-                                <div className="lg:col-span-8">
-                                    <section className="mb-16">
-                                        <div className="flex items-center gap-4 mb-8">
-                                            <div className="w-2 h-8 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.6)]"></div>
-                                            <h2 className="text-3xl font-black text-white uppercase tracking-tight">Mission Briefing</h2>
-                                        </div>
-                                        <div className="bg-gray-900/40 backdrop-blur-md rounded-[2rem] p-8 md:p-12 border border-white/5 relative overflow-hidden">
-                                            <HtmlContent html={game.description} />
-                                            {/* In-content conversion point */}
-                                            <div className="mt-12 pt-10 border-t border-white/5 flex flex-col items-center">
-                                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-4">Partner Mission Available</p>
-                                                <Ad placement="home_quest_banner" className="w-full max-w-2xl bg-black/20" />
-                                            </div>
-                                        </div>
-                                    </section>
-
-                                    {/* SCREENSHOTS GALLERY */}
-                                    {game.gallery && game.gallery.length > 0 && (
-                                        <section className="mb-16">
-                                            <div className="flex items-center gap-4 mb-8">
-                                                <div className="w-2 h-8 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.6)]"></div>
-                                                <h2 className="text-3xl font-black text-white uppercase tracking-tight">Visual Recon</h2>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                {game.gallery.map((img, idx) => (
-                                                    <button 
-                                                        key={idx} 
-                                                        onClick={() => { setLightboxIndex(game.videoUrl ? idx + 1 : idx); setLightboxOpen(true); }}
-                                                        className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 hover:border-purple-500 transition-all group shadow-xl"
-                                                    >
-                                                        <Image src={img} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-110" unoptimized />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </section>
-                                    )}
+                            <section className="mb-20">
+                                <div className="flex items-center gap-4 mb-10">
+                                    <div className="w-1.5 h-8 bg-purple-600 rounded-full"></div>
+                                    <h2 className="text-3xl font-black text-white uppercase tracking-tight">Intelligence Briefing</h2>
                                 </div>
-
-                                {/* RIGHT PART: TECHNICAL & ADS */}
-                                <div className="lg:col-span-4 space-y-8">
-                                    {/* SYSTEM REQUIREMENTS */}
-                                    {game.requirements && (
-                                        <section className="bg-gradient-to-br from-gray-900 to-gray-800/50 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
-                                            <div className="flex items-center gap-3 mb-8">
-                                                <div className="w-1.5 h-6 bg-green-500 rounded-full"></div>
-                                                <h2 className="text-xl font-black text-white uppercase tracking-tight">System Specs</h2>
-                                            </div>
-                                            <div className="space-y-6">
-                                                {Object.entries(game.requirements).map(([key, val]) => (
-                                                    <div key={key} className="space-y-1">
-                                                        <span className="text-[9px] font-black uppercase text-gray-500 tracking-[0.2em]">{key}</span>
-                                                        <p className="text-white font-bold text-sm">{val}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </section>
-                                    )}
-
-                                    {/* SIDEBAR AD SLOT */}
-                                    <Ad placement="game_horizontal" className="w-full bg-gray-900/60" />
-                                    
-                                    <div className="bg-purple-600/10 border border-purple-500/20 rounded-3xl p-6 text-center">
-                                        <h4 className="text-sm font-black text-purple-400 uppercase mb-2">Want faster downloads?</h4>
-                                        <p className="text-[11px] text-gray-400 mb-4 font-medium">Check out our special partner offers to unlock premium server speeds.</p>
-                                        <Link href="/quests" className="inline-block px-6 py-2 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg">Browse Offers</Link>
+                                <div className="bg-gray-900/30 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/5">
+                                    <HtmlContent html={game.description} />
+                                    <div className="mt-12 pt-10 border-t border-white/5 flex justify-center">
+                                        <Ad placement="home_quest_banner" className="opacity-50 hover:opacity-100 transition-opacity" />
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* RELATED GAMES */}
-                            <section className="mt-24 border-t border-white/5 pt-16">
-                                <div className="flex items-center gap-4 mb-12">
-                                    <div className="w-2 h-10 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.6)]"></div>
-                                    <h3 className="text-4xl font-black text-white uppercase tracking-tighter">Similar Expeditions</h3>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {similarGames.map(sg => <GameCard key={sg.id} game={sg} />)}
                                 </div>
                             </section>
-                        </main>
 
-                        {/* RIGHT AD COLUMN - STICKY SKYSCRAPER */}
-                        <aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
-                            <div className="sticky top-24 space-y-8">
-                                <div className="bg-gray-900/60 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Real-time Stability</h4>
-                                    <div className="space-y-6">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-400 font-bold uppercase">Status</span>
-                                            <span className="text-xs font-black text-green-400">Verified</span>
+                            {game.gallery && game.gallery.length > 0 && (
+                                <section className="mb-20">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="w-1.5 h-8 bg-blue-600 rounded-full"></div>
+                                        <h2 className="text-3xl font-black text-white uppercase tracking-tight">Visual Recon</h2>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
+                                        {game.gallery.map((img, idx) => (
+                                            <button 
+                                                key={idx} 
+                                                onClick={() => { setLightboxIndex(game.videoUrl ? idx + 1 : idx); setLightboxOpen(true); }}
+                                                className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/10 hover:border-purple-500/50 transition-all group shadow-2xl"
+                                            >
+                                                <Image src={img} alt="" fill className="object-cover transition-transform duration-700 group-hover:scale-110" unoptimized />
+                                                <div className="absolute inset-0 bg-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                        </div>
+
+                        {/* RIGHT: UTILITY SIDEBAR (PROFESSIONAL ZONE) */}
+                        <aside className="col-span-12 lg:col-span-4 space-y-8">
+                            <div className="lg:sticky lg:top-24 space-y-8">
+                                
+                                {/* PRIMARY ACTION CARD - NO ADS HERE */}
+                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] p-8 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl rounded-full -mr-16 -mt-16"></div>
+                                    
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="w-14 h-14 relative rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-gray-800 shrink-0">
+                                            <Image src={game.iconUrl || game.imageUrl} alt="" fill className="object-cover" unoptimized />
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-400 font-bold uppercase">Uptime</span>
-                                            <span className="text-xs font-black text-white">99.9%</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-400 font-bold uppercase">Category</span>
-                                            <span className="text-xs font-black text-purple-400">{game.category}</span>
+                                        <div>
+                                            <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Version 1.0.4 • Stable</p>
                                         </div>
                                     </div>
+
+                                    <div className="space-y-4 mb-8">
+                                        <div className="flex justify-between py-2 border-b border-white/5">
+                                            <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
+                                            <span className="text-[10px] font-black uppercase text-green-400">Verified</span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-white/5">
+                                            <span className="text-[10px] font-black uppercase text-gray-500">Deployment</span>
+                                            <span className="text-[10px] font-black uppercase text-white">Instant</span>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleActionClick}
+                                        className="w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(147,51,234,0.4)] active:scale-95 group flex items-center justify-center gap-3"
+                                    >
+                                        {isUnlocked ? 'Execute Download' : 'Start Content Quest'}
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                    </button>
                                 </div>
-                                <Ad placement="game_vertical" className="mx-auto" showLabel={true} />
+
+                                {/* TECHNICAL SPECS CARD */}
+                                {game.requirements && (
+                                    <div className="bg-gray-900/60 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
+                                        <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 flex items-center gap-2">
+                                            <div className="w-1 h-4 bg-green-500 rounded-full"></div>
+                                            Minimum Config
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                                            {Object.entries(game.requirements).map(([key, val]) => (
+                                                <div key={key}>
+                                                    <span className="text-[8px] font-black uppercase text-gray-600 tracking-[0.2em] block mb-1">{key}</span>
+                                                    <p className="text-gray-300 font-bold text-xs">{val}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* AD PLACEMENT - DISTANCED FROM BUTTON */}
+                                <div className="pt-4">
+                                    <Ad placement="game_vertical" className="mx-auto" />
+                                </div>
+
+                                <div className="bg-blue-600/5 border border-blue-500/10 rounded-3xl p-6">
+                                    <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-2">Platform Support</h4>
+                                    <p className="text-[10px] text-gray-500 font-medium leading-relaxed">This content is optimized for {game.platform || 'multiple platforms'}. For the best experience, ensure your system drivers are up to date.</p>
+                                </div>
                             </div>
                         </aside>
                     </div>
+
+                    {/* RELATED GAMES */}
+                    <section className="mt-32 border-t border-white/5 pt-20">
+                        <div className="flex items-center gap-4 mb-16">
+                            <div className="w-2 h-10 bg-purple-600 rounded-full"></div>
+                            <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter italic">Similar Expeditions</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {similarGames.map(sg => <GameCard key={sg.id} game={sg} />) || <div className="col-span-full h-40 bg-gray-900/50 rounded-3xl animate-pulse"></div>}
+                        </div>
+                    </section>
                 </div>
             </div>
 
@@ -295,7 +265,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
     const game = await getGameBySlug(params?.slug as string);
     if (!game) return { notFound: true };
-    const similar = await getRelatedGames(game.id, game.category, 6);
+    const similar = await getRelatedGames(game.id, game.category, 8);
     return { props: { game, similarGames: similar }, revalidate: 60 };
 };
 
