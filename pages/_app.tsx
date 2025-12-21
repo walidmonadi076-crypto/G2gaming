@@ -38,7 +38,6 @@ type MyAppProps = {
 declare global {
     interface Window {
         __ogadsLoaded?: boolean;
-        og_load?: () => void;
     }
 }
 
@@ -55,30 +54,26 @@ function MyApp({ Component, pageProps }: MyAppProps) {
 
   const isAdminPage = router.pathname.startsWith('/admin');
 
-  // --- OGAds Global Bridge ---
+  // --- 1. Global OGAds Event Bridge ---
   useEffect(() => {
     if (isAdminPage) return;
 
-    const handleLockerUnlock = () => {
-      // Get the current slug from the URL path safely
-      const pathParts = window.location.pathname.split('/');
-      const slug = pathParts[pathParts.length - 1];
+    const handleLockerCompletion = () => {
+      // Get current path to use as a unique key for the game
+      const slugKey = window.location.pathname;
       
-      if (slug) {
-        // 1. Persist the unlock state for this specific slug
-        sessionStorage.setItem(`unlocked_${slug}`, 'true');
-        
-        // 2. Perform a full page reload to clear the OGAds overlay from the DOM 
-        // and ensure the React app picks up the new storage state fresh.
-        window.location.reload();
-      }
+      // Persist unlock state per slug
+      sessionStorage.setItem(`unlocked_${slugKey}`, "true");
+      
+      // FORCE RELOAD: Mandatory to clear OGAds overlay and refresh React state
+      window.location.reload();
     };
 
-    // Listen for the official OGAds unlock event (DOM-based)
-    window.addEventListener('ogads_unlocked', handleLockerUnlock);
+    // Official OGAds DOM event listener
+    window.addEventListener("ogads_unlocked", handleLockerCompletion);
     
     return () => {
-      window.removeEventListener('ogads_unlocked', handleLockerUnlock);
+      window.removeEventListener("ogads_unlocked", handleLockerCompletion);
     };
   }, [isAdminPage]);
 
