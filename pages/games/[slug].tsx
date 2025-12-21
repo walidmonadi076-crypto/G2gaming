@@ -77,7 +77,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         <>
             <SEO title={game.title} description={game.description?.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 pb-20 relative overflow-x-hidden">
+            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 pb-20 relative overflow-x-hidden" suppressHydrationWarning={true}>
                 {game.backgroundUrl && (
                     <div className="fixed inset-0 z-0">
                         <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-20 blur-[3px]" priority unoptimized />
@@ -115,7 +115,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             <div className="group relative w-full aspect-video bg-gray-900 rounded-[2.5rem] overflow-hidden mb-6 shadow-[0_40px_80px_rgba(0,0,0,0.7)] border border-white/5">
                                 {game.videoUrl ? (
                                     embedUrl ? (
-                                        <iframe src={embedUrl} className="w-full h-full" title={game.title} allow="autoplay; encrypted-media; fullscreen" allowFullScreen />
+                                        <iframe src={embedUrl} className="w-full h-full" title={game.title} allow="autoplay; encrypted-media; fullscreen" />
                                     ) : (
                                         <video src={game.videoUrl} controls autoPlay muted className="w-full h-full object-cover" />
                                     )
@@ -124,25 +124,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 )}
                             </div>
 
-                            {game.gallery && game.gallery.length > 0 && (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-                                    {game.gallery.slice(0, 4).map((img, idx) => (
-                                        <button 
-                                            key={`gallery-${idx}`} 
-                                            onClick={() => { setLightboxIndex(game.videoUrl ? idx + 1 : idx); setLightboxOpen(true); }}
-                                            className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all group shadow-xl"
-                                        >
-                                            <Image src={img} alt="" fill className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" unoptimized />
-                                            {idx === 3 && game.gallery.length > 4 && (
-                                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
-                                                    <span className="text-white font-black text-sm">+{game.gallery.length - 4}</span>
-                                                </div>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-
                             <section className="mb-20">
                                 <div className="flex items-center gap-4 mb-10">
                                     <div className="w-1.5 h-8 bg-purple-600 rounded-full"></div>
@@ -150,9 +131,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 </div>
                                 <div className="bg-gray-900/30 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/5">
                                     {game.description && <HtmlContent html={game.description.trim()} />}
-                                    <div className="mt-12 pt-10 border-t border-white/5 flex justify-center">
-                                        <Ad placement="home_quest_banner" className="opacity-50 hover:opacity-100 transition-opacity" />
-                                    </div>
                                 </div>
                             </section>
                         </div>
@@ -181,68 +159,27 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                                 {!isMounted ? '...' : (isUnlocked ? 'Verified' : 'Verification Required')}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between py-2 border-b border-white/5">
-                                            <span className="text-[10px] font-black uppercase text-gray-500">Platform</span>
-                                            <span className="text-[10px] font-black uppercase text-white">{game.platform?.toUpperCase() || 'PC'}</span>
-                                        </div>
                                     </div>
 
                                     <div className="space-y-3">
                                         {isMounted && (
                                             isMobileGame ? (
                                                 <div className="grid grid-cols-1 gap-3">
-                                                    <button onClick={(e) => handleActionClick(e, game.downloadUrl)} className="w-full py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3">
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414L20.355 18.1734L18.1734 20.355L15.3414 17.523C14.1565 18.4554 12.6044 19.0026 11 19.0026C6.58172 19.0026 3 15.4209 3 11.0026C3 6.58432 6.58172 3.0026 11 3.0026C15.4183 3.0026 19 6.58432 19 11.0026C19 12.607 18.4528 14.1591 17.5204 15.344L17.523 15.3414ZM11 17.0026C14.3137 17.0026 17 14.3163 17 11.0026C17 7.68889 14.3137 5.0026 11 5.0026C7.68629 5.0026 5 7.68889 5 11.0026C5 14.3163 7.68629 17.0026 11 17.0026Z"/></svg>
+                                                    <button onClick={(e) => handleActionClick(e, game.downloadUrl)} className="w-full py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-xl flex items-center justify-center gap-3">
                                                         {isUnlocked ? 'Google Play' : 'Unlock for Android'}
-                                                    </button>
-                                                    <button onClick={(e) => handleActionClick(e, game.downloadUrlIos || '#')} className="w-full py-4 bg-gray-700 hover:bg-gray-600 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3">
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.05 20.28c-.96.95-2.04 1.84-3.32 1.84-1.25 0-1.63-.77-3.1-.77-1.45 0-1.92.74-3.11.77-1.28.03-2.45-1.02-3.41-2.41-1.97-2.82-3.41-7.98-1.37-11.53.99-1.74 2.82-2.86 4.82-2.86 1.54 0 2.45.83 3.4 1.25.96.42 1.87 1.25 3.4 1.25s2.44-.83 3.4-1.25c.95-.42 1.86-1.25 3.4-1.25 1.54 0 2.45.83 3.4 1.25 2.01 0 3.84 1.12 4.83 2.86 2.03 3.55.6 8.71-1.37 11.53M12.03 7.25c0-1.89 1.53-3.42 3.43-3.42.06 0 .11 0 .17.01-.02-1.91-1.58-3.44-3.47-3.44-1.89 0-3.42 1.53-3.42 3.42 0 1.89 1.53 3.42 3.42 3.42.06 0 .11 0 .17-.01-.02-1.91-1.58-3.44-3.47-3.44"/></svg>
-                                                        {isUnlocked ? 'App Store' : 'Unlock for iOS'}
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <button onClick={(e) => handleActionClick(e, game.downloadUrl)} className="w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(147,51,234,0.4)] active:scale-95 group flex items-center justify-center gap-3">
+                                                <button onClick={(e) => handleActionClick(e, game.downloadUrl)} className="w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(147,51,234,0.4)] flex items-center justify-center gap-3">
                                                     {isUnlocked ? 'Execute Deployment' : 'Initiate Verification'}
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                                 </button>
                                             )
                                         )}
                                     </div>
-                                    <p className="mt-6 text-[8px] text-center text-gray-600 uppercase font-black tracking-widest leading-relaxed">
-                                        Secure Content Locker Active.
-                                    </p>
                                 </div>
-
-                                {game.requirements && (
-                                    <div className="bg-gray-900/60 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
-                                        <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 flex items-center gap-2">
-                                            <div className="w-1 h-4 bg-green-500 rounded-full"></div>
-                                            Specification
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                                            {Object.entries(game.requirements).map(([key, val]) => (
-                                                <div key={`req-${key}`}>
-                                                    <span className="text-[8px] font-black uppercase text-gray-600 tracking-[0.2em] block mb-1">{key}</span>
-                                                    <p className="text-gray-300 font-bold text-xs">{val}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                <div className="pt-4"><Ad placement="game_vertical" className="mx-auto" /></div>
                             </div>
                         </aside>
                     </div>
-
-                    <section className="mt-32 border-t border-white/5 pt-20">
-                        <div className="flex items-center gap-4 mb-16">
-                            <div className="w-2 h-10 bg-purple-600 rounded-full"></div>
-                            <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter italic">Similar Expeditions</h3>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {similarGames?.length > 0 && similarGames.map(sg => <GameCard key={`similar-${sg.id}`} game={sg} />)}
-                        </div>
-                    </section>
                 </div>
             </div>
 

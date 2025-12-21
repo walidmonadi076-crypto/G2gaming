@@ -114,6 +114,7 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
                    md:translate-x-0 
                    ${isExpanded ? 'md:w-64' : 'md:w-20'}
                    ${isFullyExpanded ? 'items-start' : 'items-center'}`}
+        suppressHydrationWarning={true}
     >
       <div className={`flex items-center text-purple-500 mb-6 w-full ${isFullyExpanded ? 'pl-6' : 'justify-center'}`}>
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -124,7 +125,6 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
 
       <ul className="w-full px-4 space-y-2">
         {navItems.map(item => {
-          // Only show active state if mounted to prevent hydration mismatch (server has no query)
           const isActive = mounted && ((item.href === '/' && router.pathname === '/') || (item.href !== '/' && router.pathname.startsWith(item.href)));
           return (
             <li key={item.href}>
@@ -153,7 +153,7 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
         </div>
         
         {mounted && (
-          <>
+          <div suppressHydrationWarning={true}>
             <div className={`w-full px-4 mb-2 mt-4 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
                 <h3 className={`text-[10px] font-black text-gray-500 uppercase tracking-widest transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
                     Discover
@@ -166,7 +166,7 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
                 ) : (
                     popularCategories.map(item => {
                         const IconComponent = ICON_MAP[item.icon_name] || ICON_MAP['Gamepad2'];
-                        const isActive = mounted && router.query.category === item.name;
+                        const isActive = router.query.category === item.name;
                         return (
                             <li key={item.id}>
                                 <Link
@@ -186,7 +186,7 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
                     })
                 )}
             </ul>
-          </>
+          </div>
         )}
       </div>
     </nav>
