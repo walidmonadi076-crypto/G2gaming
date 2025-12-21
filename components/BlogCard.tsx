@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,6 +14,7 @@ const BlogCard: React.FC<BlogCardProps> = ({ post }) => {
     return (
         <Link 
             href={`/blog/${post.slug}`} 
+            prefetch={false}
             className="group relative block w-full bg-gray-900 rounded-2xl overflow-hidden ring-1 ring-white/5 hover:ring-2 hover:ring-purple-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all duration-300 ease-out hover:-translate-y-2 h-full flex flex-col"
         >
             {/* Image Section with Overlay */}
