@@ -14,8 +14,10 @@ const HtmlContent: React.FC<HtmlContentProps> = ({ html, className = "" }) => {
 
   if (!html) return null;
 
-  // Render a hidden placeholder during SSR to maintain structure without causing mismatch
-  if (!isMounted) return <div className={`opacity-0 ${className}`} />;
+  // SSR and Initial Hydration: Render a placeholder with zero attributes to ensure match
+  if (!isMounted) {
+      return <div className={className} />;
+  }
 
   return (
     <div 
@@ -35,6 +37,7 @@ const HtmlContent: React.FC<HtmlContentProps> = ({ html, className = "" }) => {
         ${className}
       `}
       dangerouslySetInnerHTML={{ __html: html }}
+      suppressHydrationWarning={true}
     />
   );
 };

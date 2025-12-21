@@ -31,71 +31,44 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
 
   const getAdConfig = () => {
     switch (placement) {
-      case 'game_vertical': return { width: 300, height: 600, label: 'Recommended', mobileScale: false };
-      case 'game_horizontal': return { width: 300, height: 250, label: 'Sponsored', mobileScale: true };
-      case 'shop_square': return { width: 300, height: 250, label: 'Partner Offer', mobileScale: true };
+      case 'game_vertical': return { width: 300, height: 600, label: 'Recommended' };
+      case 'game_horizontal': return { width: 300, height: 250, label: 'Sponsored' };
+      case 'shop_square': return { width: 300, height: 250, label: 'Partner Offer' };
       case 'blog_skyscraper_left':
-      case 'blog_skyscraper_right': return { width: 160, height: 600, label: 'Featured', mobileScale: false };
-      case 'home_quest_banner': return { width: 728, height: 90, label: 'Special Mission', mobileScale: true };
-      case 'home_native_game': return { width: '100%', height: 250, label: 'Suggested', mobileScale: false };
-      case 'quest_page_wall': return { width: '100%', height: 800, label: 'Rewards', mobileScale: false };
-      case 'footer_partner': return { width: 728, height: 90, label: 'Partner', mobileScale: true };
-      case 'deals_strip': return { width: 120, height: 600, label: 'Hot Deals', mobileScale: false };
-      default: return { width: 300, height: 250, label: 'Content', mobileScale: true };
+      case 'blog_skyscraper_right': return { width: 160, height: 600, label: 'Featured' };
+      case 'home_quest_banner': return { width: 728, height: 90, label: 'Special Mission' };
+      case 'home_native_game': return { width: '100%', height: 250, label: 'Suggested' };
+      case 'quest_page_wall': return { width: '100%', height: 800, label: 'Rewards' };
+      case 'footer_partner': return { width: 728, height: 90, label: 'Partner' };
+      case 'deals_strip': return { width: 120, height: 600, label: 'Hot Deals' };
+      default: return { width: 300, height: 250, label: 'Content' };
     }
   };
   
-  const { width, height, label, mobileScale } = getAdConfig();
+  const { width, height, label } = getAdConfig();
 
-  // HYDRATION SHIELD: Prevent SSR mismatch (Fixes Error 418/425)
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (isMounted && mobileScale && typeof window !== 'undefined' && typeof width === 'number') {
-      const handleResize = () => {
-        const availableWidth = window.innerWidth - 32; 
-        if (availableWidth < width) {
-          setScale(availableWidth / width);
-        } else {
-          setScale(1);
-        }
-      };
-      window.addEventListener('resize', handleResize);
-      handleResize(); 
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, [isMounted, mobileScale, width]);
-  
-  // DYNAMIC INJECTION ENGINE: Safely executes JS in ad tags
+  // Injection logic only runs on client
   useEffect(() => {
     if (isMounted && codeToRender && slotRef.current) {
       const container = slotRef.current;
-      container.innerHTML = ''; // Full wipe before injection
-
+      container.innerHTML = ''; 
       try {
         const range = document.createRange();
         const fragment = range.createContextualFragment(codeToRender);
         const scripts = Array.from(fragment.querySelectorAll('script'));
-        
-        // Remove from fragment to prevent auto-execution attempts by browser during append
         scripts.forEach(s => s.remove());
         container.appendChild(fragment);
-
-        // Re-inject scripts properly to ensure execution
         scripts.forEach(oldScript => {
             const newScript = document.createElement('script');
             Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
             if (oldScript.innerHTML) newScript.textContent = oldScript.innerHTML;
-            
-            // Log blockages instead of crashing
-            newScript.onerror = () => console.warn(`[Ad Engine] Script load blocked for ${placement}. Check domain whitelist/AdBlock.`);
             container.appendChild(newScript);
         });
-      } catch (err) {
-        console.error("[Ad Engine] Injection Failed:", err);
-      }
+      } catch (err) { console.error("[Ad] Error:", err); }
     }
   }, [isMounted, codeToRender, placement]);
 
@@ -104,8 +77,10 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
     isTransparent ? '' : 'bg-gray-900/60 border border-white/5 backdrop-blur-md'
   } ${className}`;
 
-  // Maintain layout stability during SSR
-  if (!isMounted) return <div className={containerClasses} style={{ width, height: height || 250, visibility: 'hidden' }} />;
+  // SSR: Return a pixel-perfect empty box. NO label, NO children.
+  if (!isMounted) {
+    return <div className={containerClasses} style={{ width: width === '100%' ? '100%' : width, height: height || 250, opacity: 0 }} />;
+  }
 
   return (
     <div className={containerClasses} data-slot-id={placement}>
@@ -116,10 +91,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
       )}
       <div style={{ 
         width: typeof width === 'number' ? `${width}px` : width,
-        minHeight: typeof height === 'number' ? `${height}px` : 'auto',
-        transform: scale < 1 ? `scale(${scale})` : 'none',
-        transformOrigin: 'top center',
-        marginBottom: scale < 1 && typeof height === 'number' ? -(height * (1 - scale)) : 0
+        minHeight: typeof height === 'number' ? `${height}px` : 'auto'
       }} className="relative z-0 flex items-center justify-center overflow-hidden">
         {isLoading && overrideCode === undefined ? (
           <div className="animate-pulse bg-white/5 rounded-lg w-full h-full min-h-[250px]" />

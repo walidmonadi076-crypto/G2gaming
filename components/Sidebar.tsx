@@ -31,10 +31,13 @@ const MoonIcon = () => (
   </svg>
 );
 
-// FIX: Removed React.FC to avoid implicit 'children' requirement in some TypeScript/React configurations.
 const ThemeToggle = ({ isExpanded }: { isExpanded: boolean }) => {
   const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   
+  if (!mounted) return <div className="h-12 w-12" />;
+
   return (
     <button
       onClick={toggleTheme}
@@ -42,24 +45,26 @@ const ThemeToggle = ({ isExpanded }: { isExpanded: boolean }) => {
         `flex items-center p-3 rounded-lg transition-all duration-200 text-gray-400 hover:bg-gray-700 hover:text-white
          ${isExpanded ? 'w-full' : 'w-12 h-12 justify-center'}`
       }
-      title={isExpanded ? '' : 'Toggle Theme'}
-      aria-label="Toggle light and dark theme"
+      aria-label="Toggle theme"
     >
       {theme === 'light' ? <MoonIcon /> : <SunIcon />}
-      <span className={`whitespace-nowrap transition-all duration-200 ${isExpanded ? 'ml-4 opacity-100' : 'w-0 opacity-0'}`}>
+      <span className={`whitespace-nowrap transition-all duration-200 ${isExpanded ? 'ml-4 opacity-100' : 'w-0 opacity-0 h-0 overflow-hidden'}`}>
         {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
       </span>
     </button>
   );
 };
 
-
-// FIX: Removed React.FC to avoid implicit 'children' requirement in some TypeScript/React configurations.
 const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobileClose }: SidebarProps) => {
   const router = useRouter();
   const { settings } = useSettings();
   const [popularCategories, setPopularCategories] = useState<SidebarCategory[]>([]);
   const [loadingCats, setLoadingCats] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const navItems = [
     { href: '/', icon: ICONS.HOME, label: 'Home' },
@@ -89,19 +94,12 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
               if (res.ok) {
                   const data = await res.json();
                   setPopularCategories(data);
-              } else {
-                  setPopularCategories([]);
               }
-          } catch (e) {
-              console.error("Failed to fetch sidebar categories", e);
-              setPopularCategories([]);
-          } finally {
-              setLoadingCats(false);
-          }
+          } catch (e) { console.error(e); }
+          finally { setLoadingCats(false); }
       };
-      
-      fetchCategories();
-  }, [currentSection]);
+      if (mounted) fetchCategories();
+  }, [currentSection, mounted]);
 
   const isFullyExpanded = isExpanded || isMobileOpen;
 
@@ -118,7 +116,7 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
     >
       <div className={`flex items-center text-purple-500 mb-6 w-full ${isFullyExpanded ? 'pl-6' : 'justify-center'}`}>
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span className={`text-xl font-bold text-white whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-3 opacity-100' : 'w-0 opacity-0'}`}>
+        <span className={`text-xl font-bold text-white whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-3 opacity-100' : 'w-0 opacity-0 h-0 overflow-hidden'}`}>
             {settings.site_name}
         </span>
       </div>
@@ -136,11 +134,9 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
                    ${isActive ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}
                    ${isFullyExpanded ? 'w-full' : 'w-12 h-12 justify-center'}`
                 }
-                title={isFullyExpanded ? '' : item.label}
-                aria-current={isActive ? 'page' : undefined}
               >
                 {React.cloneElement(item.icon, { className: 'h-6 w-6 flex-shrink-0' })}
-                <span className={`whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-4 opacity-100' : 'w-0 opacity-0'}`}>
+                <span className={`whitespace-nowrap transition-all duration-200 ${isFullyExpanded ? 'ml-4 opacity-100' : 'w-0 opacity-0 h-0 overflow-hidden'}`}>
                   {item.label}
                 </span>
               </Link>
@@ -154,52 +150,41 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
             <ThemeToggle isExpanded={isFullyExpanded} />
         </div>
         
-        {/* Popular Categories */}
-        <div className={`w-full px-4 mb-2 mt-4 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
-            <h3 className={`text-xs font-semibold text-gray-500 uppercase tracking-wider transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
-                Popular
-            </h3>
-        </div>
-        
-        <ul className="w-full px-4 space-y-1">
-            {loadingCats ? (
-                // Loading Skeleton
-                [1, 2, 3, 4].map(i => (
-                    <li key={i} className={`h-10 rounded-lg bg-gray-700/30 animate-pulse ${isFullyExpanded ? 'w-full' : 'w-10 mx-auto'}`}></li>
-                ))
-            ) : (
-                popularCategories.map(item => {
-                    const href = {
-                      pathname: parentPath,
-                      query: { category: item.name },
-                    };
-                    const isActive = router.pathname === href.pathname && router.query.category === item.name;
-                    const IconComponent = ICON_MAP[item.icon_name] || ICON_MAP['Gamepad2'];
-                    
-                    return (
-                        <li key={item.id}>
-                            <Link
-                              href={href}
-                              onClick={onMobileClose}
-                              className={
-                                  `flex items-center p-2 rounded-lg transition-all duration-200 group
-                                  ${isActive ? 'bg-purple-600/20 text-purple-300' : 'text-gray-400 hover:bg-gray-800/70 hover:text-white'}
-                                  ${isFullyExpanded ? 'w-full' : 'w-10 h-10 justify-center mx-auto'}`
-                              }
-                              title={isFullyExpanded ? '' : item.name}
-                            >
-                              <div className={`flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-purple-400' : 'text-gray-500 group-hover:text-white'}`}>
-                                {React.isValidElement(IconComponent) ? React.cloneElement(IconComponent as React.ReactElement<any>, { width: 18, height: 18 }) : IconComponent}
-                              </div>
-                              <span className={`whitespace-nowrap text-sm font-medium transition-all duration-200 overflow-hidden ${isFullyExpanded ? 'ml-3 opacity-100 w-auto' : 'w-0 opacity-0 ml-0'}`}>
-                                  {item.name}
-                              </span>
-                            </Link>
-                        </li>
-                    );
-                })
-            )}
-        </ul>
+        {mounted && (
+          <>
+            <div className={`w-full px-4 mb-2 mt-4 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
+                <h3 className={`text-[10px] font-black text-gray-500 uppercase tracking-widest transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
+                    Discover
+                </h3>
+            </div>
+            
+            <ul className="w-full px-4 space-y-1">
+                {loadingCats ? (
+                    [1, 2, 3].map(i => <li key={i} className="h-10 rounded-lg bg-gray-700/30 animate-pulse mb-1" />)
+                ) : (
+                    popularCategories.map(item => {
+                        const IconComponent = ICON_MAP[item.icon_name] || ICON_MAP['Gamepad2'];
+                        return (
+                            <li key={item.id}>
+                                <Link
+                                  href={{ pathname: parentPath, query: { category: item.name } }}
+                                  onClick={onMobileClose}
+                                  className={`flex items-center p-2 rounded-lg transition-all duration-200 group
+                                      ${router.query.category === item.name ? 'bg-purple-600/20 text-purple-300' : 'text-gray-400 hover:bg-gray-800/70 hover:text-white'}
+                                      ${isFullyExpanded ? 'w-full' : 'w-10 h-10 justify-center mx-auto'}`}
+                                >
+                                  <div className="flex-shrink-0">{React.isValidElement(IconComponent) ? React.cloneElement(IconComponent as any, { width: 18, height: 18 }) : null}</div>
+                                  <span className={`whitespace-nowrap text-xs font-bold transition-all duration-200 overflow-hidden ${isFullyExpanded ? 'ml-3 opacity-100' : 'w-0 opacity-0 ml-0 h-0'}`}>
+                                      {item.name}
+                                  </span>
+                                </Link>
+                            </li>
+                        );
+                    })
+                )}
+            </ul>
+          </>
+        )}
       </div>
     </nav>
   );

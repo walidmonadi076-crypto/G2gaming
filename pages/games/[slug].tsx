@@ -35,7 +35,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         return items;
     }, [game]);
 
-    // HYDRATION GUARD: Crucial to prevent Error 418/425 when accessing sessionStorage
+    // PREVENT HYDRATION ERRORS: Ensure window/sessionStorage usage only after mount
     useEffect(() => {
         setIsMounted(true);
         if (typeof window !== 'undefined' && game.slug) {
@@ -70,7 +70,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         window.open(targetUrl, '_blank');
     };
 
-    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white uppercase font-black">Loading Terminal...</div>;
+    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white uppercase font-black">Loading...</div>;
 
     const isMobileGame = game.platform === 'mobile';
 
@@ -179,7 +179,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     <div className="space-y-4 mb-8">
                                         <div className="flex justify-between py-2 border-b border-white/5">
                                             <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
-                                            <span className={`text-[10px] font-black uppercase ${isUnlocked ? 'text-green-400' : 'text-blue-400'}`}>
+                                            <span className={`text-[10px] font-black uppercase ${!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}`}>
                                                 {!isMounted ? '...' : (isUnlocked ? 'Verified' : 'Verification Required')}
                                             </span>
                                         </div>
