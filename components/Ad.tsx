@@ -23,48 +23,39 @@ interface AdProps {
 const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, overrideCode }) => {
   const { ads, isLoading } = useAds();
   const slotRef = useRef<HTMLDivElement>(null);
-  const [isIframe, setIsIframe] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [scale, setScale] = useState(1);
   
+  // Find the code: prioritize override (for admin preview) then context
   const adFromContext = ads.find(a => a.placement === placement);
   const codeToRender = overrideCode !== undefined ? overrideCode : adFromContext?.code;
 
   const getAdConfig = () => {
     switch (placement) {
-      case 'game_vertical':
-        return { width: 300, height: 600, label: 'Recommended', mobileScale: false };
-      case 'game_horizontal':
-        return { width: 300, height: 250, label: 'Sponsored Content', mobileScale: true };
-      case 'shop_square':
-        return { width: 300, height: 250, label: 'Partner Offer', mobileScale: true };
+      case 'game_vertical': return { width: 300, height: 600, label: 'Recommended', mobileScale: false };
+      case 'game_horizontal': return { width: 300, height: 250, label: 'Sponsored', mobileScale: true };
+      case 'shop_square': return { width: 300, height: 250, label: 'Partner Offer', mobileScale: true };
       case 'blog_skyscraper_left':
-      case 'blog_skyscraper_right':
-        return { width: 160, height: 600, label: 'Featured', mobileScale: false };
-      case 'home_quest_banner':
-        return { width: 728, height: 90, label: 'Special Mission', mobileScale: true };
-      case 'home_native_game':
-        return { width: '100%', height: 250, label: 'Suggested', mobileScale: false };
-      case 'quest_page_wall':
-        return { width: '100%', height: 800, label: 'Rewards', mobileScale: false };
-      case 'footer_partner':
-        return { width: 728, height: 90, label: 'Partner', mobileScale: true };
-      case 'deals_strip':
-        return { width: 120, height: 600, label: 'Hot Deals', mobileScale: false };
-      default:
-        return { width: 300, height: 250, label: 'Content', mobileScale: true };
+      case 'blog_skyscraper_right': return { width: 160, height: 600, label: 'Featured', mobileScale: false };
+      case 'home_quest_banner': return { width: 728, height: 90, label: 'Special Mission', mobileScale: true };
+      case 'home_native_game': return { width: '100%', height: 250, label: 'Suggested', mobileScale: false };
+      case 'quest_page_wall': return { width: '100%', height: 800, label: 'Rewards', mobileScale: false };
+      case 'footer_partner': return { width: 728, height: 90, label: 'Partner', mobileScale: true };
+      case 'deals_strip': return { width: 120, height: 600, label: 'Hot Deals', mobileScale: false };
+      default: return { width: 300, height: 250, label: 'Content', mobileScale: true };
     }
   };
   
   const { width, height, label, mobileScale } = getAdConfig();
 
+  // HYDRATION GUARD: Never render script injection on server
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.self !== window.top) {
-      setIsIframe(true);
-    }
+    setIsMounted(true);
   }, []);
 
+  // Handle mobile scaling
   useEffect(() => {
-    if (mobileScale && typeof window !== 'undefined' && typeof width === 'number') {
+    if (isMounted && mobileScale && typeof window !== 'undefined' && typeof width === 'number') {
       const handleResize = () => {
         const availableWidth = window.innerWidth - 32; 
         if (availableWidth < width) {
@@ -77,44 +68,55 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
       handleResize(); 
       return () => window.removeEventListener('resize', handleResize);
     }
-  }, [mobileScale, width]);
+  }, [isMounted, mobileScale, width]);
   
+  // DYNAMIC INJECTION ENGINE
   useEffect(() => {
-    if (codeToRender && slotRef.current && !isIframe) {
+    if (isMounted && codeToRender && slotRef.current) {
       const container = slotRef.current;
+      
+      // 1. Clean previous contents
       container.innerHTML = ''; 
 
       try {
         const range = document.createRange();
         const fragment = range.createContextualFragment(codeToRender);
 
-        // Manual script execution with safety
+        // 2. Manual Script Re-insertion: Standard innerHTML/fragment doesn't execute <script> tags
         const scripts = Array.from(fragment.querySelectorAll('script'));
-        scripts.forEach(oldScript => {
-            try {
-                const newScript = document.createElement('script');
-                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-                if (oldScript.innerHTML) {
-                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                }
-                // Handle script loading errors (like 403 Forbidden)
-                newScript.onerror = () => {
-                    console.warn(`Ad script failed to load for ${placement}. This might be due to an AdBlocker or 403 error.`);
-                };
-                oldScript.parentNode?.replaceChild(newScript, oldScript);
-            } catch (innerErr) {
-                console.error("Script injection error:", innerErr);
-            }
-        });
+        
+        // Remove scripts from fragment to prevent double-insertion if browser tries to process them
+        scripts.forEach(s => s.remove());
 
+        // 3. Append the static HTML parts first
         container.appendChild(fragment);
+
+        // 4. Create and append new script tags one by one
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            
+            // Copy attributes (src, type, async, etc.)
+            Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+            });
+            
+            // Copy inner code if it's an inline script
+            if (oldScript.innerHTML) {
+                newScript.textContent = oldScript.innerHTML;
+            }
+
+            // Error handling for 403s
+            newScript.onerror = () => {
+                console.warn(`[Ad Engine] Script failed for ${placement}. Check domain authorization or AdBlock.`);
+            };
+
+            container.appendChild(newScript);
+        });
       } catch (err) {
-        console.error("Ad context rendering failed:", err);
+        console.error("[Ad Engine] Critical Rendering Error:", err);
       }
-    } else if (slotRef.current) {
-        slotRef.current.innerHTML = '';
     }
-  }, [codeToRender, isIframe, placement]);
+  }, [isMounted, codeToRender, placement]);
 
   const isTransparent = ['footer_partner', 'home_native_game', 'deals_strip'].includes(placement);
   
@@ -130,7 +132,8 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
     marginBottom: scale < 1 && typeof height === 'number' ? -(height * (1 - scale)) : 0
   };
 
-  if (isIframe) return null;
+  // Prevent any server-side rendering of the ad slot to fix Error 418
+  if (!isMounted) return <div className={containerClasses} style={{ width, height: height || 250 }} />;
 
   return (
     <div className={containerClasses} data-slot-id={placement}>

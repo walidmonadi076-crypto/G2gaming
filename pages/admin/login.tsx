@@ -264,7 +264,9 @@ export default function AdminPanel() {
 
   const renderAdPreviewModal = () => {
     if (!previewingAdPlacement) return null;
-    const code = ads[previewingAdPlacement];
+    // Get latest code directly from local state 'ads' to allow real-time testing
+    const currentCode = ads[previewingAdPlacement];
+    
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
             <div className="bg-gray-900 border border-white/10 rounded-[2.5rem] w-full max-w-4xl overflow-hidden shadow-2xl">
@@ -275,8 +277,9 @@ export default function AdminPanel() {
                     </button>
                 </div>
                 <div className="p-12 flex items-center justify-center bg-black/40 min-h-[400px]">
-                    <div className="relative">
-                        <Ad placement={previewingAdPlacement as any} overrideCode={code} />
+                    <div className="relative border border-dashed border-white/10 p-4 rounded-xl">
+                        {/* Force a key change to re-trigger the script injection logic in Ad.tsx */}
+                        <Ad key={`${previewingAdPlacement}-${Date.now()}`} placement={previewingAdPlacement as any} overrideCode={currentCode} />
                     </div>
                 </div>
                 <div className="px-8 py-4 bg-gray-800/50 border-t border-white/5 text-center">
