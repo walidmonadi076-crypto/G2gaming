@@ -84,27 +84,40 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
       const container = slotRef.current;
       container.innerHTML = ''; 
 
-      const range = document.createRange();
-      const fragment = range.createContextualFragment(codeToRender);
+      try {
+        const range = document.createRange();
+        const fragment = range.createContextualFragment(codeToRender);
 
-      // Manual script execution for dynamic parts
-      const scripts = Array.from(fragment.querySelectorAll('script'));
-      scripts.forEach(oldScript => {
-        const newScript = document.createElement('script');
-        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-        oldScript.parentNode?.replaceChild(newScript, oldScript);
-      });
+        // Manual script execution with safety
+        const scripts = Array.from(fragment.querySelectorAll('script'));
+        scripts.forEach(oldScript => {
+            try {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                if (oldScript.innerHTML) {
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                }
+                // Handle script loading errors (like 403 Forbidden)
+                newScript.onerror = () => {
+                    console.warn(`Ad script failed to load for ${placement}. This might be due to an AdBlocker or 403 error.`);
+                };
+                oldScript.parentNode?.replaceChild(newScript, oldScript);
+            } catch (innerErr) {
+                console.error("Script injection error:", innerErr);
+            }
+        });
 
-      container.appendChild(fragment);
+        container.appendChild(fragment);
+      } catch (err) {
+        console.error("Ad context rendering failed:", err);
+      }
     } else if (slotRef.current) {
         slotRef.current.innerHTML = '';
     }
-  }, [codeToRender, isIframe]);
+  }, [codeToRender, isIframe, placement]);
 
   const isTransparent = ['footer_partner', 'home_native_game', 'deals_strip'].includes(placement);
   
-  // Anti-Adblock class naming (Avoiding 'ad', 'banner', 'ads')
   const containerClasses = `relative flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
     isTransparent ? '' : 'bg-gray-900/60 border border-white/5 backdrop-blur-md'
   } ${className}`;
