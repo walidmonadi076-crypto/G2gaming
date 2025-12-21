@@ -28,7 +28,11 @@ class MyDocument extends Document<MyDocumentProps> {
         ogadsScriptUrl: scriptUrl,
       };
     } catch (error) {
-      return { ...initialProps, ogadsScriptUrl: null };
+      console.error('Failed to fetch site settings in _document:', error);
+      return { 
+        ...initialProps,
+        ogadsScriptUrl: null,
+      };
     }
   }
 
@@ -39,9 +43,9 @@ class MyDocument extends Document<MyDocumentProps> {
       <Html lang="en" className="font-sans" suppressHydrationWarning={true}>
         <Head>
           <meta charSet="UTF-8" />
-          {/* Fix 404 by embedding icon directly */}
+          {/* Use Data URI directly to satisfy browser and avoid 404 /favicon.ico */}
           <link rel="icon" href={FAVICON_DATA_URI} type="image/svg+xml" />
-          <meta name="theme-color" content="#0d0d0d" />
+          <meta name="theme-color" content="#ffffff" />
           {ogadsScriptUrl && (
             <script
               id="ogjs"
@@ -56,10 +60,19 @@ class MyDocument extends Document<MyDocumentProps> {
             dangerouslySetInnerHTML={{
               __html: `
               (function() {
-                  try {
-                      const theme = window.localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                      if (theme === 'light') document.documentElement.classList.add('light');
-                  } catch (e) {}
+                  function getInitialTheme() {
+                      try {
+                          const storedTheme = window.localStorage.getItem('theme');
+                          if (storedTheme) return storedTheme;
+                          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                      } catch (e) {
+                          return 'dark';
+                      }
+                  }
+                  const theme = getInitialTheme();
+                  if (theme === 'light') {
+                      document.documentElement.classList.add('light');
+                  }
               })();
               `,
             }}

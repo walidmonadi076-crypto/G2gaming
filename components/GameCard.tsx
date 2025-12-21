@@ -55,7 +55,6 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
   return (
     <Link 
       href={`/games/${game.slug}`}
-      prefetch={false}
       className={`group flex flex-col w-full h-full bg-[#0e0e12] p-3 rounded-[32px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] 
                  ${active ? 'bg-[#13131a] scale-110 z-30 border-purple-500/60 shadow-[0_0_60px_rgba(168,85,247,0.3)] opacity-100' : 'opacity-80 scale-95 border-white/5'} 
                  border relative`}
@@ -71,7 +70,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
                        src={embedUrl}
                        className="absolute top-1/2 left-1/2 w-[150%] h-[150%] -translate-x-1/2 -translate-y-1/2 pointer-events-none object-cover" 
                        title={game.title}
-                       allow="autoplay; encrypted-media; fullscreen"
+                       allow="autoplay; encrypted-media"
                        onLoad={() => setVideoLoaded(true)}
                      />
                    </div>
@@ -147,7 +146,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
          </div>
 
          <div className={`flex-1 rounded-2xl px-4 py-3 flex items-center justify-center gap-2 transition-all shadow-lg ${active ? 'bg-[#5865F2] text-white' : 'bg-gray-800 text-gray-500'}`}>
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />

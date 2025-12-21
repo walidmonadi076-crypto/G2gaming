@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -110,6 +111,7 @@ const Lightbox: React.FC<LightboxProps> = ({ items, startIndex = 0, onClose }) =
                     className="w-full h-full"
                     title="Video Player"
                     allow="autoplay; encrypted-media; fullscreen"
+                    allowFullScreen
                 />
              </div>
           ) : (
