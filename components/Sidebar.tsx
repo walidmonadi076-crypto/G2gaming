@@ -88,6 +88,7 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
 
   useEffect(() => {
       const fetchCategories = async () => {
+          if (!mounted) return;
           setLoadingCats(true);
           try {
               const res = await fetch(`/api/public/sidebar-categories?section=${currentSection}`);
@@ -98,7 +99,7 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
           } catch (e) { console.error(e); }
           finally { setLoadingCats(false); }
       };
-      if (mounted) fetchCategories();
+      fetchCategories();
   }, [currentSection, mounted]);
 
   const isFullyExpanded = isExpanded || isMobileOpen;
@@ -123,7 +124,8 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
 
       <ul className="w-full px-4 space-y-2">
         {navItems.map(item => {
-          const isActive = (item.href === '/' && router.pathname === '/') || (item.href !== '/' && router.pathname.startsWith(item.href));
+          // Only show active state if mounted to prevent hydration mismatch (server has no query)
+          const isActive = mounted && ((item.href === '/' && router.pathname === '/') || (item.href !== '/' && router.pathname.startsWith(item.href)));
           return (
             <li key={item.href}>
               <Link
@@ -164,13 +166,14 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
                 ) : (
                     popularCategories.map(item => {
                         const IconComponent = ICON_MAP[item.icon_name] || ICON_MAP['Gamepad2'];
+                        const isActive = mounted && router.query.category === item.name;
                         return (
                             <li key={item.id}>
                                 <Link
                                   href={{ pathname: parentPath, query: { category: item.name } }}
                                   onClick={onMobileClose}
                                   className={`flex items-center p-2 rounded-lg transition-all duration-200 group
-                                      ${router.query.category === item.name ? 'bg-purple-600/20 text-purple-300' : 'text-gray-400 hover:bg-gray-800/70 hover:text-white'}
+                                      ${isActive ? 'bg-purple-600/20 text-purple-300' : 'text-gray-400 hover:bg-gray-800/70 hover:text-white'}
                                       ${isFullyExpanded ? 'w-full' : 'w-10 h-10 justify-center mx-auto'}`}
                                 >
                                   <div className="flex-shrink-0">{React.isValidElement(IconComponent) ? React.cloneElement(IconComponent as any, { width: 18, height: 18 }) : null}</div>

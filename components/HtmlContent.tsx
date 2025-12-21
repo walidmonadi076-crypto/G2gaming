@@ -14,9 +14,10 @@ const HtmlContent: React.FC<HtmlContentProps> = ({ html, className = "" }) => {
 
   if (!html) return null;
 
-  // SSR and Initial Hydration: Render a placeholder with zero attributes to ensure match
+  // SSR/Initial Hydration: Match container structure exactly with NO inner content
+  // This avoids mismatches between server-rendered string and client parsed DOM
   if (!isMounted) {
-      return <div className={className} />;
+      return <div className={className} suppressHydrationWarning={true} />;
   }
 
   return (

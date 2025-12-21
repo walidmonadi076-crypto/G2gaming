@@ -8,9 +8,7 @@ interface SEOProps {
   url?: string;
   keywords?: string[];
   schema?: Record<string, any>;
-  // FIX: Added noindex prop to allow pages to opt-out of search engine indexing.
   noindex?: boolean;
-  // FIX: Added optional children to satisfy strict type checks when used as a component.
   children?: React.ReactNode;
 }
 
@@ -28,7 +26,6 @@ export default function SEO({
   const fullUrl = url ? `https://yoursite.com${url}` : 'https://yoursite.com';
 
   return (
-    /* FIX: Using explicit children prop for Head to resolve type resolution issues with JSX children in some environments. */
     <Head
       children={
         <>
@@ -36,7 +33,6 @@ export default function SEO({
           <meta name="description" content={description} />
           <meta name="keywords" content={keywords.join(', ')} />
 
-          {/* FIX: Conditionally render the 'noindex' meta tag for search engines. */}
           {noindex && <meta name="robots" content="noindex, nofollow" />}
 
           <meta property="og:title" content={fullTitle} />
@@ -54,7 +50,7 @@ export default function SEO({
           <meta name="theme-color" content="#7c3aed" />
           <link rel="canonical" href={fullUrl} />
 
-          <link rel="icon" href="/favicon.ico" />
+          {/* Favicon is globally handled in _document.tsx with a Data URI. No need for /favicon.ico here. */}
 
           {schema && (
             <script

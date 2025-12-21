@@ -24,7 +24,6 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
   const { ads, isLoading } = useAds();
   const slotRef = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [scale, setScale] = useState(1);
   
   const adFromContext = ads.find(a => a.placement === placement);
   const codeToRender = overrideCode !== undefined ? overrideCode : adFromContext?.code;
@@ -47,11 +46,15 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
   
   const { width, height, label } = getAdConfig();
 
+  // STABILIZE DIMENSIONS FOR HYDRATION - CRITICAL FOR ERROR 425
+  // We use string templates to ensure both server and client produce the exact same style strings (e.g. "728px")
+  const cssWidth = typeof width === 'number' ? `${width}px` : width;
+  const cssHeight = typeof height === 'number' ? `${height}px` : (height ? `${height}px` : '250px');
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Injection logic only runs on client
   useEffect(() => {
     if (isMounted && codeToRender && slotRef.current) {
       const container = slotRef.current;
@@ -68,7 +71,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
             if (oldScript.innerHTML) newScript.textContent = oldScript.innerHTML;
             container.appendChild(newScript);
         });
-      } catch (err) { console.error("[Ad] Error:", err); }
+      } catch (err) { console.error("[Ad Engine] Injection Failed:", err); }
     }
   }, [isMounted, codeToRender, placement]);
 
@@ -77,22 +80,25 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
     isTransparent ? '' : 'bg-gray-900/60 border border-white/5 backdrop-blur-md'
   } ${className}`;
 
-  // SSR: Return a pixel-perfect empty box. NO label, NO children.
   if (!isMounted) {
-    return <div className={containerClasses} style={{ width: width === '100%' ? '100%' : width, height: height || 250, opacity: 0 }} />;
+    return (
+      <div 
+        className={containerClasses} 
+        style={{ width: cssWidth, height: cssHeight, opacity: 0 }}
+        data-slot-id={placement}
+        suppressHydrationWarning={true}
+      />
+    );
   }
 
   return (
-    <div className={containerClasses} data-slot-id={placement}>
+    <div className={containerClasses} data-slot-id={placement} suppressHydrationWarning={true}>
       {showLabel && !isTransparent && (
         <span className="absolute top-0 left-0 bg-gray-800/90 text-[8px] font-black text-gray-500 px-2 py-0.5 rounded-br-lg uppercase tracking-widest z-10 border-b border-r border-white/5">
           {label}
         </span>
       )}
-      <div style={{ 
-        width: typeof width === 'number' ? `${width}px` : width,
-        minHeight: typeof height === 'number' ? `${height}px` : 'auto'
-      }} className="relative z-0 flex items-center justify-center overflow-hidden">
+      <div style={{ width: cssWidth, minHeight: cssHeight }} className="relative z-0 flex items-center justify-center overflow-hidden">
         {isLoading && overrideCode === undefined ? (
           <div className="animate-pulse bg-white/5 rounded-lg w-full h-full min-h-[250px]" />
         ) : (

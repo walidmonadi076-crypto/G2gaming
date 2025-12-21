@@ -35,7 +35,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         return items;
     }, [game]);
 
-    // PREVENT HYDRATION ERRORS: Ensure window/sessionStorage usage only after mount
     useEffect(() => {
         setIsMounted(true);
         if (typeof window !== 'undefined' && game.slug) {
@@ -125,12 +124,11 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 )}
                             </div>
 
-                            {/* UNIQUE KEYS: Use image URL as key to prevent Error 423 */}
                             {game.gallery && game.gallery.length > 0 && (
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
                                     {game.gallery.slice(0, 4).map((img, idx) => (
                                         <button 
-                                            key={img} 
+                                            key={`gallery-${idx}`} 
                                             onClick={() => { setLightboxIndex(game.videoUrl ? idx + 1 : idx); setLightboxOpen(true); }}
                                             className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all group shadow-xl"
                                         >
@@ -171,7 +169,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                                Status: {!isMounted ? '...' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}
+                                                Status: <span suppressHydrationWarning={true}>{!isMounted ? '...' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -179,7 +177,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     <div className="space-y-4 mb-8">
                                         <div className="flex justify-between py-2 border-b border-white/5">
                                             <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
-                                            <span className={`text-[10px] font-black uppercase ${!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}`}>
+                                            <span suppressHydrationWarning={true} className={`text-[10px] font-black uppercase ${!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}`}>
                                                 {!isMounted ? '...' : (isUnlocked ? 'Verified' : 'Verification Required')}
                                             </span>
                                         </div>
@@ -223,7 +221,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         </h3>
                                         <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                                             {Object.entries(game.requirements).map(([key, val]) => (
-                                                <div key={key}>
+                                                <div key={`req-${key}`}>
                                                     <span className="text-[8px] font-black uppercase text-gray-600 tracking-[0.2em] block mb-1">{key}</span>
                                                     <p className="text-gray-300 font-bold text-xs">{val}</p>
                                                 </div>
@@ -242,7 +240,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter italic">Similar Expeditions</h3>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {similarGames?.length > 0 && similarGames.map(sg => <GameCard key={sg.id} game={sg} />)}
+                            {similarGames?.length > 0 && similarGames.map(sg => <GameCard key={`similar-${sg.id}`} game={sg} />)}
                         </div>
                     </section>
                 </div>
