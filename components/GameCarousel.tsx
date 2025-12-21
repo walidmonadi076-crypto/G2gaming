@@ -100,8 +100,13 @@ const GameCarousel: React.FC<GameCarouselProps> = ({ games, cardVariant = 'defau
       <NavButton direction="left" disabled={!canScrollLeft} />
       <div
         ref={scrollContainerRef}
+        // FIX: Replaced <style jsx> with inline styles to resolve TypeScript error 'Property jsx does not exist on type style'.
+        style={xmbEffect ? {
+          maskImage: 'linear-gradient(to right, transparent, black 25%, black 75%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent, black 25%, black 75%, transparent)'
+        } : undefined}
         className={`flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 md:gap-8 py-10 -my-10 no-scrollbar items-center
-                    ${xmbEffect ? 'mask-gradient-x px-[15%]' : ''}`}
+                    ${xmbEffect ? 'px-[15%]' : ''}`}
       >
         {games.map((game, index) => (
           <div 
@@ -113,15 +118,6 @@ const GameCarousel: React.FC<GameCarouselProps> = ({ games, cardVariant = 'defau
         ))}
       </div>
       <NavButton direction="right" disabled={!canScrollRight} />
-      
-      {xmbEffect && (
-          <style jsx>{`
-            .mask-gradient-x {
-                mask-image: linear-gradient(to right, transparent, black 25%, black 75%, transparent);
-                -webkit-mask-image: linear-gradient(to right, transparent, black 25%, black 75%, transparent);
-            }
-          `}</style>
-      )}
     </div>
   );
 };

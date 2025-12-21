@@ -81,12 +81,12 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
 
   useEffect(() => {
     if (item) {
-      setFormData({ gallery: [], tags: [], ...item });
+      setFormData({ gallery: [], tags: [], requirements: { os: '', ram: '', storage: '' }, ...item });
       setIsPinned(!!(item as any).isPinned);
       if (type === 'games') setIsFeatured((item as Game).tags?.includes('Featured') || false);
     } else {
       const defaults = {
-        games: { title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [], platform: 'pc', requirements: { os: '', ram: '', storage: '' } },
+        games: { title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [], platform: 'pc', downloadsCount: 1500, rating: 95, requirements: { os: 'Windows 10', ram: '8GB', storage: '20GB' } },
         blogs: { title: '', summary: '', imageUrl: '', author: 'Admin', content: '', category: '' },
         products: { name: '', imageUrl: '', videoUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
         'social-links': { name: '', url: '', icon_svg: '' },
@@ -103,13 +103,22 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       setFormData((prev: any) => ({ ...prev, [name]: val, slug: slugify(val) }));
   }
 
-  const renderBasicField = (name: string, label: string, placeholder: string = "", required = true) => (
+  const handleAddGalleryItem = () => {
+    const url = prompt("Enter Image URL:");
+    if (url) setField('gallery', [...(formData.gallery || []), url]);
+  };
+
+  const handleRemoveGalleryItem = (index: number) => {
+    setField('gallery', formData.gallery.filter((_:any, i:number) => i !== index));
+  };
+
+  const renderBasicField = (name: string, label: string, placeholder: string = "", required = true, inputType = "text") => (
       <div className="space-y-1">
           <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">{label}</label>
           <input 
-              type="text" 
-              value={formData[name] || ''} 
-              onChange={(e) => setField(name, e.target.value)} 
+              type={inputType} 
+              value={formData[name] === null ? '' : formData[name]} 
+              onChange={(e) => setField(name, inputType === 'number' ? parseInt(e.target.value) : e.target.value)} 
               required={required}
               placeholder={placeholder}
               className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all outline-none text-sm" 
@@ -121,12 +130,15 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in">
       <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...formData, isPinned, tags: isFeatured ? [...(formData.tags?.filter((t:any)=>t!=='Featured')||[]), 'Featured'] : formData.tags?.filter((t:any)=>t!=='Featured') }); }} className="bg-gray-800 rounded-[2.5rem] border border-white/10 shadow-2xl w-full h-full max-w-[1400px] flex flex-col overflow-hidden">
         <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-gray-900/50">
-            <div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{item ? 'Update' : 'Create'} {type.replace('-', ' ')}</h2>
+            <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{item ? 'Edit Record' : 'Initialize New Entry'}</h2>
             </div>
             <div className="flex gap-4">
               <button type="button" onClick={onClose} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Cancel</button>
-              <button type="submit" className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/40">Authorize Save</button>
+              <button type="submit" className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/40">Commit to Database</button>
             </div>
         </div>
         
@@ -135,42 +147,79 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             {type === 'games' && (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {renderBasicField('title', 'Game Identity')}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Title</label>
-                            <input type="text" value={formData.title} onChange={handleTitleChange} required className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm" />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Category</label>
+                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Classification</label>
                             <input list="cats" value={formData.category} onChange={e=>setField('category', e.target.value)} required className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm" /><datalist id="cats">{categories.map(c=><option key={c} value={c}/>)}</datalist>
                         </div>
                     </div>
-                    {renderBasicField('imageUrl', 'Cover Image URL (Sidebar Icon)')}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {renderBasicField('iconUrl', 'Game Logo (PNG/Transparent)', 'Link to Logo Image', false)}
-                        {renderBasicField('backgroundUrl', 'Hero Background', 'Large landscape image', false)}
+
+                    <div className="bg-gray-900/40 p-6 rounded-3xl border border-white/5 space-y-4">
+                        <h4 className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em] mb-4">Visual Assets</h4>
+                        {renderBasicField('imageUrl', 'Grid Cover URL')}
+                        {renderBasicField('iconUrl', 'Circle Icon Logo (Transparent PNG)')}
+                        {renderBasicField('backgroundUrl', 'Immersive Background URL')}
                     </div>
-                    {renderBasicField('videoUrl', 'YouTube/Video URL', 'https://youtube.com/watch?v=...', false)}
-                    <div className="grid grid-cols-3 gap-4">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {renderBasicField('downloadsCount', 'Manual Players Count', 'e.g. 5000', true, 'number')}
+                        {renderBasicField('rating', 'Manual Score (0-100)', '95', true, 'number')}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {renderBasicField('videoUrl', 'YouTube / MP4 Trailer', 'https://...', false)}
+                        {renderBasicField('downloadUrl', 'Download Target URL', 'https://...', true)}
+                    </div>
+
+                    {/* Requirements Manager */}
+                    <div className="bg-gray-900/40 p-6 rounded-3xl border border-white/5">
+                        <h4 className="text-[10px] font-black uppercase text-green-400 tracking-[0.2em] mb-4">System Requirements</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input type="text" placeholder="OS" value={formData.requirements?.os} onChange={e=>setField('requirements', {...formData.requirements, os: e.target.value})} className="bg-gray-900 border border-gray-700 rounded-lg p-2 text-xs" />
+                            <input type="text" placeholder="RAM" value={formData.requirements?.ram} onChange={e=>setField('requirements', {...formData.requirements, ram: e.target.value})} className="bg-gray-900 border border-gray-700 rounded-lg p-2 text-xs" />
+                            <input type="text" placeholder="Storage" value={formData.requirements?.storage} onChange={e=>setField('requirements', {...formData.requirements, storage: e.target.value})} className="bg-gray-900 border border-gray-700 rounded-lg p-2 text-xs" />
+                        </div>
+                    </div>
+
+                    {/* Gallery Manager */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Visual Recon Gallery</label>
+                            <button type="button" onClick={handleAddGalleryItem} className="text-[9px] font-black uppercase px-3 py-1 bg-blue-600 text-white rounded-md">Add Capture</button>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                            {formData.gallery?.map((url: string, i: number) => (
+                                <div key={i} className="relative group aspect-video bg-gray-900 rounded-lg overflow-hidden border border-white/10">
+                                    <img src={url} className="w-full h-full object-cover" alt="" />
+                                    <button onClick={()=>handleRemoveGalleryItem(i)} className="absolute inset-0 bg-red-600/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" strokeWidth={3} /></svg>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3 bg-gray-900 p-4 rounded-2xl border border-gray-700 cursor-pointer" onClick={()=>setIsFeatured(!isFeatured)}>
                             <div className={`w-5 h-5 rounded-md border-2 transition-colors ${isFeatured?'bg-purple-500 border-purple-500':'border-gray-600'}`} />
-                            <span className="text-[10px] font-black uppercase text-gray-400">Featured</span>
+                            <span className="text-[10px] font-black uppercase text-gray-400">Mark as Featured</span>
                         </div>
                         <div className="flex items-center gap-3 bg-gray-900 p-4 rounded-2xl border border-gray-700 cursor-pointer" onClick={()=>setIsPinned(!isPinned)}>
                             <div className={`w-5 h-5 rounded-md border-2 transition-colors ${isPinned?'bg-blue-500 border-blue-500':'border-gray-600'}`} />
-                            <span className="text-[10px] font-black uppercase text-gray-400">Pin Top</span>
+                            <span className="text-[10px] font-black uppercase text-gray-400">Pin to Top</span>
                         </div>
-                        {renderBasicField('rating', 'Rating (0-100)')}
                     </div>
-                    <RichTextEditor id="desc" label="Game Description" value={formData.description} onChange={v=>setField('description', v)} />
+
+                    <RichTextEditor id="desc" label="Briefing & Missions" value={formData.description} onChange={v=>setField('description', v)} />
                     <AIHelperPanel contextType="game" onApplyLongDescription={v=>setField('description', v)} />
                 </>
             )}
+            {/* ... Blogs, Products logic (remains similar) */}
             {type === 'blogs' && (
                 <>
                     <input type="text" value={formData.title} onChange={handleTitleChange} className="text-3xl font-black bg-transparent border-b border-gray-700 w-full outline-none focus:border-purple-500 uppercase tracking-tighter" placeholder="Article Title..." />
                     {renderBasicField('imageUrl', 'Banner URL')}
                     <RichTextEditor id="cont" label="Article Content" value={formData.content} onChange={v=>setField('content', v)} />
-                    <AIHelperPanel contextType="blog" onApplyLongDescription={v=>setField('content', v)} />
                 </>
             )}
             {type === 'products' && (
@@ -183,22 +232,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                     {renderBasicField('imageUrl', 'Main Image URL')}
                     <RichTextEditor id="pdesc" label="Product Details" value={formData.description} onChange={v=>setField('description', v)} />
                 </>
-            )}
-            {type === 'social-links' && (
-                <div className="space-y-6">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Social Connection</h3>
-                    {renderBasicField('name', 'Link Name (e.g. Discord, YouTube)')}
-                    {renderBasicField('url', 'Target URL')}
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">SVG Icon Code</label>
-                        <textarea 
-                            value={formData.icon_svg} 
-                            onChange={e=>setField('icon_svg', e.target.value)} 
-                            className="w-full h-48 bg-gray-900 border border-gray-700 rounded-xl p-4 font-mono text-xs text-blue-300 outline-none focus:border-purple-500" 
-                            placeholder='<svg ...>...</svg>'
-                        />
-                    </div>
-                </div>
             )}
           </div>
           <div className="hidden lg:block h-full"><AdminPreview data={formData} type={type} /></div>
