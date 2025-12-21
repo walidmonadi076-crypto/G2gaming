@@ -39,8 +39,6 @@ declare global {
     interface Window {
         __ogadsLoaded?: boolean;
         og_load?: () => void;
-        // Global bridge for OGAds callback configuration
-        onLockerUnlock?: () => void; 
     }
 }
 
@@ -57,33 +55,32 @@ function MyApp({ Component, pageProps }: MyAppProps) {
 
   const isAdminPage = router.pathname.startsWith('/admin');
 
-  // Load OGAds Script Globally - ONCE
+  // --- OGAds Global Bridge ---
   useEffect(() => {
-    if (!isAdminPage && !window.__ogadsLoaded) {
-      const script = document.createElement("script");
-      // This is the core library. Ensure your OGAds dashboard uses "Overlay Mode"
-      script.src = "https://www.ogads.com/locker.js"; 
-      script.async = true;
-      script.id = "og-locker-core";
+    if (isAdminPage) return;
+
+    const handleLockerUnlock = () => {
+      // Get the current slug from the URL path safely
+      const pathParts = window.location.pathname.split('/');
+      const slug = pathParts[pathParts.length - 1];
       
-      script.onload = () => {
-        window.__ogadsLoaded = true;
-      };
+      if (slug) {
+        // 1. Persist the unlock state for this specific slug
+        sessionStorage.setItem(`unlocked_${slug}`, 'true');
+        
+        // 2. Perform a full page reload to clear the OGAds overlay from the DOM 
+        // and ensure the React app picks up the new storage state fresh.
+        window.location.reload();
+      }
+    };
 
-      document.body.appendChild(script);
-    }
+    // Listen for the official OGAds unlock event (DOM-based)
+    window.addEventListener('ogads_unlocked', handleLockerUnlock);
+    
+    return () => {
+      window.removeEventListener('ogads_unlocked', handleLockerUnlock);
+    };
   }, [isAdminPage]);
-
-  // Global handler for OGAds completion
-  // Many OGAds configurations allow calling a specific function on success.
-  // We attach it to window so it's accessible from the locker.
-  useEffect(() => {
-      window.onLockerUnlock = () => {
-          // This can be used as a fallback or triggered by page-level components
-          const event = new CustomEvent('og-unlocked');
-          window.dispatchEvent(event);
-      };
-  }, []);
 
   useEffect(() => {
     const fetchClientSideData = async () => {

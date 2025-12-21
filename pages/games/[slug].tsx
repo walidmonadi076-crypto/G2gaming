@@ -34,7 +34,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         return items;
     }, [game]);
 
-    // 1. Initial State Check
+    // Check for unlock state on mount (Crucial for picking up state after location.reload)
     useEffect(() => {
         if (game.slug) {
             const unlocked = sessionStorage.getItem(`unlocked_${game.slug}`);
@@ -44,32 +44,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         }
     }, [game.slug]);
 
-    // 2. Global Event Listener for OGAds completion
-    useEffect(() => {
-        const handleUnlock = () => {
-            if (game.slug) {
-                sessionStorage.setItem(`unlocked_${game.slug}`, 'true');
-                setIsUnlocked(true);
-                // Perform a "lightweight refresh" by replacing current path
-                // This ensures all components react to the new state
-                router.replace(router.asPath);
-            }
-        };
-
-        // Standard OGAds lockers can be set to call window.onLockerUnlock
-        window.onLockerUnlock = handleUnlock;
-        
-        // Also listen for a custom DOM event for extra stability
-        window.addEventListener('og-unlocked', handleUnlock);
-        
-        return () => { 
-            window.removeEventListener('og-unlocked', handleUnlock);
-            // Don't delete window.onLockerUnlock globally, just clear the reference if needed
-            // but usually it's safe to keep as it's replaced on next mount
-        };
-    }, [game.slug, router]);
-
-    // 3. Tracking views
+    // Tracking views
     useEffect(() => {
         if (router.isReady && game.slug && process.env.NODE_ENV === 'production') {
             fetch('/api/views/track', {
@@ -84,16 +59,14 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         e.preventDefault();
         
         if (isUnlocked) {
+            // Already unlocked, proceed directly to content
             window.open(targetUrl, '_blank');
         } else {
+            // Trigger OGAds Content Locker
             if (typeof window.og_load === 'function') {
-                // IMPORTANT: Ensure your OGAds Content Locker is configured with:
-                // 1. Overlay Mode (Standard)
-                // 2. No Redirect on success
-                // 3. Javascript Success Callback: "onLockerUnlock()"
                 window.og_load();
             } else {
-                // Fallback if script didn't load
+                // Fallback for development or if script fails
                 window.open(targetUrl, '_blank');
             }
         }
@@ -136,7 +109,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
                             <div className="h-4 w-px bg-gray-800"></div>
                             <span className="text-gray-400 text-xs font-black uppercase tracking-[0.1em]">
-                                {game.downloadsCount ? game.downloadsCount.toLocaleString() : 0} Joined the expedition
+                                {game.downloadsCount ? game.downloadsCount.toLocaleString() : 0} Players Joined
                             </span>
                         </div>
                     </header>
@@ -206,15 +179,15 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         </div>
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">System Status: {isUnlocked ? 'UNLOCKED' : 'SECURED'}</p>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">System Status: {isUnlocked ? 'AUTHORIZED' : 'SECURED'}</p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-4 mb-8">
                                         <div className="flex justify-between py-2 border-b border-white/5">
                                             <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
-                                            <span className={`text-[10px] font-black uppercase ${isUnlocked ? 'text-green-400' : 'text-blue-400 animate-pulse'}`}>
-                                                {isUnlocked ? 'Verified' : 'Verification Required'}
+                                            <span className={`text-[10px] font-black uppercase ${isUnlocked ? 'text-green-400' : 'text-blue-400'}`}>
+                                                {isUnlocked ? 'Verified' : 'Validation Required'}
                                             </span>
                                         </div>
                                         <div className="flex justify-between py-2 border-b border-white/5">
@@ -237,13 +210,13 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                             </div>
                                         ) : (
                                             <button onClick={(e) => handleActionClick(e, game.downloadUrl)} className={`w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(147,51,234,0.4)] active:scale-95 group flex items-center justify-center gap-3`}>
-                                                {isUnlocked ? 'Execute Deployment' : 'Start Content Quest'}
+                                                {isUnlocked ? 'Execute Deployment' : 'Initiate Verification'}
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                             </button>
                                         )}
                                     </div>
                                     <p className="mt-6 text-[8px] text-center text-gray-600 uppercase font-black tracking-widest leading-relaxed">
-                                        Secure tunnel encryption enabled. Unlocking persists for this session.
+                                        Secure Content Locker Active. Unlocking persists for this session.
                                     </p>
                                 </div>
 
@@ -251,7 +224,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     <div className="bg-gray-900/60 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
                                         <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 flex items-center gap-2">
                                             <div className="w-1 h-4 bg-green-500 rounded-full"></div>
-                                            Configuration
+                                            Specification
                                         </h3>
                                         <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                                             {Object.entries(game.requirements).map(([key, val]) => (
