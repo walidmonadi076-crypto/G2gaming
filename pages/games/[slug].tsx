@@ -79,15 +79,32 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         }
     };
 
-    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white">Loading...</div>;
+    if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white font-black uppercase tracking-widest">Loading Game Data...</div>;
 
     return (
         <>
             <SEO title={game.title} description={game.description?.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 pb-20">
-                {/* Background Decor */}
-                <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none z-0" />
+            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 pb-20 relative overflow-hidden">
+                {/* Immersive Background Image from DB */}
+                {game.backgroundUrl && (
+                    <div className="fixed inset-0 z-0">
+                        <Image 
+                            src={game.backgroundUrl} 
+                            alt="" 
+                            fill 
+                            className="object-cover opacity-30 blur-[2px]" 
+                            priority 
+                            unoptimized 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/60 via-[#0d0d0d]/90 to-[#0d0d0d]" />
+                    </div>
+                )}
+                
+                {/* Fallback Decor if no backgroundUrl */}
+                {!game.backgroundUrl && (
+                    <div className="fixed top-0 left-0 w-full h-[800px] bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none z-0" />
+                )}
 
                 <div className="relative z-10 max-w-[1600px] mx-auto px-4 pt-8">
                     <div className="mb-8">
@@ -112,27 +129,29 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <span className="px-3 py-1 rounded-full bg-purple-900/30 border border-purple-500/30 text-purple-300 text-[10px] font-black uppercase tracking-widest">{game.category}</span>
-                                        <span className="px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-300 text-[10px] font-black uppercase tracking-widest">{game.platform || 'PC'}</span>
+                                        <span className="px-3 py-1 rounded-full bg-purple-900/40 border border-purple-500/40 text-purple-300 text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">{game.category}</span>
+                                        <span className="px-3 py-1 rounded-full bg-blue-900/40 border border-blue-500/40 text-blue-300 text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">{game.platform || 'PC'}</span>
                                     </div>
-                                    <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none">{game.title}</h1>
+                                    <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-2xl">{game.title}</h1>
                                     <div className="flex items-center gap-4">
-                                        <StarRating rating={game.rating ? game.rating / 20 : 4.8} size="large" />
-                                        <span className="text-gray-600 text-xs font-bold uppercase tracking-widest">|</span>
-                                        <span className="text-gray-400 text-xs font-black uppercase tracking-widest">{(game.downloadsCount || 1500).toLocaleString()} Players</span>
+                                        <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
+                                        <span className="text-gray-700 text-xs font-bold uppercase tracking-widest">|</span>
+                                        <span className="text-gray-400 text-xs font-black uppercase tracking-widest">
+                                            {game.downloadsCount ? game.downloadsCount.toLocaleString() : 0} Players Joined
+                                        </span>
                                     </div>
                                 </div>
                                 
                                 <button 
                                     onClick={handleActionClick}
-                                    className="px-10 py-4 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest text-sm rounded-xl transition-all hover:scale-105 shadow-[0_10px_30px_rgba(147,51,234,0.4)] active:scale-95 whitespace-nowrap"
+                                    className="px-10 py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest text-sm rounded-2xl transition-all hover:scale-105 shadow-[0_15px_40px_rgba(147,51,234,0.5)] active:scale-95 whitespace-nowrap"
                                 >
-                                    {isUnlocked ? 'Download Full Game' : 'Unlock & Play Now'}
+                                    {isUnlocked ? 'Download Full Version' : 'Access Content Now'}
                                 </button>
                             </header>
 
                             {/* Main Media Visual */}
-                            <div className="group relative w-full aspect-video bg-gray-900 rounded-3xl overflow-hidden mb-8 shadow-2xl border border-white/10">
+                            <div className="group relative w-full aspect-video bg-gray-900 rounded-[2.5rem] overflow-hidden mb-12 shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-white/10">
                                 {game.videoUrl ? (
                                     embedUrl ? (
                                         <iframe src={embedUrl} className="w-full h-full" title={game.title} allow="autoplay; encrypted-media; fullscreen" allowFullScreen />
@@ -140,40 +159,44 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <video src={game.videoUrl} controls autoPlay muted className="w-full h-full object-cover" />
                                     )
                                 ) : (
-                                    <Image src={game.imageUrl} alt={game.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" priority unoptimized />
+                                    <Image src={game.imageUrl} alt={game.title} fill className="object-cover transition-transform duration-1000 group-hover:scale-110" priority unoptimized />
                                 )}
                             </div>
 
                             {/* Middle Ad */}
-                            <div className="mb-12 flex justify-center">
+                            <div className="mb-16 flex justify-center">
                                 <Ad placement="game_horizontal" />
                             </div>
 
                             {/* Description Section */}
-                            <section className="mb-16">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
-                                    <h2 className="text-2xl font-black text-white uppercase tracking-tight">Overview</h2>
+                            <section className="mb-20">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="w-2 h-8 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.6)]"></div>
+                                    <h2 className="text-3xl font-black text-white uppercase tracking-tight">Mission Briefing</h2>
                                 </div>
-                                <HtmlContent html={game.description} />
+                                <div className="bg-gray-900/40 backdrop-blur-md rounded-[2rem] p-8 md:p-12 border border-white/5">
+                                    <HtmlContent html={game.description} />
+                                </div>
                             </section>
 
                             {/* Screenshots Gallery */}
                             {game.gallery && game.gallery.length > 0 && (
-                                <section className="mb-16">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">Gallery</h2>
+                                <section className="mb-20">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="w-2 h-8 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.6)]"></div>
+                                        <h2 className="text-3xl font-black text-white uppercase tracking-tight">Visual Recon</h2>
                                     </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                         {game.gallery.map((img, idx) => (
                                             <button 
                                                 key={idx} 
                                                 onClick={() => { setLightboxIndex(game.videoUrl ? idx + 1 : idx); setLightboxOpen(true); }}
-                                                className="relative aspect-video rounded-xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all group"
+                                                className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 hover:border-purple-500 transition-all group shadow-xl"
                                             >
-                                                <Image src={img} alt="" fill className="object-cover transition-transform group-hover:scale-110" unoptimized />
-                                                <div className="absolute inset-0 bg-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <Image src={img} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-110" unoptimized />
+                                                <div className="absolute inset-0 bg-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                </div>
                                             </button>
                                         ))}
                                     </div>
@@ -182,16 +205,16 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
 
                             {/* Requirements */}
                             {game.requirements && (
-                                <section className="mb-16 bg-gray-900/50 rounded-3xl p-8 border border-white/5">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="w-1.5 h-6 bg-green-600 rounded-full"></div>
-                                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">System Requirements</h2>
+                                <section className="mb-20 bg-gradient-to-br from-gray-900/80 to-gray-900/40 backdrop-blur-xl rounded-[2.5rem] p-10 border border-white/10 shadow-2xl">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="w-2 h-8 bg-green-600 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.6)]"></div>
+                                        <h2 className="text-3xl font-black text-white uppercase tracking-tight">System Specs</h2>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                         {Object.entries(game.requirements).map(([key, val]) => (
-                                            <div key={key} className="space-y-1">
-                                                <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">{key}</span>
-                                                <p className="text-white font-bold">{val}</p>
+                                            <div key={key} className="space-y-2 group">
+                                                <span className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] group-hover:text-green-500 transition-colors">{key}</span>
+                                                <p className="text-white font-bold text-lg">{val}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -199,10 +222,10 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             )}
 
                             {/* Related Games */}
-                            <section className="mt-20 border-t border-white/5 pt-12">
-                                <div className="flex items-center gap-3 mb-10">
-                                    <div className="w-1.5 h-8 bg-purple-600 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.4)]"></div>
-                                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Related Titles</h3>
+                            <section className="mt-24 border-t border-white/5 pt-16">
+                                <div className="flex items-center gap-4 mb-12">
+                                    <div className="w-2 h-10 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.6)]"></div>
+                                    <h3 className="text-4xl font-black text-white uppercase tracking-tighter">Similar Expeditions</h3>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {similarGames.map(sg => <GameCard key={sg.id} game={sg} />)}
@@ -213,20 +236,24 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                         {/* RIGHT AD COLUMN */}
                         <aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
                             <div className="sticky top-24 space-y-8">
-                                <div className="bg-gray-900/80 rounded-2xl p-6 border border-white/5 backdrop-blur-sm">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">Quick Stats</h4>
-                                    <div className="space-y-4">
+                                <div className="bg-gray-900/60 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Database Record</h4>
+                                    <div className="space-y-6">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-400">Rating</span>
-                                            <span className="text-xs font-bold text-white">{game.rating || 95}%</span>
+                                            <span className="text-xs text-gray-400 font-bold uppercase">Stability</span>
+                                            <span className="text-xs font-black text-green-400">Stable</span>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-400">Played</span>
-                                            <span className="text-xs font-bold text-white">{(game.view_count || 0).toLocaleString()}</span>
+                                            <span className="text-xs text-gray-400 font-bold uppercase">Rating</span>
+                                            <span className="text-xs font-black text-white">{game.rating || 0}%</span>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-400">Size</span>
-                                            <span className="text-xs font-bold text-white">{game.requirements?.storage || 'Varies'}</span>
+                                            <span className="text-xs text-gray-400 font-bold uppercase">Active</span>
+                                            <span className="text-xs font-black text-white">{(game.view_count || 0).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs text-gray-400 font-bold uppercase">Size</span>
+                                            <span className="text-xs font-black text-purple-400">{game.requirements?.storage || 'Variable'}</span>
                                         </div>
                                     </div>
                                 </div>
