@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface HtmlContentProps {
   html: string;
@@ -7,7 +6,16 @@ interface HtmlContentProps {
 }
 
 const HtmlContent: React.FC<HtmlContentProps> = ({ html, className = "" }) => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   if (!html) return null;
+
+  // Render a hidden placeholder during SSR to maintain structure without causing mismatch
+  if (!isMounted) return <div className={`opacity-0 ${className}`} />;
 
   return (
     <div 

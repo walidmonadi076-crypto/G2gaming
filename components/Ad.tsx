@@ -26,7 +26,6 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
   const [isMounted, setIsMounted] = useState(false);
   const [scale, setScale] = useState(1);
   
-  // Find the code: prioritize override (for admin preview) then context
   const adFromContext = ads.find(a => a.placement === placement);
   const codeToRender = overrideCode !== undefined ? overrideCode : adFromContext?.code;
 
@@ -48,12 +47,11 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
   
   const { width, height, label, mobileScale } = getAdConfig();
 
-  // HYDRATION GUARD: Never render script injection on server
+  // HYDRATION SHIELD: Prevent SSR mismatch (Fixes Error 418/425)
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Handle mobile scaling
   useEffect(() => {
     if (isMounted && mobileScale && typeof window !== 'undefined' && typeof width === 'number') {
       const handleResize = () => {
@@ -70,70 +68,44 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
     }
   }, [isMounted, mobileScale, width]);
   
-  // DYNAMIC INJECTION ENGINE
+  // DYNAMIC INJECTION ENGINE: Safely executes JS in ad tags
   useEffect(() => {
     if (isMounted && codeToRender && slotRef.current) {
       const container = slotRef.current;
-      
-      // 1. Clean previous contents
-      container.innerHTML = ''; 
+      container.innerHTML = ''; // Full wipe before injection
 
       try {
         const range = document.createRange();
         const fragment = range.createContextualFragment(codeToRender);
-
-        // 2. Manual Script Re-insertion: Standard innerHTML/fragment doesn't execute <script> tags
         const scripts = Array.from(fragment.querySelectorAll('script'));
         
-        // Remove scripts from fragment to prevent double-insertion if browser tries to process them
+        // Remove from fragment to prevent auto-execution attempts by browser during append
         scripts.forEach(s => s.remove());
-
-        // 3. Append the static HTML parts first
         container.appendChild(fragment);
 
-        // 4. Create and append new script tags one by one
+        // Re-inject scripts properly to ensure execution
         scripts.forEach(oldScript => {
             const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+            if (oldScript.innerHTML) newScript.textContent = oldScript.innerHTML;
             
-            // Copy attributes (src, type, async, etc.)
-            Array.from(oldScript.attributes).forEach(attr => {
-                newScript.setAttribute(attr.name, attr.value);
-            });
-            
-            // Copy inner code if it's an inline script
-            if (oldScript.innerHTML) {
-                newScript.textContent = oldScript.innerHTML;
-            }
-
-            // Error handling for 403s
-            newScript.onerror = () => {
-                console.warn(`[Ad Engine] Script failed for ${placement}. Check domain authorization or AdBlock.`);
-            };
-
+            // Log blockages instead of crashing
+            newScript.onerror = () => console.warn(`[Ad Engine] Script load blocked for ${placement}. Check domain whitelist/AdBlock.`);
             container.appendChild(newScript);
         });
       } catch (err) {
-        console.error("[Ad Engine] Critical Rendering Error:", err);
+        console.error("[Ad Engine] Injection Failed:", err);
       }
     }
   }, [isMounted, codeToRender, placement]);
 
   const isTransparent = ['footer_partner', 'home_native_game', 'deals_strip'].includes(placement);
-  
   const containerClasses = `relative flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
     isTransparent ? '' : 'bg-gray-900/60 border border-white/5 backdrop-blur-md'
   } ${className}`;
 
-  const containerStyle = { 
-    width: typeof width === 'number' ? `${width}px` : width,
-    minHeight: typeof height === 'number' ? `${height}px` : 'auto',
-    transform: scale < 1 ? `scale(${scale})` : 'none',
-    transformOrigin: 'top center',
-    marginBottom: scale < 1 && typeof height === 'number' ? -(height * (1 - scale)) : 0
-  };
-
-  // Prevent any server-side rendering of the ad slot to fix Error 418
-  if (!isMounted) return <div className={containerClasses} style={{ width, height: height || 250 }} />;
+  // Maintain layout stability during SSR
+  if (!isMounted) return <div className={containerClasses} style={{ width, height: height || 250, visibility: 'hidden' }} />;
 
   return (
     <div className={containerClasses} data-slot-id={placement}>
@@ -142,12 +114,17 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
           {label}
         </span>
       )}
-      
-      <div style={containerStyle} className="relative z-0 flex items-center justify-center overflow-hidden">
+      <div style={{ 
+        width: typeof width === 'number' ? `${width}px` : width,
+        minHeight: typeof height === 'number' ? `${height}px` : 'auto',
+        transform: scale < 1 ? `scale(${scale})` : 'none',
+        transformOrigin: 'top center',
+        marginBottom: scale < 1 && typeof height === 'number' ? -(height * (1 - scale)) : 0
+      }} className="relative z-0 flex items-center justify-center overflow-hidden">
         {isLoading && overrideCode === undefined ? (
           <div className="animate-pulse bg-white/5 rounded-lg w-full h-full min-h-[250px]" />
         ) : (
-          <div ref={slotRef} className="slot-content-render-target w-full h-full flex justify-center items-center" />
+          <div ref={slotRef} className="w-full h-full flex justify-center items-center" />
         )}
       </div>
     </div>
