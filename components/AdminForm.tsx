@@ -74,8 +74,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const [categories, setCategories] = useState<string[]>([]);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  
-  // Gallery URL state for pro input
   const [newGalleryUrl, setNewGalleryUrl] = useState('');
 
   useEffect(() => {
@@ -89,7 +87,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       if (type === 'games') setIsFeatured((item as Game).tags?.includes('Featured') || false);
     } else {
       const defaults = {
-        games: { title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], description: '', downloadUrl: '#', gallery: [], platform: 'pc', downloadsCount: 1000, rating: 95, requirements: { os: 'Windows 10', ram: '8GB', storage: '20GB' } },
+        games: { title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], description: '', downloadUrl: '#', downloadUrlIos: '', gallery: [], platform: 'pc', downloadsCount: 1000, rating: 95, requirements: { os: 'Windows 10', ram: '8GB', storage: '20GB' } },
         blogs: { title: '', summary: '', imageUrl: '', author: 'Admin', content: '', category: '' },
         products: { name: '', imageUrl: '', videoUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
         'social-links': { name: '', url: '', icon_svg: '' },
@@ -163,6 +161,30 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
                         <div className="flex items-center gap-2 mb-2">
                              <div className="w-1.5 h-4 bg-purple-500 rounded-full"></div>
+                             <h4 className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Deployment & Platform</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Platform Type</label>
+                                <select value={formData.platform || 'pc'} onChange={e=>setField('platform', e.target.value)} className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm text-white">
+                                    <option value="pc">PC / Desktop</option>
+                                    <option value="mobile">Mobile (iOS & Android)</option>
+                                </select>
+                            </div>
+                            {formData.platform === 'mobile' ? (
+                                <>
+                                    {renderBasicField('downloadUrl', 'Android APK / Play Store Link', 'https://...')}
+                                    {renderBasicField('downloadUrlIos', 'iOS App Store Link', 'https://...')}
+                                </>
+                            ) : (
+                                renderBasicField('downloadUrl', 'PC Download / Deployment Link', 'https://...')
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                             <div className="w-1.5 h-4 bg-purple-500 rounded-full"></div>
                              <h4 className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Visual & Static Controls</h4>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -172,11 +194,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                         {renderBasicField('imageUrl', 'Grid Cover URL (Main Display)')}
                         {renderBasicField('iconUrl', 'Developer Icon (Circular Logo)')}
                         {renderBasicField('backgroundUrl', 'Page Background (High Res)')}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {renderBasicField('videoUrl', 'YouTube / MP4 Assets', 'https://...')}
-                        {renderBasicField('downloadUrl', 'Target Deployment URL', 'https://...')}
+                        {renderBasicField('videoUrl', 'YouTube / MP4 Assets (Auto-detects Shorts/Videos)', 'https://...')}
                     </div>
 
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-4">
@@ -191,7 +209,6 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                         </div>
                     </div>
 
-                    {/* Pro Gallery Manager */}
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
