@@ -16,7 +16,7 @@ const inter = Inter({
 
 const defaultSettings: SiteSettings = {
   site_name: 'G2gaming',
-  site_icon_url: '/favicon.ico',
+  site_icon_url: '',
   ogads_script_src: '',
   hero_title: 'Welcome to G2gaming',
   hero_subtitle: 'Your ultimate gaming destination.',
@@ -30,18 +30,7 @@ const defaultSettings: SiteSettings = {
   recaptcha_site_key: '',
 };
 
-type MyAppProps = {
-  Component: React.ComponentType<any>;
-  pageProps: any;
-};
-
-declare global {
-    interface Window {
-        __ogadsLoaded?: boolean;
-    }
-}
-
-function MyApp({ Component, pageProps }: MyAppProps) {
+function MyApp({ Component, pageProps }: any) {
   const router = useRouter();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -51,90 +40,54 @@ function MyApp({ Component, pageProps }: MyAppProps) {
   const [settings, setSettings] = useState<SiteSettings>(pageProps.settings || defaultSettings);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isLoadingSocials, setIsLoadingSocials] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   const isAdminPage = router.pathname.startsWith('/admin');
 
-  // --- 1. Global OGAds Event Bridge ---
   useEffect(() => {
-    if (isAdminPage) return;
-
+    setIsMounted(true);
+    // Theme initialization safely on client
+    const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (theme === 'light') document.documentElement.classList.add('light');
+    
+    // OGAds Event listener
     const handleLockerCompletion = () => {
-      // Get current path to use as a unique key for the game
-      const slugKey = window.location.pathname;
-      
-      // Persist unlock state per slug
-      sessionStorage.setItem(`unlocked_${slugKey}`, "true");
-      
-      // FORCE RELOAD: Mandatory to clear OGAds overlay and refresh React state
+      sessionStorage.setItem(`unlocked_${window.location.pathname}`, "true");
       window.location.reload();
     };
-
-    // Official OGAds DOM event listener
     window.addEventListener("ogads_unlocked", handleLockerCompletion);
-    
-    return () => {
-      window.removeEventListener("ogads_unlocked", handleLockerCompletion);
-    };
-  }, [isAdminPage]);
+    return () => window.removeEventListener("ogads_unlocked", handleLockerCompletion);
+  }, []);
 
   useEffect(() => {
-    const fetchClientSideData = async () => {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : '');
-      setIsLoadingSettings(true);
+    const fetchData = async () => {
       try {
-        const settingsRes = await fetch(`${API_BASE}/api/settings`);
-        if (settingsRes.ok) {
-          const data = await settingsRes.json();
-          setSettings(data);
-        }
-      } catch (error) {
-        console.error('Error fetching settings:', error);
-      } finally {
-        setIsLoadingSettings(false);
-      }
-      
-      if (!isAdminPage) {
-        try {
-          const socialLinksRes = await fetch(`${API_BASE}/api/social-links`);
-          if (socialLinksRes.ok) {
-            const data = await socialLinksRes.json();
-            if(Array.isArray(data)) setSocialLinks(data);
-          }
-        } catch (error) {
-           console.error('Failed to fetch social links:', error);
-        } finally {
-          setIsLoadingSocials(false);
-        }
-      } else {
-        setIsLoadingSocials(false);
-      }
+        const [sRes, slRes] = await Promise.all([
+          fetch('/api/settings'),
+          isAdminPage ? Promise.resolve(null) : fetch('/api/social-links')
+        ]);
+        if (sRes.ok) setSettings(await sRes.json());
+        if (slRes && slRes.ok) setSocialLinks(await slRes.json());
+      } catch (e) { console.error(e); }
+      finally { setIsLoadingSettings(false); setIsLoadingSocials(false); }
     };
-    fetchClientSideData();
+    fetchData();
   }, [isAdminPage]);
 
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-    const searchablePages = ['/games', '/blog', '/shop'];
-    if (query && !searchablePages.includes(router.pathname)) {
-      router.push('/games');
-    }
-  };
+  if (!isMounted) return <div className="bg-[#0d0d0d] min-h-screen" />;
+  if (isAdminPage) return <Component {...pageProps} />;
 
-  if (isAdminPage) {
-    return <Component {...pageProps} />;
-  }
-  
   return (
     <ThemeProvider>
       <AdProvider>
         <SettingsProvider value={{ settings, isLoading: isLoadingSettings }}>
-          <Head children={<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />} />
-          <div className={`bg-[#0d0d0d] text-white min-h-screen flex ${inter.variable} font-sans overflow-x-hidden`}>
+          <Head children={<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />} />
+          <div className={`bg-[#0d0d0d] text-white min-h-screen flex ${inter.variable} font-sans`}>
             {isMobileSidebarOpen && <div className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
             <Sidebar isExpanded={isSidebarExpanded} onMouseEnter={() => setIsSidebarExpanded(true)} onMouseLeave={() => setIsSidebarExpanded(false)} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-            <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out w-full max-w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
-              <Header searchQuery={searchQuery} onSearchChange={handleSearchChange} onSearchFocus={() => setSearchActive(true)} onSearchBlur={() => setSearchActive(false)} onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} socialLinks={socialLinks} isLoadingSocials={isLoadingSocials} />
-              <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 w-full">
+            <div className={`flex-1 flex flex-col transition-all duration-300 w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
+              <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} onSearchFocus={() => setSearchActive(true)} onSearchBlur={() => setSearchActive(false)} onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} socialLinks={socialLinks} isLoadingSocials={isLoadingSocials} />
+              <main className="flex-1 p-4 sm:p-6 lg:p-8">
                 <Component {...pageProps} searchQuery={searchQuery} searchActive={searchActive} />
               </main>
             </div>
@@ -144,10 +97,5 @@ function MyApp({ Component, pageProps }: MyAppProps) {
     </ThemeProvider>
   );
 }
-
-MyApp.getInitialProps = async (appContext: any) => {
-  const appProps = await App.getInitialProps(appContext);
-  return { ...appProps };
-};
 
 export default MyApp;

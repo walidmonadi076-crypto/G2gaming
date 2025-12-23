@@ -19,47 +19,38 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
     setIsMounted(true);
   }, []);
 
-  const adFromContext = ads.find(a => a.placement === placement);
-  const codeToRender = overrideCode !== undefined ? overrideCode : adFromContext?.code;
+  const adData = ads.find(a => a.placement === placement);
+  const code = overrideCode !== undefined ? overrideCode : adData?.code;
 
   useEffect(() => {
-    if (isMounted && codeToRender && slotRef.current) {
+    if (isMounted && code && slotRef.current) {
       const container = slotRef.current;
-      container.innerHTML = ''; 
+      container.innerHTML = '';
       try {
         const range = document.createRange();
-        const fragment = range.createContextualFragment(codeToRender);
+        const fragment = range.createContextualFragment(code);
         const scripts = Array.from(fragment.querySelectorAll('script'));
         scripts.forEach(s => s.remove());
         container.appendChild(fragment);
         scripts.forEach(oldScript => {
-            const newScript = document.createElement('script');
-            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-            if (oldScript.innerHTML) newScript.textContent = oldScript.innerHTML;
-            container.appendChild(newScript);
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          if (oldScript.innerHTML) newScript.textContent = oldScript.innerHTML;
+          container.appendChild(newScript);
         });
-      } catch (err) {}
+      } catch (e) {}
     }
-  }, [isMounted, codeToRender, placement]);
+  }, [isMounted, code, placement]);
 
-  // SSR must match the initial client frame perfectly
-  if (!isMounted) {
-    return <div className={`min-h-[90px] ${className}`} suppressHydrationWarning={true} />;
-  }
+  if (!isMounted) return <div className={`min-h-[90px] ${className}`} />;
 
   return (
-    <div className={`relative flex flex-col items-center justify-center p-2 rounded-xl bg-gray-900/40 border border-white/5 ${className}`} suppressHydrationWarning={true}>
+    <div className={`relative flex flex-col items-center justify-center p-2 rounded-xl bg-gray-900/40 border border-white/5 ${className}`}>
       {showLabel && (
-        <span className="absolute top-0 left-0 bg-gray-800/90 text-[8px] font-black text-gray-500 px-2 py-0.5 rounded-br-lg uppercase tracking-widest z-10">
-          Ad
-        </span>
+        <span className="absolute top-0 left-0 bg-gray-800/90 text-[8px] font-black text-gray-500 px-2 py-0.5 rounded-br-lg uppercase tracking-widest z-10">Ad</span>
       )}
-      <div className="w-full flex justify-center items-center overflow-hidden min-h-[90px]">
-        {isLoading ? (
-          <div className="animate-pulse bg-white/5 rounded-lg w-full h-[90px]" />
-        ) : (
-          <div ref={slotRef} className="w-full h-full flex justify-center items-center" />
-        )}
+      <div className="w-full flex justify-center items-center min-h-[90px]">
+        {isLoading ? <div className="animate-pulse bg-white/5 rounded-lg w-full h-[90px]" /> : <div ref={slotRef} className="w-full h-full flex justify-center items-center" />}
       </div>
     </div>
   );
