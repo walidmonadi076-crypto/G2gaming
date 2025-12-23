@@ -30,7 +30,7 @@ function MyApp({ Component, pageProps }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
-  const [settings, setSettings] = useState<SiteSettings>(pageProps.settings || defaultSettings);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isLoadingSocials, setIsLoadingSocials] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -45,11 +45,7 @@ function MyApp({ Component, pageProps }: any) {
       window.location.reload();
     };
     window.addEventListener("ogads_unlocked", handleLockerCompletion);
-    return () => window.removeEventListener("ogads_unlocked", handleLockerCompletion);
-  }, []);
-
-  useEffect(() => {
-    if (!isMounted) return;
+    
     const fetchData = async () => {
       try {
         const [sRes, slRes] = await Promise.all([
@@ -62,23 +58,21 @@ function MyApp({ Component, pageProps }: any) {
       finally { setIsLoadingSettings(false); setIsLoadingSocials(false); }
     };
     fetchData();
-  }, [isAdminPage, isMounted]);
 
-  // Handle OGAds Script Injection from Settings
+    return () => window.removeEventListener("ogads_unlocked", handleLockerCompletion);
+  }, [isAdminPage]);
+
+  // Handle OGAds Script Injection
   useEffect(() => {
     if (isMounted && settings.ogads_script_src && !isAdminPage) {
-        // Extract src from script tag if it's a string containing HTML
         const srcMatch = settings.ogads_script_src.match(/src=["']([^"']+)["']/);
         const scriptUrl = srcMatch ? srcMatch[1] : null;
-        
         if (scriptUrl) {
             const script = document.createElement('script');
             script.src = scriptUrl;
             script.async = true;
             document.head.appendChild(script);
-            return () => {
-                document.head.removeChild(script);
-            };
+            return () => { if (document.head.contains(script)) document.head.removeChild(script); };
         }
     }
   }, [isMounted, settings.ogads_script_src, isAdminPage]);
@@ -93,10 +87,10 @@ function MyApp({ Component, pageProps }: any) {
             <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
             {settings.site_icon_url && <link rel="icon" href={settings.site_icon_url} />}
           </Head>
-          <div className={`bg-[#0d0d0d] text-white min-h-screen flex font-sans`} suppressHydrationWarning={true}>
+          <div className="bg-[#0d0d0d] text-white min-h-screen flex font-sans">
             {isMobileSidebarOpen && <div className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
             <Sidebar isExpanded={isSidebarExpanded} onMouseEnter={() => setIsSidebarExpanded(true)} onMouseLeave={() => setIsSidebarExpanded(false)} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-            <div className={`flex-1 flex flex-col transition-all duration-300 w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`} suppressHydrationWarning={true}>
+            <div className={`flex-1 flex flex-col transition-all duration-300 w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
               <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} onSearchFocus={() => setSearchActive(true)} onSearchBlur={() => setSearchActive(false)} onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} socialLinks={socialLinks} isLoadingSocials={isLoadingSocials} />
               <main className="flex-1 p-4 sm:p-6 lg:p-8">
                 <Component {...pageProps} searchQuery={searchQuery} searchActive={searchActive} />

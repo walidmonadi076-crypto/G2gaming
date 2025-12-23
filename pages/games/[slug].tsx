@@ -13,7 +13,6 @@ import StarRating from '../../components/StarRating';
 import GameCard from '../../components/GameCard';
 import { getEmbedUrl } from '../../lib/utils';
 
-// Load Lightbox dynamically as it's a heavy component only needed on user interaction
 const Lightbox = dynamic(() => import('../../components/Lightbox'), {
     ssr: false,
     loading: () => <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center text-white">Loading Viewer...</div>
@@ -43,7 +42,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
 
     useEffect(() => {
         setIsMounted(true);
-        if (typeof window !== 'undefined' && game.slug) {
+        if (game.slug) {
             const unlocked = sessionStorage.getItem(`unlocked_${window.location.pathname}`);
             if (unlocked === 'true') setIsUnlocked(true);
             
@@ -74,7 +73,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         <>
             <SEO title={game.title} description={game.description?.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 pb-20 relative overflow-x-hidden" suppressHydrationWarning={true}>
+            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 pb-20 relative overflow-x-hidden">
                 {game.backgroundUrl && (
                     <div className="fixed inset-0 z-0">
                         <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-20 blur-[3px]" unoptimized />
@@ -142,7 +141,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                                Status: <span suppressHydrationWarning={true}>{isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : '...'}</span>
+                                                {/* Use a stable text content for hydration */}
+                                                Status: {isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : 'INITIALIZING'}
                                             </p>
                                         </div>
                                     </div>
@@ -150,8 +150,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     <div className="space-y-4 mb-8 border-t border-white/5 pt-6">
                                         <div className="flex justify-between">
                                             <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
-                                            <span suppressHydrationWarning={true} className={`text-[10px] font-black uppercase ${!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}`}>
-                                                {!isMounted ? '...' : (isUnlocked ? 'Verified' : 'Verification Required')}
+                                            <span className={`text-[10px] font-black uppercase ${!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}`}>
+                                                {!isMounted ? 'CHECKING...' : (isUnlocked ? 'VERIFIED' : 'REQUIRED')}
                                             </span>
                                         </div>
                                     </div>
@@ -160,10 +160,10 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         onClick={(e) => handleActionClick(e, game.downloadUrl)} 
                                         className="w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
                                     >
-                                        <span suppressHydrationWarning={true}>
-                                            {!isMounted ? 'Initializing...' : (isUnlocked ? 'Execute Deployment' : 'Initiate Verification')}
+                                        <span>
+                                            {!isMounted ? 'INITIALIZING...' : (isUnlocked ? 'EXECUTE DEPLOYMENT' : 'INITIATE VERIFICATION')}
                                         </span>
-                                        {!isUnlocked && isMounted && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                        {isMounted && !isUnlocked && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
                                     </button>
                                 </div>
                                 <Ad placement="game_vertical" />
