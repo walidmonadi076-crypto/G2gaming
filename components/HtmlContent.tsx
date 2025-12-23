@@ -12,14 +12,16 @@ const HtmlContent: React.FC<HtmlContentProps> = ({ html, className = "" }) => {
     setIsMounted(true);
   }, []);
 
+  // Critical: SSR must render an identical empty container to the first client frame.
   if (!isMounted || !html) {
-    return <div className={className} />;
+    return <div className={className} suppressHydrationWarning={true} />;
   }
 
   return (
     <div 
       className={`prose prose-invert max-w-none ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
+      suppressHydrationWarning={true}
     />
   );
 };

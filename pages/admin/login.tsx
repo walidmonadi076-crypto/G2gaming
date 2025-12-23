@@ -237,7 +237,10 @@ export default function AdminPanel() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4 font-sans">
-        <Head children={<title>Restricted Access - Terminal Admin</title>} />
+        {/* FIX: Corrected Head component usage by passing children directly instead of a children prop */}
+        <Head>
+          <title>Restricted Access - Terminal Admin</title>
+        </Head>
         <div className="bg-gray-800 p-10 rounded-[3rem] shadow-2xl max-w-sm w-full border border-white/5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl rounded-full -mr-10 -mt-10"></div>
           <div className="flex flex-col items-center mb-10 relative z-10">
@@ -292,7 +295,10 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-gray-200 font-sans selection:bg-purple-500">
-        <Head children={<title>Control Center | {settings.site_name}</title>} />
+        {/* FIX: Corrected Head component usage by passing children directly instead of a children prop */}
+        <Head>
+            <title>Control Center | {settings.site_name}</title>
+        </Head>
         <ToastContainer toasts={toasts} onClose={removeToast} />
         {renderAdPreviewModal()}
         

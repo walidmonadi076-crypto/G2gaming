@@ -2,12 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { isAuthorized } from '../../auth/check';
 import { GoogleGenAI } from '@google/genai';
 
-const apiKey = process.env.API_KEY;
-if (!apiKey) {
-    throw new Error('API_KEY environment variable not set');
-}
-
-const ai = new GoogleGenAI({ apiKey });
+// FIX: Initializing GoogleGenAI directly with process.env.API_KEY as per the guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
@@ -27,8 +23,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
             return res.status(400).json({ error: 'Le prompt est obligatoire.' });
         }
 
+        // FIX: Using gemini-3-flash-preview as the standard model for basic text tasks.
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             contents: prompt,
             config: {
                 systemInstruction: "You are an expert copywriter for a gaming website called G2gaming. Your task is to generate compelling, engaging, and SEO-friendly content for games, blog posts, and products based on user prompts. Maintain a knowledgeable yet exciting tone."

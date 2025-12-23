@@ -13,6 +13,20 @@ class MyDocument extends Document {
           <script src="https://www.google.com/recaptcha/api.js" async defer></script>
         </Head>
         <body className="bg-[#0d0d0d] antialiased" suppressHydrationWarning={true}>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (!theme && supportDarkMode) theme = 'dark';
+                  if (theme === 'light') document.documentElement.classList.add('light');
+                } catch (e) {}
+              })();
+              `,
+            }}
+          />
           <Main />
           <NextScript />
         </body>

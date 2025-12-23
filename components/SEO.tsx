@@ -1,4 +1,4 @@
-import React from 'react';
+import React;
 import Head from 'next/head';
 
 interface SEOProps {
@@ -26,41 +26,38 @@ export default function SEO({
   const fullUrl = url ? `https://yoursite.com${url}` : 'https://yoursite.com';
 
   return (
-    <Head
-      children={
-        <>
-          <title>{fullTitle}</title>
-          <meta name="description" content={description} />
-          <meta name="keywords" content={keywords.join(', ')} />
+    {/* FIX: Corrected Head component usage by passing children directly instead of a children prop */}
+    <Head>
+      <title>{fullTitle}</title>
+      <meta name="description" content={description} />
+      <meta name="keywords" content={keywords.join(', ')} />
 
-          {noindex && <meta name="robots" content="noindex, nofollow" />}
+      {noindex && <meta name="robots" content="noindex, nofollow" />}
 
-          <meta property="og:title" content={fullTitle} />
-          <meta property="og:description" content={description} />
-          <meta property="og:image" content={image} />
-          <meta property="og:url" content={fullUrl} />
-          <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="G2gaming" />
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      <meta property="og:image" content={image} />
+      <meta property="og:url" content={fullUrl} />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="G2gaming" />
 
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content={fullTitle} />
-          <meta name="twitter:description" content={description} />
-          <meta name="twitter:image" content={image} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={image} />
 
-          <meta name="theme-color" content="#7c3aed" />
-          <link rel="canonical" href={fullUrl} />
+      <meta name="theme-color" content="#7c3aed" />
+      <link rel="canonical" href={fullUrl} />
 
-          {/* Favicon is globally handled in _document.tsx with a Data URI. No need for /favicon.ico here. */}
+      {/* Favicon is globally handled in _document.tsx with a Data URI. No need for /favicon.ico here. */}
 
-          {schema && (
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-            />
-          )}
-          {children}
-        </>
-      }
-    />
+      {schema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      )}
+      {children}
+    </Head>
   );
 }

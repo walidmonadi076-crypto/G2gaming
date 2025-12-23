@@ -4,12 +4,8 @@ import { Buffer } from 'buffer';
 import { isAuthorized } from '../../auth/check';
 import { GoogleGenAI } from '@google/genai';
 
-const apiKey = process.env.API_KEY;
-if (!apiKey) {
-    throw new Error('API_KEY environment variable not set');
-}
-
-const ai = new GoogleGenAI({ apiKey });
+// FIX: Initializing GoogleGenAI directly with process.env.API_KEY as per the guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Helper to validate image URLs and fetch image data
 async function fetchImage(url: string) {
@@ -58,8 +54,9 @@ export default async function handler(req: NextApiRequest & { method?: string },
         const imagePart = await fetchImage(imageUrl);
         const textPart = { text: prompt };
 
+        // FIX: Using gemini-3-flash-preview for multi-modal analysis tasks.
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             contents: { parts: [imagePart, textPart] },
         });
 

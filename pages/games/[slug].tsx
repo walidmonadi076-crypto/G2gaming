@@ -37,7 +37,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
 
     useEffect(() => {
         setIsMounted(true);
-        if (game.slug) {
+        if (typeof window !== 'undefined' && game.slug) {
             const unlocked = sessionStorage.getItem(`unlocked_${window.location.pathname}`);
             if (unlocked === 'true') setIsUnlocked(true);
             
@@ -68,7 +68,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         <>
             <SEO title={game.title} description={game.description?.replace(/<[^>]*>/g, '').slice(0, 160)} image={game.imageUrl} />
             
-            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 pb-20 relative overflow-x-hidden">
+            <div className="min-h-screen bg-[#0d0d0d] text-gray-300 pb-20 relative overflow-x-hidden" suppressHydrationWarning={true}>
                 {game.backgroundUrl && (
                     <div className="fixed inset-0 z-0">
                         <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-20 blur-[3px]" unoptimized />
@@ -136,7 +136,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                                Status: {isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : '...'}
+                                                Status: <span suppressHydrationWarning={true}>{isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : '...'}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -144,8 +144,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     <div className="space-y-4 mb-8 border-t border-white/5 pt-6">
                                         <div className="flex justify-between">
                                             <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
-                                            <span className={`text-[10px] font-black uppercase ${isUnlocked ? 'text-green-400' : 'text-blue-400'}`}>
-                                                {isUnlocked ? 'Verified' : 'Verification Required'}
+                                            <span suppressHydrationWarning={true} className={`text-[10px] font-black uppercase ${!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}`}>
+                                                {!isMounted ? '...' : (isUnlocked ? 'Verified' : 'Verification Required')}
                                             </span>
                                         </div>
                                     </div>
@@ -154,8 +154,10 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         onClick={(e) => handleActionClick(e, game.downloadUrl)} 
                                         className="w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
                                     >
-                                        {isUnlocked ? 'Execute Deployment' : 'Initiate Verification'}
-                                        {!isUnlocked && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                        <span suppressHydrationWarning={true}>
+                                            {!isMounted ? 'Initializing...' : (isUnlocked ? 'Execute Deployment' : 'Initiate Verification')}
+                                        </span>
+                                        {!isUnlocked && isMounted && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
                                     </button>
                                 </div>
                                 <Ad placement="game_vertical" />

@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 // Fix: Replaced require() with an ES module import for better TypeScript compatibility.
 import typography from "@tailwindcss/typography";
@@ -11,7 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-inter)', 'sans-serif'],
+        // FIX: Updated font stack to be self-sufficient without var(--font-inter)
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', '"Noto Sans"', 'sans-serif'],
       },
       keyframes: {
         'fade-in-right': {

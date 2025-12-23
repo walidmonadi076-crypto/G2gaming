@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import App from 'next/app';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Inter } from 'next/font/google';
+// FIX: Removed next/font/google import to resolve module error and swapped to system font stack in tailwind.config.ts
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import '../styles/globals.css';
 import type { SocialLink, SiteSettings } from '@/types';
 import { AdProvider, ThemeProvider, SettingsProvider } from '../contexts/AdContext';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-});
 
 const defaultSettings: SiteSettings = {
   site_name: 'G2gaming',
@@ -46,9 +40,6 @@ function MyApp({ Component, pageProps }: any) {
 
   useEffect(() => {
     setIsMounted(true);
-    // Theme initialization safely on client
-    const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (theme === 'light') document.documentElement.classList.add('light');
     
     // OGAds Event listener
     const handleLockerCompletion = () => {
@@ -60,6 +51,7 @@ function MyApp({ Component, pageProps }: any) {
   }, []);
 
   useEffect(() => {
+    if (!isMounted) return;
     const fetchData = async () => {
       try {
         const [sRes, slRes] = await Promise.all([
@@ -72,17 +64,27 @@ function MyApp({ Component, pageProps }: any) {
       finally { setIsLoadingSettings(false); setIsLoadingSocials(false); }
     };
     fetchData();
-  }, [isAdminPage]);
+  }, [isAdminPage, isMounted]);
 
-  if (!isMounted) return <div className="bg-[#0d0d0d] min-h-screen" />;
+  // Return a stable empty state during SSR to prevent any hydration mismatch
+  if (!isMounted) {
+    return (
+      <div className={`font-sans bg-[#0d0d0d] min-h-screen`} suppressHydrationWarning={true} />
+    );
+  }
+
   if (isAdminPage) return <Component {...pageProps} />;
 
   return (
     <ThemeProvider>
       <AdProvider>
         <SettingsProvider value={{ settings, isLoading: isLoadingSettings }}>
-          <Head children={<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />} />
-          <div className={`bg-[#0d0d0d] text-white min-h-screen flex ${inter.variable} font-sans`}>
+          {/* FIX: Corrected Head component usage by passing children directly instead of a children prop */}
+          <Head>
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+          </Head>
+          {/* FIX: Removed inter.variable and relied on tailwind font-sans */}
+          <div className={`bg-[#0d0d0d] text-white min-h-screen flex font-sans`} suppressHydrationWarning={true}>
             {isMobileSidebarOpen && <div className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
             <Sidebar isExpanded={isSidebarExpanded} onMouseEnter={() => setIsSidebarExpanded(true)} onMouseLeave={() => setIsSidebarExpanded(false)} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
             <div className={`flex-1 flex flex-col transition-all duration-300 w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
