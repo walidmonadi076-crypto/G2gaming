@@ -104,7 +104,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                             <div className="relative w-full aspect-video bg-gray-900 rounded-[2.5rem] overflow-hidden mb-6 border border-white/5 shadow-2xl">
                                 {game.videoUrl ? (
                                     embedUrl ? (
-                                        <iframe src={embedUrl} className="w-full h-full" title={game.title} allow="autoplay; encrypted-media; fullscreen" />
+                                        <iframe src={embedUrl} className="w-full h-full border-0" title={game.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" loading="lazy" />
                                     ) : (
                                         <video src={game.videoUrl} controls autoPlay muted className="w-full h-full object-cover" />
                                     )

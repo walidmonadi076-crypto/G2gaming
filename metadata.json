@@ -1,5 +1,7 @@
 {
   "name": "G2gaming",
   "description": "Your ultimate destination for free downloadable games, expert gaming guides and techniques, and top-quality gear to enhance your gameplay. G2gaming has everything you need to level up.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

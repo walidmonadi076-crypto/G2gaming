@@ -1,4 +1,4 @@
-import React;
+import React from 'react';
 import Head from 'next/head';
 
 interface SEOProps {
@@ -12,6 +12,9 @@ interface SEOProps {
   children?: React.ReactNode;
 }
 
+// Fixed domain reference - easier to change in the future
+const SITE_URL = 'https://g2gaming.vercel.app';
+
 export default function SEO({
   title = 'G2gaming - Download Free Games, Guides & Gear',
   description = 'Your ultimate destination for free downloadable games, expert gaming guides and techniques, and top-quality gear to enhance your gameplay. G2gaming has everything you need to level up.',
@@ -23,10 +26,9 @@ export default function SEO({
   children,
 }: SEOProps) {
   const fullTitle = title.includes('G2gaming') ? title : `${title} | G2gaming`;
-  const fullUrl = url ? `https://yoursite.com${url}` : 'https://yoursite.com';
+  const fullUrl = url ? `${SITE_URL}${url.startsWith('/') ? url : '/' + url}` : SITE_URL;
 
   return (
-    {/* FIX: Corrected Head component usage by passing children directly instead of a children prop */}
     <Head>
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
@@ -48,8 +50,6 @@ export default function SEO({
 
       <meta name="theme-color" content="#7c3aed" />
       <link rel="canonical" href={fullUrl} />
-
-      {/* Favicon is globally handled in _document.tsx with a Data URI. No need for /favicon.ico here. */}
 
       {schema && (
         <script

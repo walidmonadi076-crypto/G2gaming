@@ -27,7 +27,7 @@ const RichTextEditor: React.FC<{
         if (mode === 'visual' && editorRef.current && value !== editorRef.current.innerHTML) {
             editorRef.current.innerHTML = value || '';
         }
-    }, [mode]);
+    }, [mode, value]);
 
     const handleInput = () => {
         if (editorRef.current) {
@@ -75,6 +75,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const [isFeatured, setIsFeatured] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [newGalleryUrl, setNewGalleryUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (type === 'games') fetch('/api/meta/categories').then(res => res.json()).then(setCategories);
@@ -116,6 +117,26 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
     setField('gallery', formData.gallery.filter((_:any, i:number) => i !== index));
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+        const finalData = { 
+            ...formData, 
+            isPinned, 
+            tags: isFeatured 
+                ? [...(formData.tags?.filter((t:any)=>t!=='Featured')||[]), 'Featured'] 
+                : (formData.tags?.filter((t:any)=>t!=='Featured') || [])
+        };
+        await onSubmit(finalData);
+    } catch (err) {
+        console.error(err);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
   const renderBasicField = (name: string, label: string, placeholder: string = "", required = true, inputType = "text") => (
       <div className="space-y-1">
           <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">{label}</label>
@@ -132,7 +153,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in">
-      <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...formData, isPinned, tags: isFeatured ? [...(formData.tags?.filter((t:any)=>t!=='Featured')||[]), 'Featured'] : formData.tags?.filter((t:any)=>t!=='Featured') }); }} className="bg-gray-800 rounded-[2.5rem] border border-white/10 shadow-2xl w-full h-full max-w-[1400px] flex flex-col overflow-hidden">
+      <form onSubmit={handleSubmit} className="bg-gray-800 rounded-[2.5rem] border border-white/10 shadow-2xl w-full h-full max-w-[1400px] flex flex-col overflow-hidden">
         <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-gray-900/50">
             <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -141,8 +162,15 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                 <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{item ? 'Update Core Data' : 'Initialize New Entry'}</h2>
             </div>
             <div className="flex gap-4">
-              <button type="button" onClick={onClose} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Discard</button>
-              <button type="submit" className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/40">Sync Database</button>
+              <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50">Discard</button>
+              <button type="submit" disabled={isSubmitting} className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/40 disabled:bg-gray-600 flex items-center gap-2">
+                  {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        Syncing...
+                      </>
+                  ) : 'Sync Database'}
+              </button>
             </div>
         </div>
         

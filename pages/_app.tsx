@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-// FIX: Removed next/font/google import to resolve module error and swapped to system font stack in tailwind.config.ts
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import '../styles/globals.css';
@@ -41,7 +40,6 @@ function MyApp({ Component, pageProps }: any) {
   useEffect(() => {
     setIsMounted(true);
     
-    // OGAds Event listener
     const handleLockerCompletion = () => {
       sessionStorage.setItem(`unlocked_${window.location.pathname}`, "true");
       window.location.reload();
@@ -66,28 +64,19 @@ function MyApp({ Component, pageProps }: any) {
     fetchData();
   }, [isAdminPage, isMounted]);
 
-  // Return a stable empty state during SSR to prevent any hydration mismatch
-  if (!isMounted) {
-    return (
-      <div className={`font-sans bg-[#0d0d0d] min-h-screen`} suppressHydrationWarning={true} />
-    );
-  }
-
   if (isAdminPage) return <Component {...pageProps} />;
 
   return (
     <ThemeProvider>
       <AdProvider>
         <SettingsProvider value={{ settings, isLoading: isLoadingSettings }}>
-          {/* FIX: Corrected Head component usage by passing children directly instead of a children prop */}
           <Head>
             <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
           </Head>
-          {/* FIX: Removed inter.variable and relied on tailwind font-sans */}
           <div className={`bg-[#0d0d0d] text-white min-h-screen flex font-sans`} suppressHydrationWarning={true}>
             {isMobileSidebarOpen && <div className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
             <Sidebar isExpanded={isSidebarExpanded} onMouseEnter={() => setIsSidebarExpanded(true)} onMouseLeave={() => setIsSidebarExpanded(false)} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-            <div className={`flex-1 flex flex-col transition-all duration-300 w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
+            <div className={`flex-1 flex flex-col transition-all duration-300 w-full ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`} suppressHydrationWarning={true}>
               <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} onSearchFocus={() => setSearchActive(true)} onSearchBlur={() => setSearchActive(false)} onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} socialLinks={socialLinks} isLoadingSocials={isLoadingSocials} />
               <main className="flex-1 p-4 sm:p-6 lg:p-8">
                 <Component {...pageProps} searchQuery={searchQuery} searchActive={searchActive} />
