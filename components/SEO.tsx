@@ -12,7 +12,6 @@ interface SEOProps {
   children?: React.ReactNode;
 }
 
-// Fixed domain reference - easier to change in the future
 const SITE_URL = 'https://g2gaming.vercel.app';
 
 export default function SEO({
@@ -26,7 +25,8 @@ export default function SEO({
   children,
 }: SEOProps) {
   const fullTitle = title.includes('G2gaming') ? title : `${title} | G2gaming`;
-  const fullUrl = url ? `${SITE_URL}${url.startsWith('/') ? url : '/' + url}` : SITE_URL;
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = url ? `${SITE_URL}${cleanUrl}` : SITE_URL;
 
   return (
     <Head>
@@ -42,8 +42,10 @@ export default function SEO({
       <meta property="og:url" content={fullUrl} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="G2gaming" />
+      <meta property="og:locale" content="en_US" />
 
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:site" content="@g2gaming" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />

@@ -2,16 +2,22 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { getGameBySlug, getAllGames, getRelatedGames } from '../../lib/data';
 import type { Game } from '../../types';
 import SEO from '../../components/SEO';
 import Ad from '../../components/Ad';
 import HtmlContent from '../../components/HtmlContent';
-import Lightbox from '../../components/Lightbox';
 import StarRating from '../../components/StarRating';
 import GameCard from '../../components/GameCard';
 import { getEmbedUrl } from '../../lib/utils';
+
+// Load Lightbox dynamically as it's a heavy component only needed on user interaction
+const Lightbox = dynamic(() => import('../../components/Lightbox'), {
+    ssr: false,
+    loading: () => <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center text-white">Loading Viewer...</div>
+});
 
 interface GameDetailPageProps { 
     game: Game; 

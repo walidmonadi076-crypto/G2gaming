@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useAds } from '../contexts/AdContext';
 
 interface AdProps {
@@ -19,13 +19,16 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
     setIsMounted(true);
   }, []);
 
-  const adData = ads.find(a => a.placement === placement);
+  const adData = useMemo(() => ads.find(a => a.placement === placement), [ads, placement]);
   const code = overrideCode !== undefined ? overrideCode : adData?.code;
+  const lastCodeRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isMounted && code && slotRef.current) {
+    if (isMounted && code && slotRef.current && lastCodeRef.current !== code) {
       const container = slotRef.current;
       container.innerHTML = '';
+      lastCodeRef.current = code;
+      
       try {
         const range = document.createRange();
         const fragment = range.createContextualFragment(code);
@@ -39,13 +42,16 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
           const newScript = document.createElement('script');
           Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
           if (oldScript.innerHTML) newScript.textContent = oldScript.innerHTML;
+          // Set key or async to ensure execution
+          newScript.async = true;
           container.appendChild(newScript);
         });
-      } catch (e) {}
+      } catch (e) {
+          console.error("Ad injection error:", e);
+      }
     }
   }, [isMounted, code, placement]);
 
-  // Fix: Return empty identical div for SSR
   if (!isMounted) {
     return <div className={`min-h-[90px] ${className}`} suppressHydrationWarning={true} />;
   }
@@ -53,7 +59,7 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
   return (
     <div className={`relative flex flex-col items-center justify-center p-2 rounded-xl bg-gray-900/40 border border-white/5 ${className}`} suppressHydrationWarning={true}>
       {showLabel && (
-        <span className="absolute top-0 left-0 bg-gray-800/90 text-[8px] font-black text-gray-500 px-2 py-0.5 rounded-br-lg uppercase tracking-widest z-10">Ad</span>
+        <span className="absolute top-0 left-0 bg-gray-800/90 text-[8px] font-black text-gray-500 px-2 py-0.5 rounded-br-lg uppercase tracking-widest z-10">Partner Link</span>
       )}
       <div className="w-full flex justify-center items-center min-h-[90px]">
         {isLoading ? (

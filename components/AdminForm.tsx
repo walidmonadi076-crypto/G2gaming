@@ -176,6 +176,15 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
         
         <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-8 p-8 overflow-hidden">
           <div className="overflow-y-auto space-y-8 pr-4 custom-scrollbar">
+            <div className="flex items-center gap-4 bg-gray-900/40 p-4 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => setIsPinned(!isPinned)}>
+                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isPinned ? 'bg-blue-600 border-blue-500 shadow-lg' : 'border-gray-600 hover:border-gray-500'}`}>
+                        {isPinned && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-gray-400">Global Pin (Front-row placement)</span>
+                </div>
+            </div>
+
             {type === 'games' && (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -237,61 +246,11 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                         </div>
                     </div>
 
-                    <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
-                                <h4 className="text-[10px] font-black uppercase text-blue-400 tracking-[0.2em]">Visual Recon Gallery</h4>
-                            </div>
-                            <span className="text-[9px] text-gray-500 font-bold uppercase">{formData.gallery?.length || 0} Captures</span>
+                    <div className="flex items-center gap-3 bg-gray-900 p-5 rounded-2xl border border-gray-700 cursor-pointer hover:border-purple-500/50 transition-all group" onClick={()=>setIsFeatured(!isFeatured)}>
+                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isFeatured?'bg-purple-600 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]':'border-gray-600 group-hover:border-gray-500'}`}>
+                            {isFeatured && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                         </div>
-                        
-                        <div className="flex gap-2">
-                            <input 
-                                type="text" 
-                                value={newGalleryUrl} 
-                                onChange={(e) => setNewGalleryUrl(e.target.value)}
-                                placeholder="Paste Image URL here..."
-                                className="flex-grow px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-blue-500 outline-none text-xs text-white transition-all" 
-                            />
-                            <button 
-                                type="button" 
-                                onClick={handleAddGalleryItem}
-                                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-900/40"
-                            >
-                                Add
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-4 gap-3">
-                            {formData.gallery?.map((url: string, i: number) => (
-                                <div key={i} className="relative group aspect-video bg-black rounded-xl overflow-hidden border border-white/10 shadow-lg">
-                                    <img src={url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
-                                    <button 
-                                        type="button"
-                                        onClick={()=>handleRemoveGalleryItem(i)} 
-                                        className="absolute inset-0 bg-red-600/90 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-all transform group-hover:backdrop-blur-sm"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center gap-3 bg-gray-900 p-5 rounded-2xl border border-gray-700 cursor-pointer hover:border-purple-500/50 transition-all group" onClick={()=>setIsFeatured(!isFeatured)}>
-                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isFeatured?'bg-purple-600 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]':'border-gray-600 group-hover:border-gray-500'}`}>
-                                {isFeatured && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                            </div>
-                            <span className="text-[10px] font-black uppercase text-gray-400 group-hover:text-gray-200">Featured Placement</span>
-                        </div>
-                        <div className="flex items-center gap-3 bg-gray-900 p-5 rounded-2xl border border-gray-700 cursor-pointer hover:border-blue-500/50 transition-all group" onClick={()=>setIsPinned(!isPinned)}>
-                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isPinned?'bg-blue-600 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]':'border-gray-600 group-hover:border-gray-500'}`}>
-                                {isPinned && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                            </div>
-                            <span className="text-[10px] font-black uppercase text-gray-400 group-hover:text-gray-200">Global Pin</span>
-                        </div>
+                        <span className="text-[10px] font-black uppercase text-gray-400 group-hover:text-gray-200">Featured Placement</span>
                     </div>
 
                     <RichTextEditor id="desc" label="Mission Briefing & Description" value={formData.description} onChange={v=>setField('description', v)} />

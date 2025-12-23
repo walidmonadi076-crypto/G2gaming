@@ -64,6 +64,25 @@ function MyApp({ Component, pageProps }: any) {
     fetchData();
   }, [isAdminPage, isMounted]);
 
+  // Handle OGAds Script Injection from Settings
+  useEffect(() => {
+    if (isMounted && settings.ogads_script_src && !isAdminPage) {
+        // Extract src from script tag if it's a string containing HTML
+        const srcMatch = settings.ogads_script_src.match(/src=["']([^"']+)["']/);
+        const scriptUrl = srcMatch ? srcMatch[1] : null;
+        
+        if (scriptUrl) {
+            const script = document.createElement('script');
+            script.src = scriptUrl;
+            script.async = true;
+            document.head.appendChild(script);
+            return () => {
+                document.head.removeChild(script);
+            };
+        }
+    }
+  }, [isMounted, settings.ogads_script_src, isAdminPage]);
+
   if (isAdminPage) return <Component {...pageProps} />;
 
   return (
@@ -72,6 +91,7 @@ function MyApp({ Component, pageProps }: any) {
         <SettingsProvider value={{ settings, isLoading: isLoadingSettings }}>
           <Head>
             <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+            {settings.site_icon_url && <link rel="icon" href={settings.site_icon_url} />}
           </Head>
           <div className={`bg-[#0d0d0d] text-white min-h-screen flex font-sans`} suppressHydrationWarning={true}>
             {isMobileSidebarOpen && <div className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}

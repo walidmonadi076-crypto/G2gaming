@@ -1,17 +1,22 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { getProductBySlug, getAllProducts, getRelatedProducts, getTrendingProducts } from '../../lib/data';
 import type { Product } from '../../types';
 import Ad from '../../components/Ad';
 import SEO from '../../components/SEO';
-import Lightbox from '../../components/Lightbox';
 import StoreItemCard from '../../components/StoreItemCard';
 import HtmlContent from '../../components/HtmlContent';
 import { getEmbedUrl } from '../../lib/utils';
+
+// Dynamic import for performance
+const Lightbox = dynamic(() => import('../../components/Lightbox'), {
+    ssr: false,
+    loading: () => <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center text-white">Loading Viewer...</div>
+});
 
 interface ProductDetailPageProps { 
     product: Product; 
@@ -91,7 +96,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, relatedP
                             <button className="relative w-full aspect-square md:aspect-[4/3] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-white/5 group cursor-zoom-in ring-1 ring-white/5 hover:ring-green-500/50 transition-all duration-500" onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}>
                                 {product.videoUrl ? (
                                     embedUrl ? (
-                                        <iframe src={embedUrl} className="w-full h-full pointer-events-none" title={product.name} allow="autoplay; encrypted-media" />
+                                        <iframe src={embedUrl} className="w-full h-full pointer-events-none" title={product.name} allow="autoplay; encrypted-media; fullscreen" />
                                     ) : (
                                         <video src={product.videoUrl} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                                     )
