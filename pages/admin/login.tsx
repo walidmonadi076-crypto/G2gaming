@@ -80,6 +80,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [adPreviewToggles, setAdPreviewToggles] = useState<Record<string, 'primary' | 'fallback'>>({});
   
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationState>({ totalItems: 0, totalPages: 1, currentPage: 1, itemsPerPage: 20 });
@@ -254,7 +255,7 @@ export default function AdminPanel() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Control Panel</h1>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Infrastructure v3.3 [RESTORED]</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Infrastructure v3.4 [AD PREVIEW RESTORED]</p>
                     </div>
                 </div>
                 <div className="flex gap-4">
@@ -430,28 +431,52 @@ export default function AdminPanel() {
 
                 {/* 5. Ads Tab */}
                 {activeTab === 'ads' && (
-                    <div className="space-y-8 animate-fade-in">
+                    <div className="space-y-12 animate-fade-in">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Monetization Engine</h2>
                             <button onClick={handleSaveAds} className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg">Deploy Logic</button>
                         </div>
-                        <div className="grid grid-cols-1 gap-12">
+                        <div className="grid grid-cols-1 gap-16">
                             {Object.entries(AD_CONFIG).map(([key, config]) => (
-                                <div key={key} className="bg-gray-800/50 border border-white/5 rounded-[2rem] p-8 space-y-6 group">
-                                    <div className="flex justify-between items-start">
+                                <div key={key} className="bg-gray-800/50 border border-white/5 rounded-[3rem] p-8 lg:p-12 space-y-10 group shadow-2xl">
+                                    <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-white/5 pb-8">
                                         <div>
-                                            <h3 className="text-xl font-black text-white uppercase tracking-tight">{config.label}</h3>
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">{config.size} • {config.role}</p>
+                                            <h3 className="text-2xl font-black text-white uppercase tracking-tight">{config.label}</h3>
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">{config.size} • {config.role}</p>
+                                        </div>
+                                        <div className="flex bg-gray-900 rounded-xl p-1.5 border border-white/10">
+                                            <button onClick={() => setAdPreviewToggles(p => ({...p, [key]: 'primary'}))} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${adPreviewToggles[key] !== 'fallback' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500'}`}>Test Primary</button>
+                                            <button onClick={() => setAdPreviewToggles(p => ({...p, [key]: 'fallback'}))} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${adPreviewToggles[key] === 'fallback' ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-500'}`}>Test Fallback</button>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-purple-400 tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Primary Code</label>
-                                            <textarea value={adData[key]?.code || ''} onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], code: e.target.value } }))} className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-blue-300 outline-none focus:border-purple-500 transition-all resize-none shadow-inner" placeholder="Paste Ad HTML/Script code here..." />
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-purple-400 tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Primary Code</label>
+                                                <textarea value={adData[key]?.code || ''} onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], code: e.target.value } }))} className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-blue-300 outline-none focus:border-purple-500 transition-all resize-none shadow-inner" placeholder="Paste Ad HTML/Script code here..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-orange-400 tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Fallback Code</label>
+                                                <textarea value={adData[key]?.fallback_code || ''} onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], fallback_code: e.target.value } }))} className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-orange-200 outline-none focus:border-orange-500 transition-all resize-none shadow-inner" placeholder="Paste Fallback HTML..." />
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-orange-400 tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Fallback Code</label>
-                                            <textarea value={adData[key]?.fallback_code || ''} onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], fallback_code: e.target.value } }))} className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-orange-200 outline-none focus:border-orange-500 transition-all resize-none shadow-inner" placeholder="Paste Fallback HTML..." />
+
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                Live Deployment Preview ({adPreviewToggles[key] === 'fallback' ? 'Fallback' : 'Primary'})
+                                            </label>
+                                            <div className="bg-[#050505] border border-white/5 rounded-[2rem] p-6 flex items-center justify-center min-h-[300px] relative overflow-hidden shadow-inner">
+                                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
+                                                <Ad 
+                                                    placement={key} 
+                                                    showLabel={false} 
+                                                    overrideCode={adPreviewToggles[key] === 'fallback' ? (adData[key]?.fallback_code || '<!-- No Fallback -->') : (adData[key]?.code || '<!-- No Code -->')} 
+                                                    className="bg-transparent border-0 scale-90 md:scale-100" 
+                                                />
+                                            </div>
+                                            <p className="text-[9px] text-gray-600 font-bold uppercase text-center tracking-widest italic">Simulation of user-end rendering</p>
                                         </div>
                                     </div>
                                 </div>
