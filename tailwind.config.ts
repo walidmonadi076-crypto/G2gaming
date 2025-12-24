@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-// Fix: Replaced require() with an ES module import for better TypeScript compatibility.
 import typography from "@tailwindcss/typography";
 
 const config: Config = {
@@ -10,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        // FIX: Updated font stack to be self-sufficient without var(--font-inter)
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', '"Noto Sans"', 'sans-serif'],
+        fredoka: ['"Fredoka One"', 'cursive'],
       },
       keyframes: {
         'fade-in-right': {

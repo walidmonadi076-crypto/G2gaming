@@ -10,6 +10,7 @@ class MyDocument extends Document {
         <Head>
           <meta charSet="UTF-8" />
           <link rel="icon" href={FAVICON_DATA_URI} type="image/svg+xml" />
+          <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet" />
           <script src="https://www.google.com/recaptcha/api.js" async defer></script>
         </Head>
         <body className="bg-[#0d0d0d] antialiased" suppressHydrationWarning={true}>
@@ -19,7 +20,7 @@ class MyDocument extends Document {
               (function() {
                 try {
                   var theme = localStorage.getItem('theme');
-                  var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  var support darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   if (!theme && supportDarkMode) theme = 'dark';
                   if (theme === 'light') document.documentElement.classList.add('light');
                 } catch (e) {}

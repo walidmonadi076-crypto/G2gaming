@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import type { GetStaticProps } from 'next';
@@ -87,17 +86,17 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
     <>
       <SEO title="Library - G2gaming" description="Browse our extensive collection of free online games." />
       
-      <div className="min-h-screen bg-[#0d0d0d] text-white font-sans selection:bg-purple-500 selection:text-white">
+      <div className="min-h-screen bg-[#0d0d0d] text-white font-fredoka selection:bg-purple-500 selection:text-white">
         
         {/* --- Mobile App-Like Header --- */}
         <div className="lg:hidden px-4 pt-6 pb-2 bg-gradient-to-b from-[#0d0d0d] to-[#0d0d0d]/90 sticky top-0 z-40 backdrop-blur-md border-b border-white/5">
             <div className="flex justify-between items-end mb-4">
-                <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+                <h1 className="text-3xl font-normal text-white tracking-tighter uppercase leading-none">
                     Game<span className="text-purple-500">Lib</span>
                 </h1>
                 
                 {/* Platform Toggles Mobile */}
-                <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
+                <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800 font-sans">
                     <button 
                         onClick={() => handlePlatformSelect('pc')}
                         className={`px-3 py-1 text-[10px] font-bold uppercase rounded ${selectedPlatform === 'pc' ? 'bg-purple-600 text-white' : 'text-gray-500'}`}
@@ -120,7 +119,7 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
                         key={cat}
                         onClick={() => handleCategorySelect(cat)}
                         className={`
-                            whitespace-nowrap px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border transition-all duration-200
+                            whitespace-nowrap px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border transition-all duration-200 font-sans
                             ${selectedCategory === cat && !selectedTag
                                 ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20' 
                                 : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white'}
@@ -137,17 +136,17 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
             <div className="hidden lg:flex relative z-10 flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/5 pb-8">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-purple-900/20 blur-[120px] rounded-full pointer-events-none" />
                 <div>
-                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white mb-2 uppercase leading-[0.8]">
+                    <h1 className="text-7xl md:text-9xl font-normal tracking-tighter text-white mb-2 uppercase leading-[0.8]">
                         {selectedPlatform === 'mobile' ? 'Mobile' : 'All'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 animate-gradient-x">Games</span>
                     </h1>
-                    <p className="text-gray-400 text-lg md:text-xl font-bold uppercase tracking-widest mt-6 max-w-xl flex items-center gap-3">
+                    <p className="text-gray-400 text-lg md:text-xl font-bold uppercase tracking-widest mt-6 max-w-xl flex items-center gap-3 font-sans">
                         <span className="w-8 h-[2px] bg-purple-500 inline-block"></span>
                         {selectedPlatform === 'mobile' ? 'iOS & Android Exclusives' : 'Discover . Play . Dominate'}
                     </p>
                 </div>
 
                 {/* Desktop Platform Switcher */}
-                <div className="flex bg-gray-900 p-1.5 rounded-xl border border-white/10">
+                <div className="flex bg-gray-900 p-1.5 rounded-xl border border-white/10 font-sans">
                     <button 
                         onClick={() => handlePlatformSelect('pc')}
                         className={`px-8 py-3 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${selectedPlatform === 'pc' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
@@ -164,7 +163,7 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
             </div>
 
             {/* --- Desktop Filters (Hidden on Mobile) --- */}
-            <div className="hidden lg:block sticky top-20 z-30 bg-[#0d0d0d]/80 backdrop-blur-xl border-y border-white/5 py-4 -mx-4 px-4 sm:px-0 sm:mx-0 sm:border-0 sm:mb-12">
+            <div className="hidden lg:block sticky top-20 z-30 bg-[#0d0d0d]/80 backdrop-blur-xl border-y border-white/5 py-4 -mx-4 px-4 sm:px-0 sm:mx-0 sm:border-0 sm:mb-12 font-sans">
                 <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
                     <div className="flex items-center gap-3 overflow-x-auto no-scrollbar w-full md:w-auto pb-2 md:pb-0">
                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mr-2 shrink-0">Filter By //</span>
@@ -187,14 +186,13 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
                 </div>
             </div>
 
-            {/* --- Game Grid (Updated to 4 columns on LG) --- */}
+            {/* --- Game Grid --- */}
             {filteredGames.length > 0 ? (
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6 md:gap-6 mt-4 lg:mt-0 auto-rows-fr">
                         {visibleGames.map((game, index) => (
                             <React.Fragment key={game.id}>
                                 <GameCard game={game} />
-                                {/* Inject Sponsored Native Ad after every 4th game */}
                                 {(index + 1) % 4 === 0 && (
                                     <div className="col-span-1 sm:col-span-1 h-full"> 
                                         <SponsoredGameCard />
@@ -206,7 +204,7 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
 
                     {/* Load More Button */}
                     {hasMoreGames && (
-                        <div className="mt-12 flex justify-center pb-8">
+                        <div className="mt-12 flex justify-center pb-8 font-sans">
                             <button 
                                 onClick={handleLoadMore}
                                 className="group relative px-8 py-3 bg-gray-900 border border-purple-500/30 rounded-xl hover:border-purple-500 transition-all duration-300 shadow-lg hover:shadow-purple-500/20 active:scale-95"
@@ -226,13 +224,13 @@ const GamesPage: React.FC<GamesPageProps> = ({ searchQuery, games }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 className="text-3xl font-black uppercase text-white mb-2 tracking-tight">System Glitch</h3>
-                    <p className="text-gray-400 font-medium max-w-md mb-8">
+                    <h3 className="text-3xl font-normal uppercase text-white mb-2 tracking-tight">System Glitch</h3>
+                    <p className="text-gray-400 font-medium max-w-md mb-8 font-sans">
                         No games found matching "{searchQuery}" or the selected filters. 
                     </p>
                     <button 
                         onClick={() => router.push('/games')}
-                        className="px-10 py-4 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest text-sm skew-x-[-10deg] transition-all hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] hover:-translate-y-1"
+                        className="px-10 py-4 bg-purple-600 hover:bg-purple-50 text-white font-black uppercase tracking-widest text-sm skew-x-[-10deg] transition-all hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] hover:-translate-y-1 font-sans"
                     >
                         <span className="block skew-x-[10deg]">Reset System</span>
                     </button>
