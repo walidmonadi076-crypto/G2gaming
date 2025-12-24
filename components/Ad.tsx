@@ -50,15 +50,12 @@ const Ad: React.FC<AdProps> = ({ placement, className = '', showLabel = true, ov
   }, [isMounted, code]);
 
   return (
-    <div 
-      className={`relative flex flex-col items-center justify-center p-2 rounded-xl bg-gray-900/40 border border-white/5 ${className}`}
-      suppressHydrationWarning
-    >
+    <div className={`relative flex flex-col items-center justify-center p-2 rounded-xl bg-gray-900/40 border border-white/5 ${className}`}>
+      {/* FIX: Avoid conditional rendering of spans that could lead to mismatch */}
       {isMounted && showLabel && (
         <span className="absolute top-0 left-0 bg-gray-800/90 text-[8px] font-black text-gray-500 px-2 py-0.5 rounded-br-lg uppercase tracking-widest z-10">Partner Link</span>
       )}
       <div className="w-full flex justify-center items-center min-h-[90px]">
-        {/* Strictly identical DOM for server and first client render */}
         {!isMounted || isLoading ? (
           <div className="animate-pulse bg-white/5 rounded-lg w-full h-[90px]" />
         ) : (

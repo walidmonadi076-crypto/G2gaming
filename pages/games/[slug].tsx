@@ -100,7 +100,10 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                         <div className="flex items-center gap-6">
                             <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
                             <div className="h-4 w-px bg-gray-800"></div>
-                            <span className="text-gray-400 text-xs font-black uppercase">{game.downloadsCount?.toLocaleString() || 0} Joined</span>
+                            {/* FIX: Locale-dependent strings must be handled after mount to prevent Error #425 */}
+                            <span className="text-gray-400 text-xs font-black uppercase">
+                                {isMounted ? (game.downloadsCount?.toLocaleString() || 0) : '...'} Joined
+                            </span>
                         </div>
                     </header>
 
@@ -133,7 +136,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
 
                         <aside className="col-span-12 lg:col-span-4 space-y-8">
                             <div className="lg:sticky lg:top-24 space-y-8">
-                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden relative" suppressHydrationWarning>
+                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden relative">
                                     <div className="flex items-center gap-4 mb-8">
                                         <div className="w-14 h-14 relative rounded-2xl overflow-hidden border border-white/10 bg-gray-800 shrink-0">
                                             <Image src={game.iconUrl || game.imageUrl} alt="" fill className="object-cover" unoptimized />
@@ -141,7 +144,8 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                                Status: <span className="text-white">{isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : 'INITIALIZING'}</span>
+                                                {/* FIX: Use strictly identical text nodes for hydration */}
+                                                Status: <span className="text-white">{!isMounted ? 'INITIALIZING' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}</span>
                                             </p>
                                         </div>
                                     </div>
