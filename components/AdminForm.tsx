@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import type { Game, BlogPost, Product, SocialLink } from '../types';
 import AdminPreview from './AdminPreview'; 
@@ -23,24 +24,13 @@ const RichTextEditor: React.FC<{
 }> = ({ value, onChange, label, id }) => {
     const [mode, setMode] = useState<'visual' | 'html'>('visual');
     const editorRef = useRef<HTMLDivElement>(null);
-
     useEffect(() => {
         if (mode === 'visual' && editorRef.current && value !== editorRef.current.innerHTML) {
             editorRef.current.innerHTML = value || '';
         }
     }, [mode, value]);
-
-    const handleInput = () => {
-        if (editorRef.current) {
-            onChange(editorRef.current.innerHTML);
-        }
-    };
-
-    const execCommand = (command: string, val: string | undefined = undefined) => {
-        document.execCommand(command, false, val);
-        handleInput();
-    };
-
+    const handleInput = () => { if (editorRef.current) onChange(editorRef.current.innerHTML); };
+    const execCommand = (command: string, val: string | undefined = undefined) => { document.execCommand(command, false, val); handleInput(); };
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -78,20 +68,18 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   const [newGalleryUrl, setNewGalleryUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (type === 'games') fetch('/api/meta/categories').then(res => res.json()).then(setCategories);
-  }, [type]);
+  useEffect(() => { if (type === 'games') fetch('/api/meta/categories').then(res => res.json()).then(setCategories); }, [type]);
 
   useEffect(() => {
     if (item) {
-      setFormData({ gallery: [], tags: [], requirements: { os: '', ram: '', storage: '' }, ...item });
+      setFormData({ gallery: [], tags: [], requirements: { os: '', ram: '', storage: '' }, theme: 'dark', accentColor: '#a855f7', ...item });
       setIsPinned(!!(item as any).isPinned);
       if (type === 'games') setIsFeatured((item as Game).tags?.includes('Featured') || false);
     } else {
       const defaults = {
-        games: { title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], description: '', downloadUrl: '#', downloadUrlIos: '', gallery: [], platform: 'pc', downloadsCount: 1000, rating: 95, requirements: { os: 'Windows 10', ram: '8GB', storage: '20GB' } },
-        blogs: { title: '', summary: '', imageUrl: '', author: 'Admin', content: '', category: '' },
-        products: { name: '', imageUrl: '', videoUrl: '', price: '', url: '#', description: '', category: '', gallery: [] },
+        games: { title: '', imageUrl: '', iconUrl: '', backgroundUrl: '', category: '', tags: [], theme: 'dark', accentColor: '#a855f7', description: '', downloadUrl: '#', downloadUrlIos: '', gallery: [], platform: 'pc', downloadsCount: 1000, rating: 95, requirements: { os: 'Windows 10', ram: '8GB', storage: '20GB' } },
+        blogs: { title: '', summary: '', imageUrl: '', author: 'Admin', content: '', category: '', accentColor: '#a855f7' },
+        products: { name: '', imageUrl: '', videoUrl: '', price: '', url: '#', description: '', category: '', gallery: [], accentColor: '#a855f7' },
         'social-links': { name: '', url: '', icon_svg: '' },
       };
       setFormData(defaults[type]);
@@ -99,55 +87,29 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
   }, [item, type]);
 
   const setField = (name: string, val: any) => setFormData((prev: any) => ({ ...prev, [name]: val }));
-
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
       const name = type === 'products' ? 'name' : 'title';
       setFormData((prev: any) => ({ ...prev, [name]: val, slug: slugify(val) }));
   }
-
-  const handleAddGalleryItem = () => {
-    if (newGalleryUrl.trim()) {
-      setField('gallery', [...(formData.gallery || []), newGalleryUrl.trim()]);
-      setNewGalleryUrl('');
-    }
-  };
-
-  const handleRemoveGalleryItem = (index: number) => {
-    setField('gallery', formData.gallery.filter((_:any, i:number) => i !== index));
-  };
+  const handleAddGalleryItem = () => { if (newGalleryUrl.trim()) { setField('gallery', [...(formData.gallery || []), newGalleryUrl.trim()]); setNewGalleryUrl(''); } };
+  const handleRemoveGalleryItem = (index: number) => { setField('gallery', formData.gallery.filter((_:any, i:number) => i !== index)); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-        const finalData = { 
-            ...formData, 
-            isPinned, 
-            tags: isFeatured 
-                ? [...(formData.tags?.filter((t:any)=>t!=='Featured')||[]), 'Featured'] 
-                : (formData.tags?.filter((t:any)=>t!=='Featured') || [])
-        };
+        const finalData = { ...formData, isPinned, tags: isFeatured ? [...(formData.tags?.filter((t:any)=>t!=='Featured')||[]), 'Featured'] : (formData.tags?.filter((t:any)=>t!=='Featured') || []) };
         await onSubmit(finalData);
-    } catch (err) {
-        console.error(err);
-    } finally {
-        setIsSubmitting(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setIsSubmitting(false); }
   };
 
   const renderBasicField = (name: string, label: string, placeholder: string = "", required = true, inputType = "text") => (
       <div className="space-y-1">
           <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">{label}</label>
-          <input 
-              type={inputType} 
-              value={formData[name] === null || formData[name] === undefined ? '' : formData[name]} 
-              onChange={(e) => setField(name, inputType === 'number' ? (e.target.value === '' ? 0 : parseInt(e.target.value)) : e.target.value)} 
-              required={required}
-              placeholder={placeholder}
-              className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all outline-none text-sm text-white" 
-          />
+          <input type={inputType} value={formData[name] === null || formData[name] === undefined ? '' : formData[name]} onChange={(e) => setField(name, inputType === 'number' ? (e.target.value === '' ? 0 : parseInt(e.target.value)) : e.target.value)} required={required} placeholder={placeholder} className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all outline-none text-sm text-white" />
       </div>
   );
 
@@ -156,33 +118,31 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       <form onSubmit={handleSubmit} className="bg-gray-800 rounded-[2.5rem] border border-white/10 shadow-2xl w-full h-full max-w-[1400px] flex flex-col overflow-hidden">
         <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-gray-900/50">
             <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                </div>
+                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
                 <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{item ? 'Update Core Data' : 'Initialize New Entry'}</h2>
             </div>
             <div className="flex gap-4">
               <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50">Discard</button>
-              <button type="submit" disabled={isSubmitting} className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/40 disabled:bg-gray-600 flex items-center gap-2">
-                  {isSubmitting ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        Syncing...
-                      </>
-                  ) : 'Sync Database'}
+              <button type="submit" disabled={isSubmitting} className="px-8 py-3 bg-purple-600 hover:bg-purple-50 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/40 disabled:bg-gray-600 flex items-center gap-2">
+                  {isSubmitting ? <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : 'Sync Database'}
               </button>
             </div>
         </div>
-        
         <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-8 p-8 overflow-hidden">
           <div className="overflow-y-auto space-y-8 pr-4 custom-scrollbar">
-            <div className="flex items-center gap-4 bg-gray-900/40 p-4 rounded-2xl border border-white/5">
+            <div className="flex flex-wrap items-center gap-6 bg-gray-900/40 p-4 rounded-2xl border border-white/5">
                 <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => setIsPinned(!isPinned)}>
                     <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isPinned ? 'bg-blue-600 border-blue-500 shadow-lg' : 'border-gray-600 hover:border-gray-500'}`}>
                         {isPinned && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                     </div>
-                    <span className="text-[10px] font-black uppercase text-gray-400">Global Pin (Front-row placement)</span>
+                    <span className="text-[10px] font-black uppercase text-gray-400">Global Pin</span>
                 </div>
+                {type !== 'social-links' && (
+                    <div className="flex items-center gap-3">
+                        <label className="text-[10px] font-black uppercase text-gray-400">Neon Accent</label>
+                        <input type="color" value={formData.accentColor || '#a855f7'} onChange={e => setField('accentColor', e.target.value)} className="w-10 h-10 bg-transparent cursor-pointer rounded-lg border-0 p-0" />
+                    </div>
+                )}
             </div>
 
             {type === 'games' && (
@@ -194,44 +154,27 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                             <input list="cats" value={formData.category} onChange={e=>setField('category', e.target.value)} required className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm text-white" /><datalist id="cats">{categories.map(c=><option key={c} value={c}/>)}</datalist>
                         </div>
                     </div>
-
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
-                        <div className="flex items-center gap-2 mb-2">
-                             <div className="w-1.5 h-4 bg-purple-500 rounded-full"></div>
-                             <h4 className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Deployment & Platform</h4>
-                        </div>
+                        <div className="flex items-center gap-2 mb-2"><div className="w-1.5 h-4 bg-purple-500 rounded-full"></div><h4 className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Deployment & Platform</h4></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Platform Type</label>
                                 <select value={formData.platform || 'pc'} onChange={e=>setField('platform', e.target.value)} className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm text-white">
-                                    <option value="pc">PC / Desktop</option>
-                                    <option value="mobile">Mobile (iOS & Android)</option>
+                                    <option value="pc">PC / Desktop</option><option value="mobile">Mobile</option>
                                 </select>
                             </div>
                             {formData.platform === 'mobile' ? (
                                 <>
-                                    {renderBasicField('downloadUrl', 'Android APK / Play Store Link', 'https://...')}
-                                    {renderBasicField('downloadUrlIos', 'iOS App Store Link', 'https://...')}
+                                    {renderBasicField('downloadUrl', 'Android APK', 'https://...')}
+                                    {renderBasicField('downloadUrlIos', 'iOS App Store', 'https://...')}
                                 </>
-                            ) : (
-                                renderBasicField('downloadUrl', 'PC Download / Deployment Link', 'https://...')
-                            )}
+                            ) : renderBasicField('downloadUrl', 'PC Download', 'https://...')}
                         </div>
                     </div>
-
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
-                        <div className="flex items-center gap-2 mb-2">
-                             <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
-                             <h4 className="text-[10px] font-black uppercase text-blue-400 tracking-[0.2em]">Visual Assets Gallery</h4>
-                        </div>
+                        <div className="flex items-center gap-2 mb-2"><div className="w-1.5 h-4 bg-blue-500 rounded-full"></div><h4 className="text-[10px] font-black uppercase text-blue-400 tracking-[0.2em]">Visual Assets Gallery</h4></div>
                         <div className="flex gap-2">
-                            <input 
-                                type="text" 
-                                value={newGalleryUrl} 
-                                onChange={e=>setNewGalleryUrl(e.target.value)} 
-                                placeholder="Paste Screenshot URL..." 
-                                className="flex-grow px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-xs text-white outline-none focus:border-blue-500" 
-                            />
+                            <input type="text" value={newGalleryUrl} onChange={e=>setNewGalleryUrl(e.target.value)} placeholder="Paste Screenshot URL..." className="flex-grow px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-xs text-white outline-none focus:border-blue-500" />
                             <button type="button" onClick={handleAddGalleryItem} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-[10px] uppercase">Add</button>
                         </div>
                         {formData.gallery && formData.gallery.length > 0 && (
@@ -239,49 +182,35 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                                 {formData.gallery.map((url: string, idx: number) => (
                                     <div key={idx} className="relative group aspect-video rounded-lg overflow-hidden border border-white/5 bg-black">
                                         <Image src={url} alt="" fill className="object-cover" unoptimized />
-                                        <button type="button" onClick={()=>handleRemoveGalleryItem(idx)} className="absolute top-1 right-1 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
+                                        <button type="button" onClick={()=>handleRemoveGalleryItem(idx)} className="absolute top-1 right-1 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12"/></svg></button>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
-
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
-                        <div className="flex items-center gap-2 mb-2">
-                             <div className="w-1.5 h-4 bg-purple-500 rounded-full"></div>
-                             <h4 className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Visual & Static Controls</h4>
-                        </div>
+                        <div className="flex items-center gap-2 mb-2"><div className="w-1.5 h-4 bg-purple-500 rounded-full"></div><h4 className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Visual & Static Controls</h4></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {renderBasicField('downloadsCount', 'Manual Player Count', 'e.g. 5000', true, 'number')}
                             {renderBasicField('rating', 'Dynamic Rating (0-100)', '95', true, 'number')}
                         </div>
-                        {renderBasicField('imageUrl', 'Grid Cover URL (Main Display)')}
-                        {renderBasicField('iconUrl', 'Developer Icon (Circular Logo)')}
-                        {renderBasicField('backgroundUrl', 'Page Background (High Res)')}
-                        {renderBasicField('videoUrl', 'YouTube / MP4 Assets (Auto-detects Shorts/Videos)', 'https://...')}
+                        {renderBasicField('imageUrl', 'Grid Cover URL')}
+                        {renderBasicField('iconUrl', 'Developer Icon')}
+                        {renderBasicField('backgroundUrl', 'Page Background')}
+                        {renderBasicField('videoUrl', 'YouTube / MP4 Assets')}
                     </div>
-
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-4">
-                        <div className="flex items-center gap-2 mb-2">
-                             <div className="w-1.5 h-4 bg-green-500 rounded-full"></div>
-                             <h4 className="text-[10px] font-black uppercase text-green-400 tracking-[0.2em]">System Requirements</h4>
-                        </div>
+                        <div className="flex items-center gap-2 mb-2"><div className="w-1.5 h-4 bg-green-500 rounded-full"></div><h4 className="text-[10px] font-black uppercase text-green-400 tracking-[0.2em]">System Requirements</h4></div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <input type="text" placeholder="OS" value={formData.requirements?.os} onChange={e=>setField('requirements', {...formData.requirements, os: e.target.value})} className="bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-green-500" />
                             <input type="text" placeholder="RAM" value={formData.requirements?.ram} onChange={e=>setField('requirements', {...formData.requirements, ram: e.target.value})} className="bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-green-500" />
                             <input type="text" placeholder="Storage" value={formData.requirements?.storage} onChange={e=>setField('requirements', {...formData.requirements, storage: e.target.value})} className="bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-green-500" />
                         </div>
                     </div>
-
                     <div className="flex items-center gap-3 bg-gray-900 p-5 rounded-2xl border border-gray-700 cursor-pointer hover:border-purple-500/50 transition-all group" onClick={()=>setIsFeatured(!isFeatured)}>
-                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isFeatured?'bg-purple-600 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]':'border-gray-600 group-hover:border-gray-500'}`}>
-                            {isFeatured && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                        </div>
+                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isFeatured?'bg-purple-600 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]':'border-gray-600 group-hover:border-gray-500'}`}>{isFeatured && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}</div>
                         <span className="text-[10px] font-black uppercase text-gray-400 group-hover:text-gray-200">Featured Placement</span>
                     </div>
-
                     <RichTextEditor id="desc" label="Mission Briefing & Description" value={formData.description} onChange={v=>setField('description', v)} />
                     <AIHelperPanel contextType="game" onApplyLongDescription={v=>setField('description', v)} />
                 </>
@@ -300,10 +229,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
             {type === 'products' && (
                 <>
                     <input type="text" value={formData.name} onChange={handleTitleChange} className="text-4xl font-black bg-transparent border-b-2 border-gray-700 w-full outline-none focus:border-green-500 uppercase tracking-tighter text-white py-4" placeholder="Gear Identity Name..." />
-                    <div className="grid grid-cols-2 gap-4">
-                        {renderBasicField('price', 'Store Price ($)')}
-                        {renderBasicField('category', 'Inventory Class')}
-                    </div>
+                    <div className="grid grid-cols-2 gap-4">{renderBasicField('price', 'Store Price ($)')}{renderBasicField('category', 'Inventory Class')}</div>
                     {renderBasicField('imageUrl', 'Master Product Image URL')}
                     <RichTextEditor id="pdesc" label="Technical Specifications" value={formData.description} onChange={v=>setField('description', v)} />
                 </>

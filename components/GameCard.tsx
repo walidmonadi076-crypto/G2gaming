@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,7 +18,6 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
   const [imageError, setImageError] = useState(false);
 
   const active = isHovered || isFocused;
-
   const PLACEHOLDER_IMAGE = "https://picsum.photos/seed/gaming/800/600";
   const embedUrl = getEmbedUrl(game.videoUrl);
 
@@ -25,9 +25,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
     if (!embedUrl && videoRef.current) {
         if (active) {
             const playPromise = videoRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {});
-            }
+            if (playPromise !== undefined) playPromise.catch(() => {});
         } else {
             videoRef.current.pause();
             videoRef.current.currentTime = 0;
@@ -35,29 +33,26 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
     }
   }, [active, embedUrl]);
 
-  const downloadCount = game.downloadsCount !== undefined && game.downloadsCount !== null 
-    ? game.downloadsCount 
-    : (game.view_count ? game.view_count * 12 + 500 : (game.id * 1500) + 7000);
-
-  const rating = game.rating !== undefined && game.rating !== null
-    ? game.rating
-    : (game.id ? 85 + (game.id % 13) : 98);
+  const downloadCount = game.downloadsCount || (game.view_count ? game.view_count * 12 + 500 : 7000);
+  const rating = game.rating || 98;
   
   const formatCompactNumber = (number: number) => {
-    return new Intl.NumberFormat('en-US', {
-      notation: "compact",
-      maximumFractionDigits: 1
-    }).format(number);
+    return new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(number);
   };
 
-  const profileImageSrc = game.iconUrl || game.imageUrl || PLACEHOLDER_IMAGE;
+  const accentColor = game.accentColor || '#a855f7';
+  const glowStyle = active ? {
+    borderColor: accentColor,
+    boxShadow: `0 0 40px ${accentColor}44`,
+  } : {};
 
   return (
     <Link 
       href={`/games/${game.slug}`}
       className={`group flex flex-col w-full h-full bg-[#0e0e12] p-3 rounded-[32px] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] 
-                 ${active ? 'bg-[#13131a] scale-110 z-30 border-purple-500/60 shadow-[0_0_60px_rgba(168,85,247,0.3)] opacity-100' : 'opacity-80 scale-95 border-white/5'} 
+                 ${active ? 'bg-[#13131a] scale-110 z-30 opacity-100' : 'opacity-80 scale-95 border-white/5'} 
                  border relative font-fredoka`}
+      style={glowStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setVideoLoaded(false); }}
     >
@@ -66,71 +61,30 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
             {game.videoUrl && active && (
               embedUrl ? (
                    <div className="w-full h-full overflow-hidden relative pointer-events-none">
-                     <iframe 
-                       src={embedUrl}
-                       className="absolute top-1/2 left-1/2 w-[150%] h-[150%] -translate-x-1/2 -translate-y-1/2 pointer-events-none object-cover" 
-                       title={game.title}
-                       allow="autoplay; encrypted-media"
-                       onLoad={() => setVideoLoaded(true)}
-                     />
+                     <iframe src={embedUrl} className="absolute top-1/2 left-1/2 w-[150%] h-[150%] -translate-x-1/2 -translate-y-1/2 pointer-events-none object-cover" title={game.title} allow="autoplay; encrypted-media" onLoad={() => setVideoLoaded(true)} />
                    </div>
               ) : (
-                <video
-                  ref={videoRef}
-                  src={game.videoUrl}
-                  muted={true}
-                  loop
-                  playsInline
-                  preload="auto"
-                  onLoadedData={() => setVideoLoaded(true)}
-                  className="w-full h-full object-cover"
-                />
+                <video ref={videoRef} src={game.videoUrl} muted loop playsInline preload="auto" onLoadedData={() => setVideoLoaded(true)} className="w-full h-full object-cover" />
               )
             )}
         </div>
-
         <div className={`absolute inset-0 z-10 transition-opacity duration-500 ease-in-out ${active && videoLoaded ? 'opacity-0' : 'opacity-100'}`}>
-            {!imageError ? (
-            <Image 
-                src={game.imageUrl} 
-                alt={game.title} 
-                fill
-                sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-cover"
-                onError={() => setImageError(true)}
-                unoptimized
-            />
-            ) : (
-            <img 
-                src={game.imageUrl || PLACEHOLDER_IMAGE} 
-                alt={game.title}
-                className="absolute inset-0 w-full h-full object-cover"
-            />
-            )}
+            {!imageError ? <Image src={game.imageUrl} alt={game.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" onError={() => setImageError(true)} unoptimized /> : <img src={game.imageUrl || PLACEHOLDER_IMAGE} alt={game.title} className="absolute inset-0 w-full h-full object-cover" />}
             <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-0'}`}></div>
         </div>
       </div>
 
       <div className="flex justify-between items-start mb-5 px-1 gap-2">
          <div className="flex flex-col gap-2 min-w-0 flex-1">
-            <h3 className={`font-normal text-lg leading-none truncate transition-colors ${active ? 'text-purple-400' : 'text-white'}`}>
+            <h3 className={`font-normal text-lg leading-none truncate transition-colors`} style={active ? { color: accentColor } : {}}>
                 {game.title}
             </h3>
             <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 rounded-full bg-[#1c1c24] text-gray-400 text-[9px] font-black uppercase tracking-widest border border-white/5 whitespace-nowrap">
-                    {game.category}
-                </span>
+                <span className="px-3 py-1 rounded-full bg-[#1c1c24] text-gray-400 text-[9px] font-black uppercase tracking-widest border border-white/5 whitespace-nowrap">{game.category}</span>
             </div>
          </div>
-         
-         <div className={`relative w-11 h-11 rounded-2xl overflow-hidden shrink-0 border-2 transition-all duration-700 ${active ? 'border-purple-500 scale-110 rotate-3' : 'border-[#1c1c24]'} shadow-sm bg-gray-800`}>
-             <Image 
-                src={profileImageSrc} 
-                alt="" 
-                fill 
-                className="object-cover" 
-                unoptimized 
-             />
+         <div className={`relative w-11 h-11 rounded-2xl overflow-hidden shrink-0 border-2 transition-all duration-700 ${active ? 'scale-110 rotate-3' : 'border-[#1c1c24]'} shadow-sm bg-gray-800`} style={active ? { borderColor: accentColor } : {}}>
+             <Image src={game.iconUrl || game.imageUrl || PLACEHOLDER_IMAGE} alt="" fill className="object-cover" unoptimized />
          </div>
       </div>
 
@@ -139,21 +93,11 @@ const GameCard: React.FC<GameCardProps> = ({ game, variant = 'default', isFocuse
             <div className={`w-5 h-5 rounded-full flex items-center justify-center text-black shadow-lg transition-colors ${active ? 'bg-[#a3e635]' : 'bg-gray-600'}`}>
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-2h-2v2zm0-4h2V7h-2v6z"/></svg>
             </div>
-            <div className="flex flex-col leading-none">
-                <span className="text-[8px] text-gray-500 font-black uppercase tracking-wider mb-0.5">Rating</span>
-                <span className="text-xs font-black text-white">{rating}%</span>
-            </div>
+            <div className="flex flex-col leading-none"><span className="text-[8px] text-gray-500 font-black uppercase tracking-wider mb-0.5">Rating</span><span className="text-xs font-black text-white">{rating}%</span></div>
          </div>
-
-         <div className={`flex-1 rounded-2xl px-4 py-3 flex items-center justify-center gap-2 transition-all shadow-lg ${active ? 'bg-[#5865F2] text-white' : 'bg-gray-800 text-gray-500'}`}>
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-             </svg>
-             <span className="font-black text-sm tracking-wide">
-                {formatCompactNumber(downloadCount)}
-             </span>
+         <div className={`flex-1 rounded-2xl px-4 py-3 flex items-center justify-center gap-2 transition-all shadow-lg ${active ? 'text-white' : 'bg-gray-800 text-gray-500'}`} style={active ? { backgroundColor: accentColor } : {}}>
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+             <span className="font-black text-sm tracking-wide">{formatCompactNumber(downloadCount)}</span>
          </div>
       </div>
     </Link>

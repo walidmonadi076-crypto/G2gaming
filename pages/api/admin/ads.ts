@@ -1,9 +1,8 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDbClient } from '../../../db';
 import { isAuthorized } from '../auth/check';
-import { Ad } from '../../../types';
 
-// FIX: Add method to NextApiRequest type to resolve TypeScript error.
 export default async function handler(req: NextApiRequest & { method?: string }, res: NextApiResponse) {
   if (!isAuthorized(req)) {
     return res.status(401).json({ error: 'Non autorisé' });
@@ -13,40 +12,32 @@ export default async function handler(req: NextApiRequest & { method?: string },
   try {
     client = await getDbClient();
     if (req.method === 'GET') {
-      const result = await client.query('SELECT placement, code FROM ads');
+      const result = await client.query('SELECT placement, code, fallback_code FROM ads');
       res.status(200).json(result.rows);
     } else if (req.method === 'POST') {
-      const ads: Record<string, string> = req.body;
+      const adConfigs: Record<string, { code: string, fallback_code: string }> = req.body;
       
       await client.query('BEGIN');
-      for (const placement in ads) {
-        if (Object.prototype.hasOwnProperty.call(ads, placement)) {
-          const code = ads[placement];
-          await client.query(
-            `INSERT INTO ads (placement, code) 
-             VALUES ($1, $2)
-             ON CONFLICT (placement) 
-             DO UPDATE SET code = EXCLUDED.code, updated_at = NOW()`,
-            [placement, code]
-          );
-        }
+      for (const placement in adConfigs) {
+        const { code, fallback_code } = adConfigs[placement];
+        await client.query(
+          `INSERT INTO ads (placement, code, fallback_code) 
+           VALUES ($1, $2, $3)
+           ON CONFLICT (placement) 
+           DO UPDATE SET code = EXCLUDED.code, fallback_code = EXCLUDED.fallback_code, updated_at = NOW()`,
+          [placement, code, fallback_code]
+        );
       }
       await client.query('COMMIT');
-      
-      res.status(200).json({ success: true, message: 'Publicités mises à jour.' });
+      res.status(200).json({ success: true, message: 'Ad ecosystem synchronized.' });
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
       res.status(405).json({ message: 'Method not allowed' });
     }
   } catch (error) {
-    if (client) {
-      await client.query('ROLLBACK');
-    }
-    console.error("API Error in /api/admin/ads:", error);
-    res.status(500).json({ error: 'Erreur interne du serveur.', details: (error as Error).message });
+    if (client) await client.query('ROLLBACK');
+    res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    if (client) {
-      client.release();
-    }
+    if (client) client.release();
   }
 }

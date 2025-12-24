@@ -11,16 +11,17 @@ export interface Game {
   category: string;
   platform?: 'mobile' | 'pc' | 'web';
   tags?: string[];
-  theme?: 'dark' | 'light' | 'colorful' | 'retro';
+  theme?: 'dark' | 'light' | 'colorful' | 'retro' | 'neon';
+  accentColor?: string; // New: Hex color for neon glows
   description: string;
   videoUrl?: string;
-  downloadUrl: string; // Used for PC or Android
-  downloadUrlIos?: string; // Specific for iOS
+  downloadUrl: string;
+  downloadUrlIos?: string;
   gallery: string[];
   view_count?: number;
-  rating?: number; // New: Manual Rating (0-100)
-  downloadsCount?: number; // New: Manual Download Count
-  isPinned?: boolean; // New: Pin to top
+  rating?: number;
+  downloadsCount?: number;
+  isPinned?: boolean;
   requirements?: {
     os: string;
     ram: string;
@@ -37,6 +38,7 @@ export interface Product {
   videoUrl?: string;
   price: string;
   url: string;
+  accentColor?: string; // New: Hex color
   description: string;
   gallery: string[];
   category: string;
@@ -67,6 +69,7 @@ export interface BlogPost {
   author: string;
   publishDate: string;
   rating: number;
+  accentColor?: string; // New: Hex color
   affiliateUrl: string;
   content: string;
   category: string;
@@ -84,6 +87,7 @@ export interface SocialLink {
 export interface Ad {
   placement: string;
   code: string;
+  fallback_code?: string;
 }
 
 export interface SiteSettings {
