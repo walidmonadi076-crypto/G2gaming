@@ -67,6 +67,12 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
         window.open(targetUrl, '_blank');
     };
 
+    const handleGalleryClick = (index: number) => {
+        // Offset by 1 if there's a video in the mediaItems array
+        setLightboxIndex(game.videoUrl ? index + 1 : index);
+        setLightboxOpen(true);
+    };
+
     if (router.isFallback) return <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center text-white font-black uppercase">Loading Terminal...</div>;
 
     return (
@@ -100,7 +106,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                         <div className="flex items-center gap-6">
                             <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
                             <div className="h-4 w-px bg-gray-800"></div>
-                            {/* FIX: Locale-dependent strings must be handled after mount to prevent Error #425 */}
                             <span className="text-gray-400 text-xs font-black uppercase">
                                 {isMounted ? (game.downloadsCount?.toLocaleString() || 0) : '...'} Joined
                             </span>
@@ -120,6 +125,22 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                     <Image src={game.imageUrl} alt={game.title} fill className="object-cover" priority unoptimized />
                                 )}
                             </div>
+
+                            {/* Screenshots Grid Section */}
+                            {game.gallery && game.gallery.length > 0 && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+                                    {game.gallery.map((img, idx) => (
+                                        <button 
+                                            key={idx} 
+                                            onClick={() => handleGalleryClick(idx)}
+                                            className="group relative aspect-video rounded-2xl overflow-hidden border border-white/5 bg-gray-900 shadow-lg hover:border-purple-500/50 transition-all duration-300"
+                                        >
+                                            <Image src={img} alt={`${game.title} screenshot ${idx + 1}`} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
+                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                             <section className="mb-20">
                                 <h2 className="text-3xl font-black text-white uppercase mb-10 flex items-center gap-4">
@@ -144,7 +165,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                                {/* FIX: Use strictly identical text nodes for hydration */}
                                                 Status: <span className="text-white">{!isMounted ? 'INITIALIZING' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}</span>
                                             </p>
                                         </div>

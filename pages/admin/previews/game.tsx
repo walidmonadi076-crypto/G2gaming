@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import type { Game } from '../../../types';
-import Ad from '../../../components/Ad';
 import SEO from '../../../components/SEO';
-import Lightbox from '../../../components/Lightbox';
 import StarRating from '../../../components/StarRating';
 import HtmlContent from '../../../components/HtmlContent';
-import GameCard from '../../../components/GameCard';
 import { getEmbedUrl } from '../../../lib/utils';
 
 const GamePreviewPage: React.FC = () => {
@@ -26,9 +22,6 @@ const GamePreviewPage: React.FC = () => {
         platform: 'pc'
     });
 
-    const [lightboxOpen, setLightboxOpen] = useState(false);
-    const [lightboxIndex, setLightboxIndex] = useState(0);
-
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             if (event.origin !== window.location.origin) return;
@@ -41,14 +34,6 @@ const GamePreviewPage: React.FC = () => {
     }, []);
 
     const embedUrl = useMemo(() => getEmbedUrl(game.videoUrl), [game.videoUrl]);
-
-    const mediaItems = useMemo(() => {
-        const items = [];
-        if (game.videoUrl) items.push({ type: 'video' as const, src: game.videoUrl });
-        (game.gallery || []).forEach(img => items.push({ type: 'image' as const, src: img }));
-        if (items.length === 0 && game.imageUrl) items.push({ type: 'image' as const, src: game.imageUrl });
-        return items;
-    }, [game]);
     
     const isMobileGame = game.platform === 'mobile';
 
@@ -56,7 +41,6 @@ const GamePreviewPage: React.FC = () => {
         <>
             <SEO title={`Preview: ${game.title}`} noindex={true} />
             <div className="min-h-screen bg-[#0d0d0d] text-gray-300 font-sans selection:bg-purple-500 pb-20 relative overflow-x-hidden">
-                {/* Immersive Background */}
                 {game.backgroundUrl && (
                     <div className="fixed inset-0 z-0">
                         <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-20 blur-[3px]" priority unoptimized />
@@ -79,13 +63,12 @@ const GamePreviewPage: React.FC = () => {
                             <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
                             <div className="h-4 w-px bg-gray-800"></div>
                             <span className="text-gray-400 text-xs font-black uppercase tracking-[0.1em]">
-                                {game.downloadsCount ? game.downloadsCount.toLocaleString() : 0} Players Joined
+                                {game.downloadsCount ? game.downloadsCount.toLocaleString() : 0} Joined
                             </span>
                         </div>
                     </header>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12">
-                        
                         <div className="col-span-12 lg:col-span-8">
                             <div className="group relative w-full aspect-video bg-gray-900 rounded-[2.5rem] overflow-hidden mb-6 shadow-[0_40px_80px_rgba(0,0,0,0.7)] border border-white/5">
                                 {game.videoUrl ? (
@@ -99,11 +82,11 @@ const GamePreviewPage: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* GALLERY NICHAN T7T L-VIDEO (Preview) */}
+                            {/* Gallery Preview Grid */}
                             {game.gallery && game.gallery.length > 0 && (
-                                <div className="grid grid-cols-4 gap-4 mb-16">
-                                    {game.gallery.slice(0, 4).map((img, idx) => (
-                                        <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-xl opacity-60">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+                                    {game.gallery.map((img, idx) => (
+                                        <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 bg-gray-900 opacity-60">
                                             <Image src={img} alt="" fill className="object-cover" unoptimized />
                                         </div>
                                     ))}
@@ -121,46 +104,21 @@ const GamePreviewPage: React.FC = () => {
                             </section>
                         </div>
 
-                        {/* SIDEBAR PREVIEW */}
                         <aside className="col-span-12 lg:col-span-4 space-y-8">
                             <div className="lg:sticky lg:top-8 space-y-8">
                                 <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] p-8 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl rounded-full -mr-16 -mt-16"></div>
                                     <div className="flex items-center gap-4 mb-8">
                                         <div className="w-14 h-14 relative rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-gray-800 shrink-0">
                                             <Image src={game.iconUrl || game.imageUrl || 'https://picsum.photos/seed/placeholder/100/100'} alt="" fill className="object-cover" unoptimized />
                                         </div>
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">System Status: Preview</p>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Status: PREVIEW</p>
                                         </div>
                                     </div>
-                                    <div className="space-y-4 mb-8">
-                                        <div className="flex justify-between py-2 border-b border-white/5">
-                                            <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
-                                            <span className="text-[10px] font-black uppercase text-green-400">Verified</span>
-                                        </div>
-                                        <div className="flex justify-between py-2 border-b border-white/5">
-                                            <span className="text-[10px] font-black uppercase text-gray-500">Platform</span>
-                                            <span className="text-[10px] font-black uppercase text-white">{game.platform?.toUpperCase() || 'PC'}</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {isMobileGame ? (
-                                            <div className="grid grid-cols-1 gap-3">
-                                                <button disabled className="w-full py-4 bg-white/50 text-black/50 font-black uppercase tracking-widest text-[10px] rounded-xl flex items-center justify-center gap-3 cursor-not-allowed">
-                                                    Android Link (Preview)
-                                                </button>
-                                                <button disabled className="w-full py-4 bg-gray-700/50 text-white/50 font-black uppercase tracking-widest text-[10px] rounded-xl flex items-center justify-center gap-3 cursor-not-allowed">
-                                                    iOS Link (Preview)
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button disabled className="w-full py-5 bg-purple-600/50 text-white/50 font-black uppercase tracking-[0.2em] text-xs rounded-2xl flex items-center justify-center gap-3 cursor-not-allowed">
-                                                Deployment Mode (Preview)
-                                            </button>
-                                        )}
-                                    </div>
+                                    <button disabled className="w-full py-5 bg-purple-600/50 text-white/50 font-black uppercase tracking-[0.2em] text-xs rounded-2xl flex items-center justify-center gap-3 cursor-not-allowed">
+                                        Deployment Mode (Preview)
+                                    </button>
                                 </div>
                             </div>
                         </aside>

@@ -3,6 +3,7 @@ import type { Game, BlogPost, Product, SocialLink } from '../types';
 import AdminPreview from './AdminPreview'; 
 import AIHelperPanel from './admin/AIHelperPanel';
 import { slugify } from '../lib/slugify';
+import Image from 'next/image';
 
 type Item = Game | BlogPost | Product | SocialLink;
 type ItemType = 'games' | 'blogs' | 'products' | 'social-links';
@@ -105,8 +106,7 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
       setFormData((prev: any) => ({ ...prev, [name]: val, slug: slugify(val) }));
   }
 
-  const handleAddGalleryItem = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddGalleryItem = () => {
     if (newGalleryUrl.trim()) {
       setField('gallery', [...(formData.gallery || []), newGalleryUrl.trim()]);
       setNewGalleryUrl('');
@@ -217,6 +217,35 @@ export default function AdminForm({ item, type, onClose, onSubmit }: AdminFormPr
                                 renderBasicField('downloadUrl', 'PC Download / Deployment Link', 'https://...')
                             )}
                         </div>
+                    </div>
+
+                    <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                             <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+                             <h4 className="text-[10px] font-black uppercase text-blue-400 tracking-[0.2em]">Visual Assets Gallery</h4>
+                        </div>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                value={newGalleryUrl} 
+                                onChange={e=>setNewGalleryUrl(e.target.value)} 
+                                placeholder="Paste Screenshot URL..." 
+                                className="flex-grow px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-xs text-white outline-none focus:border-blue-500" 
+                            />
+                            <button type="button" onClick={handleAddGalleryItem} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-[10px] uppercase">Add</button>
+                        </div>
+                        {formData.gallery && formData.gallery.length > 0 && (
+                            <div className="grid grid-cols-4 gap-3">
+                                {formData.gallery.map((url: string, idx: number) => (
+                                    <div key={idx} className="relative group aspect-video rounded-lg overflow-hidden border border-white/5 bg-black">
+                                        <Image src={url} alt="" fill className="object-cover" unoptimized />
+                                        <button type="button" onClick={()=>handleRemoveGalleryItem(idx)} className="absolute top-1 right-1 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="bg-gray-900/40 p-6 rounded-[2rem] border border-white/5 space-y-6">
