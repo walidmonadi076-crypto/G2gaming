@@ -114,7 +114,6 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
                    md:translate-x-0 
                    ${isExpanded ? 'md:w-64' : 'md:w-20'}
                    ${isFullyExpanded ? 'items-start' : 'items-center'}`}
-        suppressHydrationWarning={true}
     >
       <div className={`flex items-center text-purple-500 mb-6 w-full ${isFullyExpanded ? 'pl-6' : 'justify-center'}`}>
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -125,7 +124,8 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
 
       <ul className="w-full px-4 space-y-2">
         {navItems.map(item => {
-          const isActive = mounted && ((item.href === '/' && router.pathname === '/') || (item.href !== '/' && router.pathname.startsWith(item.href)));
+          // Stable check for active state
+          const isActive = item.href === '/' ? router.pathname === '/' : router.pathname.startsWith(item.href);
           return (
             <li key={item.href}>
               <Link
@@ -147,47 +147,45 @@ const Sidebar = ({ isExpanded, onMouseEnter, onMouseLeave, isMobileOpen, onMobil
         })}
       </ul>
 
+      {/* Discover Section - Stable container to prevent Error #418 */}
       <div className="mt-auto pt-4 w-full flex-1 overflow-y-auto no-scrollbar">
          <div className="w-full px-4 mb-2">
             <ThemeToggle isExpanded={isFullyExpanded} />
         </div>
         
-        {mounted && (
-          <div suppressHydrationWarning={true}>
-            <div className={`w-full px-4 mb-2 mt-4 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
-                <h3 className={`text-[10px] font-black text-gray-500 uppercase tracking-widest transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
-                    Discover
-                </h3>
-            </div>
-            
-            <ul className="w-full px-4 space-y-1">
-                {loadingCats ? (
-                    [1, 2, 3].map(i => <li key={i} className="h-10 rounded-lg bg-gray-700/30 animate-pulse mb-1" />)
-                ) : (
-                    popularCategories.map(item => {
-                        const IconComponent = ICON_MAP[item.icon_name] || ICON_MAP['Gamepad2'];
-                        const isActive = router.query.category === item.name;
-                        return (
-                            <li key={item.id}>
-                                <Link
-                                  href={{ pathname: parentPath, query: { category: item.name } }}
-                                  onClick={onMobileClose}
-                                  className={`flex items-center p-2 rounded-lg transition-all duration-200 group
-                                      ${isActive ? 'bg-purple-600/20 text-purple-300' : 'text-gray-400 hover:bg-gray-800/70 hover:text-white'}
-                                      ${isFullyExpanded ? 'w-full' : 'w-10 h-10 justify-center mx-auto'}`}
-                                >
-                                  <div className="flex-shrink-0">{React.isValidElement(IconComponent) ? React.cloneElement(IconComponent as any, { width: 18, height: 18 }) : null}</div>
-                                  <span className={`whitespace-nowrap text-xs font-bold transition-all duration-200 overflow-hidden ${isFullyExpanded ? 'ml-3 opacity-100' : 'w-0 opacity-0 ml-0 h-0'}`}>
-                                      {item.name}
-                                  </span>
-                                </Link>
-                            </li>
-                        );
-                    })
-                )}
-            </ul>
-          </div>
-        )}
+        <div className={`w-full px-4 mb-2 mt-4 ${isFullyExpanded ? 'pl-7' : 'text-center'}`}>
+            <h3 className={`text-[10px] font-black text-gray-500 uppercase tracking-widest transition-opacity duration-200 ${isFullyExpanded ? 'opacity-100' : 'opacity-0'}`}>
+                Discover
+            </h3>
+        </div>
+        
+        <ul className="w-full px-4 space-y-1">
+            {/* Logic moved inside the list to keep the parent identical on server/client */}
+            {!mounted || loadingCats ? (
+                [1, 2, 3].map(i => <li key={i} className="h-10 rounded-lg bg-gray-700/30 animate-pulse mb-1" />)
+            ) : (
+                popularCategories.map(item => {
+                    const IconComponent = ICON_MAP[item.icon_name] || ICON_MAP['Gamepad2'];
+                    const isActive = router.query.category === item.name;
+                    return (
+                        <li key={item.id}>
+                            <Link
+                              href={{ pathname: parentPath, query: { category: item.name } }}
+                              onClick={onMobileClose}
+                              className={`flex items-center p-2 rounded-lg transition-all duration-200 group
+                                  ${isActive ? 'bg-purple-600/20 text-purple-300' : 'text-gray-400 hover:bg-gray-800/70 hover:text-white'}
+                                  ${isFullyExpanded ? 'w-full' : 'w-10 h-10 justify-center mx-auto'}`}
+                            >
+                              <div className="flex-shrink-0">{React.isValidElement(IconComponent) ? React.cloneElement(IconComponent as any, { width: 18, height: 18 }) : null}</div>
+                              <span className={`whitespace-nowrap text-xs font-bold transition-all duration-200 overflow-hidden ${isFullyExpanded ? 'ml-3 opacity-100' : 'w-0 opacity-0 ml-0 h-0'}`}>
+                                  {item.name}
+                              </span>
+                            </Link>
+                        </li>
+                    );
+                })
+            )}
+        </ul>
       </div>
     </nav>
   );

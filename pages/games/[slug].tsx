@@ -141,8 +141,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                         <div>
                                             <h3 className="font-black text-white uppercase leading-none mb-1">Access Terminal</h3>
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                                {/* Use a stable text content for hydration */}
-                                                Status: {isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : 'INITIALIZING'}
+                                                Status: <span className="text-white">{isMounted ? (isUnlocked ? 'AUTHORIZED' : 'SECURED') : 'INITIALIZING'}</span>
                                             </p>
                                         </div>
                                     </div>
