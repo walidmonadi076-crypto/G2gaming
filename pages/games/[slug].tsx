@@ -11,6 +11,7 @@ import Ad from '../../components/Ad';
 import HtmlContent from '../../components/HtmlContent';
 import StarRating from '../../components/StarRating';
 import GameCard from '../../components/GameCard';
+import GameCarousel from '../../components/GameCarousel';
 import { getEmbedUrl } from '../../lib/utils';
 
 const Lightbox = dynamic(() => import('../../components/Lightbox'), {
@@ -198,9 +199,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                         <h3 className="text-4xl md:text-5xl font-normal text-white uppercase mb-16 flex items-center gap-4">
                             <div className="w-2 h-10 bg-purple-600 rounded-full"></div>Similar Expeditions
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {similarGames?.map(sg => <GameCard key={sg.id} game={sg} />)}
-                        </div>
+                        <GameCarousel games={similarGames} />
                     </section>
                 </div>
             </div>
@@ -217,7 +216,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
     const game = await getGameBySlug(params?.slug as string);
     if (!game) return { notFound: true };
-    const similar = await getRelatedGames(game.id, game.category, 4);
+    const similar = await getRelatedGames(game.id, game.category, 6); // Fetched slightly more for the carousel
     return { props: { game, similarGames: similar || [] }, revalidate: 60 };
 };
 
