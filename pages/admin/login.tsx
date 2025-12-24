@@ -72,7 +72,6 @@ export default function AdminPanel() {
   
   const [items, setItems] = useState<any[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  // adData now stores { code, fallback_code }
   const [adData, setAdData] = useState<Record<string, { code: string, fallback_code: string }>>({});
   const [settings, setSettings] = useState<Partial<SiteSettings>>({});
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
@@ -88,8 +87,6 @@ export default function AdminPanel() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
   const [toasts, setToasts] = useState<ToastData[]>([]);
-
-  const [previewingAdPlacement, setPreviewingAdPlacement] = useState<string | null>(null);
 
   const addToast = useCallback((message: string, type: ToastType) => {
     const id = Date.now();
@@ -195,6 +192,16 @@ export default function AdminPanel() {
     if (res.ok) { addToast('Entity purged.', 'success'); refreshCurrentTab(); }
   };
 
+  const handleApproveComment = async (id: number) => {
+    const csrf = getCookie('csrf_token');
+    const res = await fetch(`${API_BASE}/api/admin/comments`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf || '' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) { addToast('Comment approved.', 'success'); refreshCurrentTab(); }
+  };
+
   if (checkingAuth) return <div className="min-h-screen bg-black flex items-center justify-center text-purple-500 font-black uppercase tracking-[0.5em] animate-pulse">Initializing Core...</div>;
 
   if (!isAuthenticated) {
@@ -235,6 +242,7 @@ export default function AdminPanel() {
                 const method = editingItem ? 'PUT' : 'POST';
                 const res = await fetch(`${API_BASE}/api/admin/${activeTab}`, { method, headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf || '' }, body: JSON.stringify(d) });
                 if (res.ok) { addToast('Operation successful.', 'success'); setShowForm(false); refreshCurrentTab(); }
+                else { addToast('Operation failed.', 'error'); }
             }} />
         )}
 
@@ -246,7 +254,7 @@ export default function AdminPanel() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Control Panel</h1>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Infrastructure v3.2 [GEO-AD READY]</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Infrastructure v3.3 [RESTORED]</p>
                     </div>
                 </div>
                 <div className="flex gap-4">
@@ -257,15 +265,17 @@ export default function AdminPanel() {
 
             <AdminDashboard stats={stats} />
 
-            <div className="flex flex-wrap gap-2 mb-10 bg-gray-900/50 p-2 rounded-3xl border border-white/5">
+            <div className="flex flex-wrap gap-2 mb-10 bg-gray-900/50 p-2 rounded-3xl border border-white/5 overflow-x-auto no-scrollbar">
                 {['analytics', 'games', 'blogs', 'products', 'categories', 'comments', 'ads', 'social-links', 'settings'].map(tab => (
-                    <button key={tab} onClick={() => { setActiveTab(tab as TabType); setCurrentPage(1); }} className={`px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-3 border ${activeTab === tab ? 'bg-purple-600 text-white border-purple-500 shadow-xl' : 'bg-gray-800 text-gray-400 border-white/5 hover:bg-gray-800/80'}`}>
+                    <button key={tab} onClick={() => { setActiveTab(tab as TabType); setCurrentPage(1); }} className={`px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-3 border whitespace-nowrap ${activeTab === tab ? 'bg-purple-600 text-white border-purple-500 shadow-xl' : 'bg-gray-800 text-gray-400 border-white/5 hover:bg-gray-800/80'}`}>
                         {tab.replace('-', ' ')}
                     </button>
                 ))}
             </div>
 
-            <main className="bg-gray-900/30 rounded-[3rem] p-4 lg:p-10 border border-white/5 shadow-inner min-h-[600px]">
+            <main className="bg-gray-900/30 rounded-[3rem] p-4 lg:p-10 border border-white/5 shadow-inner min-h-[600px] relative">
+                
+                {/* 1. Analytics Tab */}
                 {activeTab === 'analytics' && analyticsData && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
                         <TopContentList title="Top Played Games" items={analyticsData.topGames} type="games" />
@@ -274,6 +284,151 @@ export default function AdminPanel() {
                     </div>
                 )}
 
+                {/* 2. Main Content Tabs (Games, Blogs, Products, Social) */}
+                {['games', 'blogs', 'products', 'social-links'].includes(activeTab) && (
+                    <div className="space-y-8 animate-fade-in">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">{activeTab.replace('-', ' ')} Manager</h2>
+                            <div className="flex w-full md:w-auto gap-4">
+                                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search database..." className="bg-gray-800 border border-gray-700 rounded-2xl px-6 py-3 text-sm focus:border-purple-500 outline-none flex-grow md:w-64" />
+                                <button onClick={() => { setEditingItem(null); setShowForm(true); }} className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg">+ New Entry</button>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto rounded-[2rem] border border-white/5">
+                            <table className="w-full text-left border-collapse bg-gray-800/20">
+                                <thead>
+                                    <tr className="bg-gray-800/40 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-white/5">
+                                        <th className="px-6 py-4">Identity</th>
+                                        <th className="px-6 py-4">Category</th>
+                                        <th className="px-6 py-4">Stats / Meta</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {items.map((item) => (
+                                        <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-gray-800 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                                                        <img src={item.imageUrl || item.image_url} alt="" className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-200 text-sm">{item.title || item.name}</p>
+                                                        <p className="text-[10px] text-gray-500 font-mono">/{item.slug}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <span className="px-3 py-1 bg-gray-900 border border-white/5 rounded-lg text-[10px] font-black uppercase tracking-widest text-purple-400">{item.category}</span>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase">{item.view_count || 0} Views</span>
+                                                    {activeTab === 'games' && <span className="text-[9px] text-gray-500 font-bold uppercase">{item.platform}</span>}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                {item.isPinned ? <span className="text-[9px] bg-blue-900/40 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 font-black uppercase">Pinned</span> : <span className="text-[9px] text-gray-600 font-bold uppercase">Static</span>}
+                                            </td>
+                                            <td className="px-6 py-5 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => { setEditingItem(item); setShowForm(true); }} className="p-2 hover:bg-purple-600/20 text-purple-400 rounded-lg transition-all"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                                    <button onClick={() => handleDeleteItem(item.id)} className="p-2 hover:bg-red-600/20 text-red-400 rounded-lg transition-all"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {/* Pagination */}
+                        <div className="flex justify-between items-center bg-gray-800/40 p-6 rounded-[2rem] border border-white/5">
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Showing {items.length} of {pagination.totalItems} entries</span>
+                            <div className="flex gap-2">
+                                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl disabled:opacity-30 transition-all font-black text-[10px] uppercase">Prev</button>
+                                <button disabled={currentPage === pagination.totalPages} onClick={() => setCurrentPage(p => p + 1)} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl disabled:opacity-30 transition-all font-black text-[10px] uppercase">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 3. Categories Tab */}
+                {activeTab === 'categories' && (
+                    <div className="space-y-8 animate-fade-in">
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Taxonomy Manager</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {categories.map((cat, idx) => (
+                                <div key={`${cat.section}-${cat.name}`} className="bg-gray-800/50 border border-white/5 rounded-[2rem] p-6 space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-purple-500 border border-white/5">
+                                                {ICON_MAP[cat.icon_name] || ICON_MAP['Gamepad2']}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-white text-sm">{cat.name}</p>
+                                                <p className="text-[10px] text-gray-500 uppercase font-black">{cat.section}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-black text-white bg-purple-600 px-2 py-0.5 rounded uppercase">{cat.count} items</span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[8px] font-black uppercase text-gray-500 tracking-widest">Visibility</label>
+                                            <button onClick={async () => {
+                                                const csrf = getCookie('csrf_token');
+                                                await fetch(`${API_BASE}/api/admin/categories`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf || '' }, body: JSON.stringify({ ...cat, show_in_sidebar: !cat.show_in_sidebar }) });
+                                                refreshCurrentTab();
+                                            }} className={`w-full py-2 rounded-lg text-[9px] font-black uppercase transition-all ${cat.show_in_sidebar ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
+                                                {cat.show_in_sidebar ? 'In Sidebar' : 'Hidden'}
+                                            </button>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[8px] font-black uppercase text-gray-500 tracking-widest">Sort Order</label>
+                                            <input type="number" value={cat.sort_order} onChange={async (e) => {
+                                                const val = parseInt(e.target.value);
+                                                const csrf = getCookie('csrf_token');
+                                                await fetch(`${API_BASE}/api/admin/categories`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf || '' }, body: JSON.stringify({ ...cat, sort_order: val }) });
+                                                setCategories(prev => prev.map(c => c.name === cat.name && c.section === cat.section ? { ...c, sort_order: val } : c));
+                                            }} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-2 text-[10px] text-white outline-none" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. Comments Tab */}
+                {activeTab === 'comments' && (
+                    <div className="space-y-8 animate-fade-in">
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Community Feedback</h2>
+                        <div className="grid grid-cols-1 gap-6">
+                            {items.length === 0 ? <p className="text-gray-500 italic">No comments awaiting review.</p> : items.map((comment) => (
+                                <div key={comment.id} className={`bg-gray-800/50 border rounded-[2rem] p-6 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center ${comment.status === 'pending' ? 'border-orange-500/30 bg-orange-900/5' : 'border-white/5'}`}>
+                                    <div className="flex-grow">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="font-bold text-white text-sm">{comment.author}</span>
+                                            <span className="text-[10px] text-gray-500 uppercase font-black">On Article: {comment.blog_title}</span>
+                                            {comment.status === 'pending' && <span className="bg-orange-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Moderation Req</span>}
+                                        </div>
+                                        <p className="text-gray-400 text-sm leading-relaxed italic">"{comment.text}"</p>
+                                    </div>
+                                    <div className="flex gap-2 shrink-0">
+                                        {comment.status === 'pending' && <button onClick={() => handleApproveComment(comment.id)} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">Approve</button>}
+                                        <button onClick={() => handleDeleteItem(comment.id)} className="px-6 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">Reject</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* 5. Ads Tab */}
                 {activeTab === 'ads' && (
                     <div className="space-y-8 animate-fade-in">
                         <div className="flex justify-between items-center mb-8">
@@ -289,39 +444,54 @@ export default function AdminPanel() {
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">{config.size} • {config.role}</p>
                                         </div>
                                     </div>
-                                    
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-purple-400 tracking-widest flex items-center gap-2">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Primary Code (Main Regions)
-                                            </label>
-                                            <textarea 
-                                                value={adData[key]?.code || ''} 
-                                                onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], code: e.target.value } }))}
-                                                className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-blue-300 outline-none focus:border-purple-500 transition-all resize-none shadow-inner"
-                                                placeholder="Paste Ad HTML/Script code here..."
-                                            />
+                                            <label className="text-[10px] font-black uppercase text-purple-400 tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Primary Code</label>
+                                            <textarea value={adData[key]?.code || ''} onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], code: e.target.value } }))} className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-blue-300 outline-none focus:border-purple-500 transition-all resize-none shadow-inner" placeholder="Paste Ad HTML/Script code here..." />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-orange-400 tracking-widest flex items-center gap-2">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Fallback Code (Restricted Regions/USA)
-                                            </label>
-                                            <textarea 
-                                                value={adData[key]?.fallback_code || ''} 
-                                                onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], fallback_code: e.target.value } }))}
-                                                className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-orange-200 outline-none focus:border-orange-500 transition-all resize-none shadow-inner"
-                                                placeholder="Paste Fallback HTML (Image Link or Alternative Network)..."
-                                            />
+                                            <label className="text-[10px] font-black uppercase text-orange-400 tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Fallback Code</label>
+                                            <textarea value={adData[key]?.fallback_code || ''} onChange={(e) => setAdData(prev => ({ ...prev, [key]: { ...prev[key], fallback_code: e.target.value } }))} className="w-full h-48 bg-gray-900 border border-gray-700 rounded-2xl p-5 font-mono text-xs text-orange-200 outline-none focus:border-orange-500 transition-all resize-none shadow-inner" placeholder="Paste Fallback HTML..." />
                                         </div>
                                     </div>
-                                    <div className="text-[9px] font-bold text-gray-600 uppercase italic">PLACEMENT_ID: {config.placement}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
-                
-                {/* ... (rest of tabs logic remains same) */}
+
+                {/* 6. Settings Tab */}
+                {activeTab === 'settings' && (
+                    <form onSubmit={handleSaveSettings} className="space-y-8 animate-fade-in">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Global Parameters</h2>
+                            <button type="submit" className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg">Commit Settings</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-gray-800/50 border border-white/5 rounded-[2rem] p-8 space-y-6">
+                                <h3 className="text-xs font-black uppercase text-gray-500 tracking-widest border-b border-white/5 pb-4">Brand Identity</h3>
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-gray-400">Site Name</label>
+                                        <input type="text" value={settings.site_name || ''} onChange={e=>setSettings({...settings, site_name: e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-gray-400">Icon URL (Favicon)</label>
+                                        <input type="text" value={settings.site_icon_url || ''} onChange={e=>setSettings({...settings, site_icon_url: e.target.value})} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-800/50 border border-white/5 rounded-[2rem] p-8 space-y-6">
+                                <h3 className="text-xs font-black uppercase text-gray-500 tracking-widest border-b border-white/5 pb-4">Locker Engine (OGAds)</h3>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-gray-400">Content Locker Script Src</label>
+                                    <textarea value={settings.ogads_script_src || ''} onChange={e=>setSettings({...settings, ogads_script_src: e.target.value})} className="w-full h-32 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-xs font-mono text-blue-400 outline-none focus:border-purple-500" placeholder="<script src='...'></script>" />
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                )}
+
             </main>
         </div>
     </div>
