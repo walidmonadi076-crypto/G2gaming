@@ -133,7 +133,7 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
 
                         <aside className="col-span-12 lg:col-span-4 space-y-8">
                             <div className="lg:sticky lg:top-24 space-y-8">
-                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden relative">
+                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden relative" suppressHydrationWarning>
                                     <div className="flex items-center gap-4 mb-8">
                                         <div className="w-14 h-14 relative rounded-2xl overflow-hidden border border-white/10 bg-gray-800 shrink-0">
                                             <Image src={game.iconUrl || game.imageUrl} alt="" fill className="object-cover" unoptimized />

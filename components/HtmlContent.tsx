@@ -15,9 +15,10 @@ const HtmlContent: React.FC<HtmlContentProps> = ({ html, className = "" }) => {
   return (
     <div 
       className={`prose prose-invert max-w-none ${className}`}
-      // This is crucial: Server renders empty, client only injects after mount.
-      // This guarantees zero mismatch errors for HTML strings.
+      // Extra safety: we render nothing during the hydration phase.
+      // Once isMounted is true (client-side only), the HTML is safely injected.
       dangerouslySetInnerHTML={{ __html: isMounted ? html : '' }}
+      suppressHydrationWarning
     />
   );
 };
