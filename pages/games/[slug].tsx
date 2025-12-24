@@ -69,7 +69,6 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
     };
 
     const handleGalleryClick = (index: number) => {
-        // Offset by 1 if there's a video in the mediaItems array
         setLightboxIndex(game.videoUrl ? index + 1 : index);
         setLightboxOpen(true);
     };
@@ -83,39 +82,39 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
             <div className="min-h-screen bg-[#0d0d0d] text-gray-300 pb-20 relative overflow-x-hidden font-fredoka">
                 {game.backgroundUrl && (
                     <div className="fixed inset-0 z-0">
-                        <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-20 blur-[3px]" unoptimized />
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/70 via-[#0d0d0d]/95 to-[#0d0d0d]" />
+                        <Image src={game.backgroundUrl} alt="" fill className="object-cover opacity-20 blur-[2px]" unoptimized />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/80 via-[#0d0d0d]/95 to-[#0d0d0d]" />
                     </div>
                 )}
 
-                <div className="relative z-10 max-w-[1700px] mx-auto px-4 pt-8">
-                    <div className="mb-10 font-sans">
-                        <Link href="/games" prefetch={false} className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
-                            <span className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500/20 transition-all">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+                <div className="relative z-10 max-w-[1500px] mx-auto px-4 pt-6">
+                    <div className="mb-6 font-sans">
+                        <Link href="/games" prefetch={false} className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+                            <span className="w-5 h-5 rounded-full border border-gray-800 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500/20 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M15 19l-7-7 7-7" /></svg>
                             </span>
-                            Library
+                            Library / Terminal
                         </Link>
                     </div>
 
-                    <header className="mb-12 max-w-4xl">
-                        <div className="flex items-center gap-3 mb-6 font-sans">
-                            <span className="px-3 py-1 rounded-md bg-purple-900/40 border border-purple-500/30 text-purple-300 text-[10px] font-black uppercase tracking-[0.2em]">{game.category}</span>
-                            <span className="px-3 py-1 rounded-md bg-blue-900/40 border border-blue-500/30 text-blue-300 text-[10px] font-black uppercase tracking-[0.2em]">{game.platform?.toUpperCase() || 'PC'}</span>
+                    <header className="mb-10 max-w-4xl">
+                        <div className="flex items-center gap-2 mb-4 font-sans">
+                            <span className="px-2.5 py-1 rounded bg-purple-900/40 border border-purple-500/30 text-purple-300 text-[9px] font-black uppercase tracking-widest">{game.category}</span>
+                            <span className="px-2.5 py-1 rounded bg-blue-900/40 border border-blue-500/30 text-blue-300 text-[9px] font-black uppercase tracking-widest">{game.platform?.toUpperCase() || 'PC'}</span>
                         </div>
-                        <h1 className="text-5xl md:text-8xl font-normal text-white uppercase tracking-tighter leading-[0.85] mb-6">{game.title}</h1>
-                        <div className="flex items-center gap-6">
-                            <StarRating rating={game.rating ? game.rating / 20 : 0} size="large" />
-                            <div className="h-4 w-px bg-gray-800"></div>
-                            <span className="text-gray-400 text-xs font-black uppercase font-sans">
-                                {isMounted ? (game.downloadsCount?.toLocaleString() || 0) : '...'} Joined
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-normal text-white uppercase tracking-tighter leading-[0.9] mb-6 drop-shadow-2xl">{game.title}</h1>
+                        <div className="flex items-center gap-5">
+                            <StarRating rating={game.rating ? game.rating / 20 : 0} />
+                            <div className="h-3 w-px bg-gray-800"></div>
+                            <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest font-sans">
+                                {isMounted ? (game.downloadsCount?.toLocaleString() || 0) : '...'} Deployed
                             </span>
                         </div>
                     </header>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                         <div className="col-span-12 lg:col-span-8">
-                            <div className="relative w-full aspect-video bg-gray-900 rounded-[2.5rem] overflow-hidden mb-6 border border-white/5 shadow-2xl">
+                            <div className="relative w-full aspect-video bg-gray-900 rounded-[2rem] overflow-hidden mb-8 border border-white/5 shadow-2xl">
                                 {game.videoUrl ? (
                                     embedUrl ? (
                                         <iframe src={embedUrl} className="w-full h-full border-0" title={game.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" loading="lazy" />
@@ -127,73 +126,65 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 )}
                             </div>
 
-                            {/* Screenshots Carousel Slider Section */}
                             {game.gallery && game.gallery.length > 0 && (
-                                <div className="mb-12 relative">
+                                <div className="mb-12 relative group/gallery">
                                     <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar snap-x snap-mandatory mask-gradient-right">
                                         {game.gallery.map((img, idx) => (
                                             <button 
                                                 key={idx} 
                                                 onClick={() => handleGalleryClick(idx)}
-                                                className="group relative flex-shrink-0 w-[85%] md:w-[45%] lg:w-[30%] aspect-video rounded-2xl overflow-hidden border border-white/5 bg-gray-900 shadow-lg hover:border-purple-500/50 transition-all duration-300 snap-start"
+                                                className="group relative flex-shrink-0 w-[75%] md:w-[40%] lg:w-[25%] aspect-video rounded-2xl overflow-hidden border border-white/5 bg-gray-900 shadow-xl hover:border-purple-500/50 transition-all duration-300 snap-start"
                                             >
-                                                <Image src={img} alt={`${game.title} screenshot ${idx + 1}`} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
-                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                                <Image src={img} alt={`${game.title} screenshot ${idx + 1}`} fill className="object-cover group-hover:scale-105 transition-transform duration-500" unoptimized />
+                                                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="flex items-center gap-2 mt-2 px-2">
-                                        <div className="w-8 h-1 bg-purple-600 rounded-full"></div>
-                                        <div className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Swipe for more intelligence</div>
+                                    <div className="flex items-center gap-2 mt-1 px-1">
+                                        <div className="w-6 h-0.5 bg-purple-600 rounded-full"></div>
+                                        <div className="text-[9px] font-black uppercase text-gray-600 tracking-[0.2em]">Intel Scroll</div>
                                     </div>
                                 </div>
                             )}
 
-                            <section className="mb-20">
-                                <h2 className="text-3xl font-normal text-white uppercase mb-10 flex items-center gap-4">
-                                    <div className="w-1.5 h-8 bg-purple-600 rounded-full"></div>Intelligence Briefing
+                            <section className="mb-16">
+                                <h2 className="text-2xl font-normal text-white uppercase mb-8 flex items-center gap-3">
+                                    <div className="w-1 h-6 bg-purple-600 rounded-full"></div>Intelligence Briefing
                                 </h2>
-                                <div className="bg-gray-900/30 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/5 font-sans">
+                                <div className="bg-gray-900/30 backdrop-blur-xl rounded-[2rem] p-6 md:p-10 border border-white/5 font-sans">
                                     {game.description && <HtmlContent html={game.description} />}
-                                    <div className="mt-12 pt-10 border-t border-white/5 flex justify-center">
+                                    <div className="mt-10 pt-8 border-t border-white/5 flex justify-center">
                                         <Ad placement="home_quest_banner" />
                                     </div>
                                 </div>
                             </section>
                         </div>
 
-                        <aside className="col-span-12 lg:col-span-4 space-y-8">
-                            <div className="lg:sticky lg:top-24 space-y-8">
-                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden relative">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-14 h-14 relative rounded-2xl overflow-hidden border border-white/10 bg-gray-800 shrink-0">
+                        <aside className="col-span-12 lg:col-span-4 space-y-6">
+                            <div className="lg:sticky lg:top-24 space-y-6">
+                                <div className="bg-gradient-to-br from-gray-800/80 to-gray-900 rounded-[2rem] p-6 border border-white/10 shadow-2xl overflow-hidden relative">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-12 h-12 relative rounded-xl overflow-hidden border border-white/10 bg-gray-800 shrink-0">
                                             <Image src={game.iconUrl || game.imageUrl} alt="" fill className="object-cover" unoptimized />
                                         </div>
                                         <div>
-                                            <h3 className="font-normal text-white uppercase leading-none mb-1">Access Terminal</h3>
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest font-sans">
-                                                Status: <span className="text-white">{!isMounted ? 'INITIALIZING' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}</span>
+                                            <h3 className="text-sm font-normal text-white uppercase leading-none mb-1">Access Terminal</h3>
+                                            <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest font-sans">
+                                                Status: <span className={!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}>
+                                                    {!isMounted ? '...' : (isUnlocked ? 'AUTHORIZED' : 'SECURED')}
+                                                </span>
                                             </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4 mb-8 border-t border-white/5 pt-6 font-sans">
-                                        <div className="flex justify-between">
-                                            <span className="text-[10px] font-black uppercase text-gray-500">Integrity</span>
-                                            <span className={`text-[10px] font-black uppercase ${!isMounted ? 'text-gray-500' : (isUnlocked ? 'text-green-400' : 'text-blue-400')}`}>
-                                                {!isMounted ? 'CHECKING...' : (isUnlocked ? 'VERIFIED' : 'REQUIRED')}
-                                            </span>
                                         </div>
                                     </div>
 
                                     <button 
                                         onClick={(e) => handleActionClick(e, game.downloadUrl)} 
-                                        className="w-full py-5 bg-purple-600 hover:bg-purple-500 text-white font-normal uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
+                                        className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-normal uppercase tracking-[0.2em] text-[10px] rounded-xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
                                     >
                                         <span>
-                                            {!isMounted ? 'INITIALIZING...' : (isUnlocked ? 'EXECUTE DEPLOYMENT' : 'INITIATE VERIFICATION')}
+                                            {!isMounted ? 'SYNCING...' : (isUnlocked ? 'START DEPLOYMENT' : 'INITIATE ACCESS')}
                                         </span>
-                                        {isMounted && !isUnlocked && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                                        {isMounted && !isUnlocked && <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
                                     </button>
                                 </div>
                                 <Ad placement="game_vertical" />
@@ -201,9 +192,9 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                         </aside>
                     </div>
 
-                    <section className="mt-32 border-t border-white/5 pt-20">
-                        <h3 className="text-4xl md:text-5xl font-normal text-white uppercase mb-16 flex items-center gap-4">
-                            <div className="w-2 h-10 bg-purple-600 rounded-full"></div>Similar Expeditions
+                    <section className="mt-20 border-t border-white/5 pt-12">
+                        <h3 className="text-3xl md:text-4xl font-normal text-white uppercase mb-12 flex items-center gap-3">
+                            <div className="w-1.5 h-8 bg-purple-600 rounded-full"></div>Similar Expeditions
                         </h3>
                         <GameCarousel games={similarGames} />
                     </section>
@@ -222,7 +213,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
     const game = await getGameBySlug(params?.slug as string);
     if (!game) return { notFound: true };
-    const similar = await getRelatedGames(game.id, game.category, 6); // Fetched slightly more for the carousel
+    const similar = await getRelatedGames(game.id, game.category, 6);
     return { props: { game, similarGames: similar || [] }, revalidate: 60 };
 };
 
