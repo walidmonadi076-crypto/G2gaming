@@ -127,19 +127,25 @@ const GameDetailPage: React.FC<GameDetailPageProps> = ({ game, similarGames }) =
                                 )}
                             </div>
 
-                            {/* Screenshots Grid Section */}
+                            {/* Screenshots Carousel Slider Section */}
                             {game.gallery && game.gallery.length > 0 && (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                                    {game.gallery.map((img, idx) => (
-                                        <button 
-                                            key={idx} 
-                                            onClick={() => handleGalleryClick(idx)}
-                                            className="group relative aspect-video rounded-2xl overflow-hidden border border-white/5 bg-gray-900 shadow-lg hover:border-purple-500/50 transition-all duration-300"
-                                        >
-                                            <Image src={img} alt={`${game.title} screenshot ${idx + 1}`} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
-                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
-                                        </button>
-                                    ))}
+                                <div className="mb-12 relative">
+                                    <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar snap-x snap-mandatory mask-gradient-right">
+                                        {game.gallery.map((img, idx) => (
+                                            <button 
+                                                key={idx} 
+                                                onClick={() => handleGalleryClick(idx)}
+                                                className="group relative flex-shrink-0 w-[85%] md:w-[45%] lg:w-[30%] aspect-video rounded-2xl overflow-hidden border border-white/5 bg-gray-900 shadow-lg hover:border-purple-500/50 transition-all duration-300 snap-start"
+                                            >
+                                                <Image src={img} alt={`${game.title} screenshot ${idx + 1}`} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
+                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-2 px-2">
+                                        <div className="w-8 h-1 bg-purple-600 rounded-full"></div>
+                                        <div className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Swipe for more intelligence</div>
+                                    </div>
                                 </div>
                             )}
 
