@@ -1,4 +1,5 @@
 
+/* ... existing imports ... */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -255,7 +256,7 @@ export default function AdminPanel() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Control Panel</h1>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Infrastructure v3.4 [AD PREVIEW RESTORED]</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Infrastructure v3.5 [RESTORING PREVIEW]</p>
                     </div>
                 </div>
                 <div className="flex gap-4">
@@ -472,7 +473,8 @@ export default function AdminPanel() {
                                                 <Ad 
                                                     placement={key} 
                                                     showLabel={false} 
-                                                    overrideCode={adPreviewToggles[key] === 'fallback' ? (adData[key]?.fallback_code || '<!-- No Fallback -->') : (adData[key]?.code || '<!-- No Code -->')} 
+                                                    isPreview={true}
+                                                    overrideCode={adPreviewToggles[key] === 'fallback' ? (adData[key]?.fallback_code || '') : (adData[key]?.code || '')} 
                                                     className="bg-transparent border-0 scale-90 md:scale-100" 
                                                 />
                                             </div>
